@@ -56,6 +56,8 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .brand h1 { margin: 0; font-family: var(--f-han); font-weight: 900; font-size: 30px; letter-spacing: 0.02em; }
 .brand .en { font-weight: 700; font-size: 18px; }
 .tagline { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.streak { margin: 6px 0 0; font-size: 13px; color: var(--jade); font-weight: 600; min-height: 1em; }
+.streak .zh { font-family: var(--f-han); margin-right: 6px; }
 .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
@@ -207,6 +209,7 @@ body.hint-off .opt .en-line { display: none; }
     <div>
       <div class="brand"><h1>街头中文</h1><span class="en">Street Mandarin</span></div>
       <p class="tagline">No lessons. Walk into a real situation, say something, get it wrong, and learn from how people react.</p>
+      <p class="streak" id="streak" aria-live="polite"></p>
     </div>
     <div class="toggles" role="group" aria-label="Display options">
       <button class="chip" id="tg-py" aria-pressed="true">Pinyin</button>
@@ -249,6 +252,28 @@ const store = {
 };
 let notebook = store.get("sm-notebook", []);
 let done = store.get("sm-done", {});
+let days = store.get("sm-days", []), said = store.get("sm-said", 0);
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function streakLen() {
+  const set = new Set(days); let n = 0; const d = new Date();
+  if (!set.has(dayKey(d))) d.setDate(d.getDate() - 1); // yesterday still counts until today is over
+  while (set.has(dayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderStreak() {
+  const box = document.getElementById("streak"); if (!box) return;
+  box.textContent = "";
+  if (!said) return;
+  const n = streakLen();
+  if (n > 1) box.append(el("span", "zh", `连续${n}天`), `${n} days in a row · `);
+  else if (n === 1) box.append(el("span", "zh", "今天练了"), "Practised today · ");
+  box.append(plural(said, "line") + " answered so far");
+}
+function practised() {
+  said++; store.set("sm-said", said);
+  const k = dayKey(); if (!days.includes(k)) { days.push(k); days = days.slice(-60); store.set("sm-days", days); }
+  renderStreak();
+}
 let prefs = Object.assign({ py: true, hint: false, listen: false, how: "pick" }, store.get("sm-prefs", {}));
 if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 
@@ -315,6 +340,7 @@ function addMe(h, p, e, kind) {
   const b = el("div", "bubble"); b.append(bubbleContent(h, p, e, true));
   row.append(b); $("#log").append(row);
   transcript.push({ who: "me", text: h });
+  practised();
   scrollLog();
 }
 function addFeedback(kind, note, fix, extra) {
@@ -1104,7 +1130,7 @@ $("#tg-py").onclick = () => { prefs.py = !prefs.py; store.set("sm-prefs", prefs)
 $("#tg-hint").onclick = () => { prefs.hint = !prefs.hint; store.set("sm-prefs", prefs); applyPrefs(); };
 $("#tg-listen").onclick = () => { prefs.listen = !prefs.listen; store.set("sm-prefs", prefs); applyPrefs(); };
 
-applyPrefs(); renderNotebook();
+applyPrefs(); renderNotebook(); renderStreak();
 let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
 start(S.some(s => s.id === last) ? last : S[0].id);
 
