@@ -76,6 +76,10 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .scn .meta { font-size: 12px; color: var(--muted); }
 .scn[aria-current="true"] { border-color: var(--fg); box-shadow: inset 3px 0 0 var(--cinnabar); }
 .scn .done { color: var(--jade); font-weight: 600; }
+.marks { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 4px; }
+.marks i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--jade); }
+.marks i.on { background: var(--jade); }
+.outcome .gain { color: var(--jade); font-weight: 600; }
 @media (max-width: 760px) {
   .rail { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
   .rail h2, .rail .rail-group { display: none; }
@@ -314,8 +318,25 @@ if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 /* ---------- state ---------- */
 let mode = "scene"; // "scene" | "review" | "drill" | "phrases"
 let cur = null, turn = 0, order = [], busy = false, finished = false;
-let flags = {}, outcomes = [], curveball = null, runMisses = [];
-let ghost = store.get("sm-ghost", {}); // what you said last time at moments that went wrong  // consequences that carry through a scene; a replay surprise
+let flags = {}, outcomes = [], curveball = null, runMisses = [], lastGained = [], runMissTags = [];
+let ghost = store.get("sm-ghost", {});
+// Three marks per place: survived it, a clean run, a clean run through a curveball
+let mastery = store.get("sm-mastery", {});
+const MARKS = [["survived", "Survived"], ["clean", "Clean run"], ["curve", "Clean through a curveball"]];
+function earnMarks(cutShort) {
+  const m = mastery[cur.id] = mastery[cur.id] || {}, gained = [];
+  const give = k => { if (!m[k]) { m[k] = Date.now(); gained.push(k); } };
+  give("survived");
+  if (!cur._rematch && !cutShort && !runMisses.length && !outcomes.length) { give("clean"); if (curveball) give("curve"); }
+  store.set("sm-mastery", mastery);
+  return gained;
+}
+function marksEl(id) {
+  const m = mastery[id] || (done[id] ? { survived: 1 } : {}), box = el("span", "marks");
+  MARKS.forEach(([k, label]) => { const i = el("i", m[k] ? "on" : ""); i.title = label; box.append(i); });
+  box.setAttribute("aria-label", MARKS.filter(([k]) => m[k]).map(([, l]) => l).join(", ") || "Not tried yet");
+  return box;
+} // what you said last time at moments that went wrong  // consequences that carry through a scene; a replay surprise
 let transcript = []; // [{who:'npc'|'me', text}] for Claude context
 const $ = s => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
@@ -461,13 +482,14 @@ function renderRail() {
     wd.onclick = () => startWander();
     rail.append(wd);
   }
-  rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived` : "Places"));
+  const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !s.curveballs)).length;
+  rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived${nMast ? ` · ${nMast} mastered` : ""}` : "Places"));
   const placeBtn = s => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
     b.append(el("span", "han", s.place), el("span", "name", s.en));
     const meta = el("span", "meta");
-    if (done[s.id]) meta.append(el("span", "done", "Survived"), miss ? ` · ${plural(miss, "mistake")}` : "");
+    if (done[s.id]) meta.append(marksEl(s.id), miss ? ` ${plural(miss, "mistake")}` : "");
     else meta.append(miss ? `${plural(miss, "mistake")} so far` : "Not tried yet");
     b.append(meta);
     b.onclick = () => start(s.id);
@@ -492,7 +514,7 @@ function renderRail() {
 function start(id) {
   mode = "scene";
   const base = S.find(s => s.id === id);
-  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = [];
+  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = []; runMissTags = []; lastGained = [];
   // Each run gets its own copy of the turns, so a curveball can be slipped in on a replay
   const turns = base.turns.map((t, i) => Object.assign({}, t, { _orig: i }));
   if (done[id] && base.curveballs && base.curveballs.length && Math.random() < 0.6) {
@@ -680,7 +702,7 @@ function clearGhost() {
 }
 function choose(o) {
   if (busy) return;
-  if (o.k === "good") clearGhost();
+  if (o.k === "good") clearGhost(); else if (o.tag) runMissTags.push(o.tag);
   if (o.quiet) return advance();
   addMe(o.h, o.p, o.e, o.k);
   if (o.r) addNpc(o.r);
@@ -707,13 +729,14 @@ function finish(cutShort) {
     const alt = cur.endAlt && Object.keys(cur.endAlt).find(f => flags[f]);
     addNpc(alt ? cur.endAlt[alt] : cur.end); addNarr(cur.endNote);
   }
+  lastGained = earnMarks(cutShort);
   done[cur.id] = true; store.set("sm-done", done); renderRail(); renderMove();
 }
 
 function rematch() {
   // Just the moments that went wrong, straight away, while the mistake is fresh
   const base = S.find(s => s.id === cur.id), turns = runMisses.map(t => Object.assign({}, t));
-  mode = "scene"; turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = [];
+  mode = "scene"; turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = []; runMissTags = []; lastGained = [];
   cur = Object.assign({}, base, { turns, _rematch: true });
   setHead(cur.place, cur.placePy, cur.en, "Rematch: ", turns.length === 1 ? "the one moment that went wrong. Get it right this time." : `the ${turns.length} moments that went wrong. Get them right this time.`);
   $("#log").textContent = ""; addNarr("Same place, same people. Only the moments you missed.");
@@ -729,6 +752,18 @@ function renderEnd() {
     const ul = el("ul"); outcomes.forEach(o => ul.append(el("li", null, o))); res.append(ul);
     res.append(el("p", null, "Play it again to get a better result."));
   } else res.append(el("p", null, "Clean run. Nothing you said cost you anything."));
+  const mk = mastery[cur.id] || {};
+  if (lastGained.includes("curve")) res.append(el("p", "gain", "New mark: you got through a curveball without a slip. This place is mastered."));
+  else if (lastGained.includes("clean")) res.append(el("p", "gain", "New mark: a clean run." + (S.find(x => x.id === cur.id).curveballs ? " One left: get through a curveball cleanly." : "")));
+  else if (!mk.clean && !cur._rematch) res.append(el("p", null, "Next mark: a clean run, with no slips at all."));
+  // Which kind of mistake this run was mostly made of, with a way to drill it
+  const kinds = {}; runMissTags.forEach(t => kinds[t] = (kinds[t] || 0) + 1);
+  const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
+  if (pat && kinds[top] >= 1) {
+    const nudge = el("p", "nudge"); const go = el("button", "linkish", `Drill “${pat.en.toLowerCase()}” across every place`);
+    go.onclick = () => startPattern(pat.id);
+    nudge.append(`This run's slip${kinds[top] > 1 ? "s were" : " was"} ${pat.en.toLowerCase()}. `, go); res.append(nudge);
+  }
   if (curveball) res.append(el("p", null, "This run had a curveball: " + curveball.what + ". Replays can surprise you."));
   else if (S.find(x => x.id === cur.id).curveballs) res.append(el("p", null, "Replay it: real life doesn't follow the script, and next time this place might not either."));
   const row = el("div", "endcard");
