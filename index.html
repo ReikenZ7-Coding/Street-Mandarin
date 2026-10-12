@@ -396,11 +396,11 @@ function setHead(place, py, en, goalLabel, goal) {
 }
 
 const GROUPS = [
-  { name: "Eating and drinking", ids: ["noodles", "tea", "cafe", "bill", "delivery"] },
+  { name: "Eating and drinking", ids: ["noodles", "dumplings", "tea", "cafe", "bill", "delivery"] },
   { name: "Getting around", ids: ["taxi", "metro", "train", "directions", "bike", "toilet"] },
   { name: "Shopping", ids: ["market", "fruit", "store", "return", "haircut"] },
-  { name: "Sorting things out", ids: ["hotel", "sim", "pharmacy", "clinic", "lost"] },
-  { name: "People", ids: ["friend"] }
+  { name: "Sorting things out", ids: ["hotel", "landlord", "sim", "pharmacy", "clinic", "lost"] },
+  { name: "People", ids: ["friend", "wechat"] }
 ];
 function railOrder() {
   const ids = GROUPS.flatMap(g => g.ids);

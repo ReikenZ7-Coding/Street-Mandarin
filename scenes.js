@@ -681,5 +681,80 @@ window.SCENES = [
         ] }
     ],
     end: ["对。拿好单子，祝你早日康复。", "Duì. Ná hǎo dānzi, zhù nǐ zǎorì kāngfù.", "Right. Keep the slip, and get well soon."],
-    endNote: "挂号 guàhào is registering, and you do it before anything else. 科 kē is a department; 自费 zìfèi is paying yourself." }
+    endNote: "挂号 guàhào is registering, and you do it before anything else. 科 kē is a department; 自费 zìfèi is paying yourself." },
+  { id: "dumplings", place: "饺子馆", placePy: "jiǎozi guǎn", en: "Dumpling house", who: "服务员", whoPy: "fúwùyuán", whoEn: "the waitress",
+    goal: "Order a sensible amount of pork dumplings, boiled.",
+    intro: "A steamy dumpling restaurant. The menu prices dumplings by the 两 liǎng, a weight. You have no idea how many that is.",
+    turns: [
+      { npc: ["吃点什么？", "Chī diǎn shénme?", "What will you have?"], prompt: "Ask how many dumplings are in one liang.",
+        opts: [
+          { h: "一两有几个？", b: "一两|有|几个", p: "Yì liǎng yǒu jǐ ge?", e: "How many are in one liang?", k: "good", note: "几个 jǐ ge asks \"how many\" when you expect a small number. 一两 here is a unit (50 g), not \"one or two\"." },
+          { h: "一两是什么？", p: "Yì liǎng shì shénme?", e: "What's a liang?", k: "okay", r: ["一两就是六个饺子。", "Yì liǎng jiù shì liù ge jiǎozi.", "One liang is six dumplings."], note: "It got you the answer. Asking 有几个 goes straight to what you need.", fix: ["一两有几个？", "Yì liǎng yǒu jǐ ge?"] },
+          { h: "要一两个。", p: "Yào yì liǎng ge.", e: "I want one or two.", k: "wrong", r: ["一两个饺子？我们是按两卖的……", "Yì liǎng ge jiǎozi? Wǒmen shì àn liǎng mài de…", "One or two dumplings? We sell by the liang…"], note: "一两个 means \"one or two\" things. Here 两 is a weight on the menu: ask 一两有几个？", fix: ["一两有几个？", "Yì liǎng yǒu jǐ ge?"] }
+        ] },
+      { npc: ["一两六个。猪肉白菜的最好吃。", "Yì liǎng liù ge. Zhūròu báicài de zuì hǎochī.", "Six per liang. Pork and cabbage is the best."], prompt: "Order three liang of pork and cabbage.",
+        opts: [
+          { h: "那要三两猪肉白菜的。", b: "那|要|三两|猪肉白菜的", p: "Nà yào sān liǎng zhūròu báicài de.", e: "Then three liang of pork and cabbage.", k: "good", note: "Eighteen dumplings: a hungry lunch. 的 de at the end means \"the pork-and-cabbage ones\"." },
+          { h: "要三斤猪肉白菜的。", p: "Yào sān jīn zhūròu báicài de.", e: "Three jin of pork and cabbage.", k: "wrong", carry: "Ordered about 180 dumplings by mistake, then had to cancel most", r: ["三斤？！一百八十个？你们几个人？", "Sān jīn?! Yìbǎi bāshí ge? Nǐmen jǐ ge rén?", "Three JIN?! A hundred and eighty? How many of you are there?"], note: "斤 jīn is half a kilo, ten times a 两 liǎng. For dumplings, say 两.", fix: ["要三两猪肉白菜的。", "Yào sān liǎng zhūròu báicài de."] },
+          { h: "要猪肉白菜的。", p: "Yào zhūròu báicài de.", e: "Pork and cabbage, please.", k: "okay", r: ["要几两？", "Yào jǐ liǎng?", "How many liang?"], note: "She needs the amount too. 三两 sān liǎng, three liang.", fix: ["要三两猪肉白菜的。", "Yào sān liǎng zhūròu báicài de."] }
+        ] },
+      { npc: ["水饺还是煎饺？", "Shuǐjiǎo háishi jiānjiǎo?", "Boiled or pan-fried?"], prompt: "Boiled, please.",
+        opts: [
+          { h: "水饺，谢谢。", b: "水饺|谢谢", p: "Shuǐjiǎo, xièxie.", e: "Boiled, thanks.", k: "good", note: "水饺 shuǐjiǎo, boiled (\"water\") dumplings; 煎饺 jiānjiǎo are pan-fried. Careful: 水饺 sounds a lot like 睡觉, to sleep." },
+          { h: "睡觉，谢谢。", p: "Shuìjiào, xièxie.", e: "Sleep, thanks.", k: "wrong", r: ["哈哈，吃完再睡觉吧！水饺对吧？", "Hāhā, chī wán zài shuìjiào ba! Shuǐjiǎo duì ba?", "Haha, eat first, then sleep! Boiled, right?"], note: "睡觉 shuìjiào (two falling tones) is to sleep. Boiled dumplings are 水饺 shuǐjiǎo.", fix: ["水饺，谢谢。", "Shuǐjiǎo, xièxie."] },
+          { h: "煮的。", p: "Zhǔ de.", e: "The boiled ones.", k: "good", note: "Also correct: 煮 zhǔ is to boil. 水饺 is the menu word." }
+        ] }
+    ],
+    end: ["好嘞，三两水饺！醋和蒜在桌上。", "Hǎo lei, sān liǎng shuǐjiǎo! Cù hé suàn zài zhuō shang.", "Coming up, three liang boiled! Vinegar and garlic are on the table."],
+    endNote: "两 liǎng is 50 g, about 5 or 6 dumplings. One person usually eats 3 to 4 liang." },
+  { id: "landlord", place: "房东", placePy: "fángdōng", en: "No hot water", who: "房东", whoPy: "fángdōng", whoEn: "your landlord",
+    goal: "Get the hot water fixed, and pin down when.",
+    intro: "Your new flat. The shower runs ice cold. You call your landlord.",
+    turns: [
+      { npc: ["喂？什么事？", "Wéi? Shénme shì?", "Hello? What's up?"], prompt: "Tell him there's no hot water.",
+        opts: [
+          { h: "您好，我家没有热水了。", b: "您好|我家|没有|热水了", p: "Nín hǎo, wǒ jiā méiyǒu rèshuǐ le.", e: "Hello, there's no hot water at my place.", k: "good", note: "热水 rèshuǐ is hot water. 了 le at the end signals a change: there was, now there isn't." },
+          { h: "我家没有水。", p: "Wǒ jiā méiyǒu shuǐ.", e: "There's no water at my place.", k: "okay", r: ["没有水？一点儿都没有？", "Méiyǒu shuǐ? Yìdiǎnr dōu méiyǒu?", "No water? None at all?"], note: "No water at all is a bigger problem. Say 热水 rèshuǐ, hot water.", fix: ["我家没有热水了。", "Wǒ jiā méiyǒu rèshuǐ le."] },
+          { h: "我家太热了。", p: "Wǒ jiā tài rè le.", e: "My place is too hot.", k: "wrong", r: ["太热？开空调啊。", "Tài rè? Kāi kōngtiáo a.", "Too hot? Turn on the air con."], note: "热 rè alone means hot. You need 热水 rèshuǐ, hot water.", fix: ["我家没有热水了。", "Wǒ jiā méiyǒu rèshuǐ le."] }
+        ] },
+      { npc: ["是不是热水器没开？你看看开关。", "Shì bu shì rèshuǐqì méi kāi? Nǐ kànkan kāiguān.", "Is the water heater not switched on? Check the switch."], prompt: "Say you checked: it's on, but it doesn't work.",
+        opts: [
+          { h: "我看了，开着呢，可是不热。", b: "我|看了|开着呢|可是|不热", p: "Wǒ kàn le, kāizhe ne, kěshì bú rè.", e: "I checked, it's on, but it's not heating.", k: "good", note: "开着呢 kāizhe ne, \"it IS on\". 着 zhe describes an ongoing state." },
+          { h: "开了。", p: "Kāi le.", e: "It's on now.", k: "okay", r: ["开了就好！过半个小时就热了。", "Kāi le jiù hǎo! Guò bàn ge xiǎoshí jiù rè le.", "Great, it's on now! It'll be hot in half an hour."], note: "开了 sounds like you just switched it on, so he thinks it's solved. Say it was on already and still cold.", fix: ["开着呢，可是不热。", "Kāizhe ne, kěshì bú rè."] },
+          { h: "热水器是什么？", p: "Rèshuǐqì shì shénme?", e: "What's a 热水器?", k: "good", note: "Fair! 热水器 rèshuǐqì is the water heater: 热水 hot water + 器 device." }
+        ] },
+      { npc: ["那我明天叫师傅过去修。", "Nà wǒ míngtiān jiào shīfu guòqù xiū.", "Then I'll send a repairman over tomorrow."], prompt: "Ask what time tomorrow.",
+        opts: [
+          { h: "明天几点？", b: "明天|几点", p: "Míngtiān jǐ diǎn?", e: "What time tomorrow?", k: "good", note: "Pinning down a time is the difference between a fix and a lost day. 几点 jǐ diǎn, what time." },
+          { h: "好的，谢谢。", p: "Hǎo de, xièxie.", e: "OK, thanks.", k: "okay", carry: "Stayed in all the next day waiting for the repairman", r: ["不客气。", "Bú kèqi.", "You're welcome."], note: "Polite, but now you don't know when he's coming.", fix: ["明天几点？", "Míngtiān jǐ diǎn?"] },
+          { h: "今天不行吗？", p: "Jīntiān bù xíng ma?", e: "Can't it be today?", k: "good", note: "Fair to push. 不行吗 bù xíng ma, \"can't it be…?\", is a gentle push back." }
+        ] }
+    ],
+    end: ["上午十点左右。师傅到了给你打电话。", "Shàngwǔ shí diǎn zuǒyòu. Shīfu dào le gěi nǐ dǎ diànhuà.", "Around 10 a.m. He'll call you when he arrives."],
+    endNote: "师傅 shīfu is how you address any skilled worker: repairmen, drivers, chefs. 左右 zuǒyòu after a time means \"about\"." },
+  { id: "wechat", place: "加微信", placePy: "jiā Wēixìn", en: "Swapping WeChat", who: "同学", whoPy: "tóngxué", whoEn: "a classmate",
+    goal: "Add a classmate on WeChat after class.",
+    intro: "Your language class just ended. A friendly classmate has been helping you all lesson.",
+    turns: [
+      { npc: ["今天谢谢你借我笔！", "Jīntiān xièxie nǐ jiè wǒ bǐ!", "Thanks for lending me a pen today!"], prompt: "Say it's nothing, then ask to add them on WeChat.",
+        opts: [
+          { h: "没事！我们加个微信吧？", b: "没事|我们|加个|微信吧", p: "Méi shì! Wǒmen jiā ge Wēixìn ba?", e: "No problem! Shall we add each other on WeChat?", k: "good", note: "加微信 jiā Wēixìn is how everyone swaps contacts. 个 ge softens it: \"add a WeChat\"." },
+          { h: "你的电话号码是多少？", p: "Nǐ de diànhuà hàomǎ shì duōshao?", e: "What's your phone number?", k: "okay", r: ["电话？我们加微信吧，方便。", "Diànhuà? Wǒmen jiā Wēixìn ba, fāngbiàn.", "Phone? Let's just add WeChat, it's easier."], note: "Works, but in China people swap WeChat, not numbers.", fix: ["我们加个微信吧？", "Wǒmen jiā ge Wēixìn ba?"] },
+          { h: "不客气！你家在哪儿？", p: "Bú kèqi! Nǐ jiā zài nǎr?", e: "You're welcome! Where do you live?", k: "wrong", r: ["呃……为什么问这个？", "È… wèi shénme wèn zhège?", "Er… why do you ask?"], note: "Asking where someone lives is a big jump from lending a pen. Start with WeChat.", fix: ["我们加个微信吧？", "Wǒmen jiā ge Wēixìn ba?"] }
+        ] },
+      { npc: ["好啊！你扫我还是我扫你？", "Hǎo a! Nǐ sǎo wǒ háishi wǒ sǎo nǐ?", "Sure! Do you scan me or do I scan you?"], prompt: "Say you'll scan theirs.",
+        opts: [
+          { h: "我扫你吧。", b: "我|扫你吧", p: "Wǒ sǎo nǐ ba.", e: "I'll scan you.", k: "good", note: "The person scanning opens 扫一扫 sǎo yi sǎo; the other shows their QR code, 二维码 èrwéimǎ." },
+          { h: "你扫我吧。", p: "Nǐ sǎo wǒ ba.", e: "You scan me.", k: "good", note: "Also fine. Then you show your 二维码 èrwéimǎ: Me → tap your name → My QR Code." },
+          { h: "我扫地吧。", p: "Wǒ sǎo dì ba.", e: "I'll sweep the floor.", k: "wrong", r: ["哈哈哈，不用扫地，扫码！", "Hāhāhā, búyòng sǎo dì, sǎo mǎ!", "Hahaha, no need to sweep, SCAN!"], note: "扫 sǎo is both scan and sweep. 扫地 is sweeping the floor; scan the person: 我扫你.", fix: ["我扫你吧。", "Wǒ sǎo nǐ ba."] }
+        ] },
+      { npc: ["加好了！我叫李明。", "Jiā hǎo le! Wǒ jiào Lǐ Míng.", "Added! I'm Li Ming."], prompt: "Introduce yourself and say to keep in touch.",
+        opts: [
+          { h: "我叫马修。以后常联系！", b: "我叫|马修|以后|常联系", p: "Wǒ jiào Mǎxiū. Yǐhòu cháng liánxì!", e: "I'm Matthew. Let's keep in touch!", k: "good", note: "以后常联系 yǐhòu cháng liánxì, \"keep in touch\", is the standard warm goodbye with a new contact." },
+          { h: "我叫马修。", p: "Wǒ jiào Mǎxiū.", e: "I'm Matthew.", k: "good", note: "Perfect. A Chinese-style name helps people remember you." },
+          { h: "我是李明。", p: "Wǒ shì Lǐ Míng.", e: "I'm Li Ming.", k: "wrong", r: ["哈哈，我才是李明！你叫什么？", "Hāhā, wǒ cái shì Lǐ Míng! Nǐ jiào shénme?", "Haha, I'M Li Ming! What's your name?"], note: "Mirroring their sentence copied their name too. Put yours in: 我叫…", fix: ["我叫马修。", "Wǒ jiào Mǎxiū."] }
+        ] }
+    ],
+    end: ["好，微信上聊！", "Hǎo, Wēixìn shang liáo!", "OK, chat on WeChat!"],
+    endNote: "加微信 is the handshake of modern China. 扫一扫 is scan; 二维码 is the QR code; 常联系 is keep in touch." }
 ];
