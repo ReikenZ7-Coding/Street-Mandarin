@@ -30,6 +30,8 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 - Consequences that carry: some wrong answers move the story on, like paying 20 kuai more for the expressway, and the end card shows what they cost you
 - Listening mode: hear each line first (with a slower replay) and see the text only after you answer
 
+After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
+
 The "say it your own way" free-typing mode and Wander use Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, those are hidden and the scripted scenarios still work.
 
 Live prototype: https://claude.ai/artifact/P1t7AavyFEdwh3Rfx6FtNE
