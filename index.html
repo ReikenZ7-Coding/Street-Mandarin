@@ -192,6 +192,21 @@ body.hint-off .opt .en-line { display: none; }
 .pb-title { margin: 6px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
 .pb-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px dashed var(--line); padding-top: 6px; }
 .pb-row .han { font-size: 18px; }
+.pb-tools { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.pb.hard .pb-title { color: var(--cinnabar); }
+.pb-hear { border-top: 1px dashed var(--line); padding-top: 6px; font-size: 14px; }
+.pb-hear summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
+.pb-heard { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 4px 0; }
+.pb-heard .han { font-family: var(--f-han); }
+.show-local { position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 16px; text-align: center; overflow-y: auto; }
+.sl-han { font-family: var(--f-han); font-weight: 900; font-size: clamp(40px, 11vw, 120px); line-height: 1.15; max-width: 14em; overflow-wrap: anywhere; }
+.sl-py { font-family: var(--f-py); font-size: clamp(16px, 3vw, 24px); color: var(--muted); }
+.sl-en { font-size: 15px; color: var(--muted); }
+.sl-reply { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 14px; max-width: 36em; }
+.sl-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--jade); font-weight: 600; }
+.sl-rhan { font-family: var(--f-han); font-size: clamp(22px, 5vw, 40px); margin-top: 6px; }
+.sl-ren { font-size: 14px; color: var(--muted); }
+.sl-tools { display: flex; gap: 8px; margin-top: 8px; }
 .modes { display: flex; gap: 6px; flex-wrap: wrap; }
 .build { display: flex; flex-direction: column; gap: 10px; }
 .slots { min-height: 52px; border: 1px dashed var(--line); border-radius: 10px; padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--bg); }
@@ -1132,36 +1147,97 @@ function renderPatternMove() {
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
 /* ---------- phrasebook: every line that worked, from places you've survived ---------- */
+let pbQuery = "";
+function phraseRow(o, reply) {
+  const row = el("div", "pb-row");
+  const txt = el("div");
+  txt.append(el("div", "han", o.h), el("div", "py", o.p), el("div", "en-line", o.e));
+  row.append(txt);
+  const tools = el("div", "pb-tools");
+  if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(o.h); tools.append(b); }
+  const show = el("button", "btn ghost small", "Show"); show.title = "Show it big, to hand your phone to someone";
+  show.onclick = () => showLocal(o, reply);
+  tools.append(show); row.append(tools);
+  return row;
+}
+// What you'd most likely hear right after saying this line: the next person's line in the scene
+function replyAfter(s, ti) { const n = s.turns[ti + 1]; return n && n.npc ? n.npc : s.end; }
 function startPhrasebook() {
   mode = "phrases"; busy = false;
-  setHead("短语", "duǎnyǔ", "Your phrasebook", "What's here: ", "The lines that worked, from every place you've survived. Tap the speaker to hear one.");
-  const log = $("#log"); log.textContent = "";
-  const places = S.filter(s => done[s.id]);
-  if (!places.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
-  places.forEach(s => {
-    const sec = el("section", "pb");
-    sec.append(el("h4", "pb-title", `${s.place} · ${s.en}`));
-    s.turns.forEach(t => t.opts.filter(o => o.k === "good").forEach(o => {
-      const row = el("div", "pb-row");
-      const txt = el("div");
-      txt.append(el("div", "han", o.h), el("div", "py", o.p), el("div", "en-line", o.e));
-      row.append(txt);
-      if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(o.h); row.append(b); }
-      sec.append(row);
-    }));
-    log.append(sec);
-  });
-  log.scrollTop = 0;
+  setHead("短语", "duǎnyǔ", "Your phrasebook", "What's here: ", "Lines that worked, from every place you've survived. Search it, hear it, or tap Show to hand your phone to someone.");
+  renderPhrases();
   renderRail(); renderMove();
+}
+function renderPhrases() {
+  const log = $("#log"); log.textContent = "";
+  const q = pbQuery.trim().toLowerCase(), qPy = normPy(q);
+  const hit = o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q) || (qPy && normPy(o.p).includes(qPy));
+  // Lines learned the hard way: the fixes for mistakes still in your notebook
+  const hard = []; const seen = new Set();
+  activeItems().forEach(n => { if (n.fix && !seen.has(n.fix)) { seen.add(n.fix); hard.push({ h: n.fix, p: n.fixPy || "", e: n.why ? n.why.split(/(?<=\.)\s/)[0] : "" }); } });
+  const hardHits = hard.filter(o => !q || o.h.includes(q) || (qPy && normPy(o.p).includes(qPy)) || o.e.toLowerCase().includes(q));
+  if (hardHits.length) {
+    const sec = el("section", "pb hard");
+    sec.append(el("h4", "pb-title", "Learned the hard way"));
+    hardHits.slice(0, 8).forEach(o => sec.append(phraseRow(o, null)));
+    log.append(sec);
+  }
+  const places = S.filter(s => done[s.id]);
+  if (!places.length && !hard.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
+  let shown = 0;
+  places.forEach(s => {
+    const rows = [];
+    s.turns.forEach((t, ti) => t.opts.filter(o => o.k === "good" && hit(o)).forEach(o => rows.push(phraseRow(o, replyAfter(s, ti)))));
+    if (!rows.length) return;
+    const sec = el("section", "pb");
+    sec.append(el("h4", "pb-title", `${s.place} · ${s.en}`), ...rows);
+    if (!q) {
+      // The other half of the conversation: what people there say to you
+      const hear = el("details", "pb-hear");
+      hear.append(el("summary", null, "What you'll hear there"));
+      s.turns.filter(t => t.npc).forEach(t => { const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]), el("span", "en-line", t.npc[2])); hear.append(r); });
+      sec.append(hear);
+    }
+    shown += rows.length; log.append(sec);
+  });
+  if (q && !shown && !hardHits.length) addNarr(`Nothing matches "${pbQuery}" yet. Survive more places to fill the phrasebook.`);
+  log.scrollTop = 0;
+}
+function showLocal(o, reply) {
+  // Full screen, big characters: for pointing at, or handing your phone over
+  const ov = el("div", "show-local"); ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Phrase shown big");
+  const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = ev => { if (ev.key === "Escape") close(); };
+  const big = el("div", "sl-han", o.h);
+  const py = el("div", "sl-py", o.p);
+  const en = el("div", "sl-en", o.e);
+  const row = el("div", "sl-tools");
+  if (canSpeak) { const b = el("button", "btn", "Play it"); b.onclick = ev => { ev.stopPropagation(); speak(o.h, 0.8); }; row.append(b); }
+  const x = el("button", "btn ghost", "Close"); x.onclick = close; row.append(x);
+  ov.append(big, py, en);
+  if (reply) {
+    const r = el("div", "sl-reply");
+    r.append(el("div", "sl-label", "They'll probably answer something like"), el("div", "sl-rhan", reply[0]), el("div", "sl-ren", reply[2]));
+    ov.append(r);
+  }
+  ov.append(row);
+  document.body.append(ov); document.addEventListener("keydown", onKey);
+  x.focus();
 }
 function renderPhrasesMove() {
   const m = $("#move"); m.textContent = "";
   const n = S.filter(s => done[s.id]).reduce((a, s) => a + s.turns.reduce((b, t) => b + t.opts.filter(o => o.k === "good").length, 0), 0);
   const head = el("div", "move-head");
   head.append(el("h3", null, plural(n, "phrase")), el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
-  const back = el("button", "btn", "Back to the situations"); back.onclick = () => start(lastScene());
+  const form = el("form", "free");
+  const inp = el("input"); inp.type = "search"; inp.autocomplete = "off"; inp.value = pbQuery;
+  inp.placeholder = "Find a line: \"toilet\", \"duoshao\", 谢谢…"; inp.setAttribute("aria-label", "Search the phrasebook");
+  inp.oninput = () => { pbQuery = inp.value; renderPhrases(); };
+  form.onsubmit = ev => ev.preventDefault();
+  form.append(inp);
+  const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
   const row = el("div", "endcard"); row.append(back);
-  m.append(head, row);
+  m.append(head, form, row);
 }
 
 /* ---------- wander: Claude makes up a fresh everyday situation and plays it out ---------- */
