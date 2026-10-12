@@ -78,7 +78,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .scn .done { color: var(--jade); font-weight: 600; }
 @media (max-width: 760px) {
   .rail { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
-  .rail h2 { display: none; }
+  .rail h2, .rail .rail-group { display: none; }
   .scn { flex: 0 0 auto; min-width: 150px; }
 }
 
@@ -422,6 +422,9 @@ function renderRail() {
   });
   const rest = S.filter(s => !seen.has(s.id));
   if (rest.length) { rail.append(el("h3", "rail-group", "More")); rest.forEach(s => rail.append(placeBtn(s))); }
+  // On a phone the rail is a sideways strip: keep the current place in view without moving the page
+  const on = rail.querySelector('.scn[aria-current="true"]');
+  if (on && rail.scrollWidth > rail.clientWidth) rail.scrollLeft = Math.max(0, on.offsetLeft - rail.offsetLeft - 16);
 }
 
 /* ---------- scenes ---------- */
