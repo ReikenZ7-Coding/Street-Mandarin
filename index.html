@@ -254,11 +254,12 @@ if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 /* ---------- state ---------- */
 let mode = "scene"; // "scene" | "review" | "drill" | "phrases"
 let cur = null, turn = 0, order = [], busy = false, finished = false;
-let flags = {}, outcomes = [];  // consequences that carry through a scene
+let flags = {}, outcomes = [], curveball = null;  // consequences that carry through a scene; a replay surprise
 let transcript = []; // [{who:'npc'|'me', text}] for Claude context
 const $ = s => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const turnRef = () => { const t = cur.turns[turn]; return { turn: t && t._orig != null ? t._orig : null, cb: t && t._cb != null ? t._cb : null }; };
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 /* ---------- speech ---------- */
@@ -350,7 +351,7 @@ function renderRail() {
   const nDone = S.filter(s => done[s.id]).length;
   pb.append(el("span", "han", "短语"), el("span", "name", "Your phrasebook"), el("span", "meta", nDone ? `Lines from ${plural(nDone, "place")}` : "Fills up as you survive places"));
   pb.onclick = () => startPhrasebook();
-  rail.append(rv, dr, pb, el("h2", "rail-sub", "Places"));
+  rail.append(rv, dr, pb, el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived` : "Places"));
   S.forEach(s => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
@@ -367,7 +368,17 @@ function renderRail() {
 /* ---------- scenes ---------- */
 function start(id) {
   mode = "scene";
-  cur = S.find(s => s.id === id); turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = [];
+  const base = S.find(s => s.id === id);
+  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null;
+  // Each run gets its own copy of the turns, so a curveball can be slipped in on a replay
+  const turns = base.turns.map((t, i) => Object.assign({}, t, { _orig: i }));
+  if (done[id] && base.curveballs && base.curveballs.length && Math.random() < 0.6) {
+    const ci = Math.floor(Math.random() * base.curveballs.length), cb = base.curveballs[ci];
+    turns.splice(cb.after + 1, 0, Object.assign({}, cb.turn, { _cb: ci }));
+    if (cb.flag) flags[cb.flag] = true;
+    curveball = cb;
+  }
+  cur = Object.assign({}, base, { turns });
   try { localStorage.setItem("sm-last", id); } catch {}
   setHead(cur.place, cur.placePy, cur.en, "Your goal: ", cur.goal);
   $("#log").textContent = ""; addNarr(cur.intro);
@@ -465,13 +476,13 @@ function submitTyped(text, t) {
   if (near) {
     addMe(text, "", "", "okay");
     addFeedback("okay", "Almost. One small slip, but they'd get what you mean.", [near.h, near.p]);
-    logMistake({ sid: cur.id, turn, kind: "okay", said: text, fix: near.h, fixPy: near.p, why: "Typed answer was one small slip away." });
+    logMistake({ sid: cur.id, ...turnRef(), kind: "okay", said: text, fix: near.h, fixPy: near.p, why: "Typed answer was one small slip away." });
     return choose(Object.assign({}, near, { quiet: true }));
   }
   if (sample) return offScript(text);
   addMe(text, "", "", "wrong");
   addFeedback("wrong", "That isn't something a local would follow here. Here's one way to say it. Try typing it yourself.", [good.h, good.p]);
-  logMistake({ sid: cur.id, turn, kind: "wrong", said: text, fix: good.h, fixPy: good.p, why: "Typed answer didn't fit this moment." });
+  logMistake({ sid: cur.id, ...turnRef(), kind: "wrong", said: text, fix: good.h, fixPy: good.p, why: "Typed answer didn't fit this moment." });
   renderMove();
 }
 
@@ -518,7 +529,7 @@ function checkBuild(good) {
     "Some of those words don't belong in this answer.";
   addMe(built.join(""), "", "", "wrong");
   addFeedback("wrong", why, [good.h, good.p]);
-  logMistake({ sid: cur.id, turn, kind: "wrong", said: built.join(""), fix: good.h, fixPy: good.p, why });
+  logMistake({ sid: cur.id, ...turnRef(), kind: "wrong", said: built.join(""), fix: good.h, fixPy: good.p, why });
   renderMove();
 }
 
@@ -539,7 +550,7 @@ function choose(o) {
   addMe(o.h, o.p, o.e, o.k);
   if (o.r) addNpc(o.r);
   addFeedback(o.k, o.note, o.fix, o.carry ? { label: "Didn't land, and it stuck", cost: "This one carries on. You'll see what it cost at the end." } : null);
-  if (o.k !== "good") logMistake({ sid: cur.id, turn, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note });
+  if (o.k !== "good") logMistake({ sid: cur.id, ...turnRef(), kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note });
   if (o.carry) {
     outcomes.push(o.carry);
     if (o.flag) flags[o.flag] = true;
@@ -574,9 +585,11 @@ function renderEnd() {
     const ul = el("ul"); outcomes.forEach(o => ul.append(el("li", null, o))); res.append(ul);
     res.append(el("p", null, "Play it again to get a better result."));
   } else res.append(el("p", null, "Clean run. Nothing you said cost you anything."));
+  if (curveball) res.append(el("p", null, "This run had a curveball: " + curveball.what + ". Replays can surprise you."));
+  else if (S.find(x => x.id === cur.id).curveballs) res.append(el("p", null, "Replay it: real life doesn't follow the script, and next time this place might not either."));
   const row = el("div", "endcard");
   const again = el("button", "btn ghost", "Play it again"); again.onclick = () => start(cur.id);
-  const next = S[(S.indexOf(cur) + 1) % S.length];
+  const next = S[(S.findIndex(x => x.id === cur.id) + 1) % S.length];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
   row.append(again, nx);
   m.append(head, res, row);
@@ -655,7 +668,7 @@ function startReview() {
 }
 function reviewItem() {
   rAnswered = false; rReveal = false;
-  const n = rq[ri], s = S.find(x => x.id === n.sid), t = s && n.turn != null ? s.turns[n.turn] : null;
+  const n = rq[ri], s = S.find(x => x.id === n.sid), t = s && n.cb != null && s.curveballs ? s.curveballs[n.cb].turn : s && n.turn != null ? s.turns[n.turn] : null;
   if (s) cur = s;
   if (t) {
     addNarr(`${s.en}, again. ${t.prompt}`);
@@ -883,7 +896,7 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
     const kind = ["good", "okay", "wrong"].includes(r.verdict) ? r.verdict : "okay";
     if (r.npc_hanzi) addNpc([r.npc_hanzi, r.npc_pinyin || "", r.npc_english || ""]);
     addFeedback(kind, r.note || "", r.better_hanzi ? [r.better_hanzi, r.better_pinyin || ""] : null);
-    if (kind !== "good") logMistake({ sid: cur.id, turn: t ? turn : null, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: r.note || "" });
+    if (kind !== "good") logMistake({ sid: cur.id, ...(t ? turnRef() : { turn: null }), kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: r.note || "" });
     busy = false;
     if (t && r.advance === true && kind !== "wrong") advance(); else renderMove();
   } catch (e) {

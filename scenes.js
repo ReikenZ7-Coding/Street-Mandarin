@@ -6,6 +6,14 @@
    b = word tiles for build mode, split with |. */
 window.SCENES = [
   { id: "noodles", place: "面馆", placePy: "miànguǎn", en: "Noodle shop", who: "老板", whoPy: "lǎobǎn", whoEn: "the owner",
+    curveballs: [
+      { after: 0, flag: "soldout", what: "the beef noodles sold out", turn: { npc: ["不好意思，牛肉面卖完了。换一个吧？", "Bù hǎoyìsi, niúròu miàn mài wán le. Huàn yí ge ba?", "Sorry, the beef noodles are sold out. Something else?"], prompt: "Ask what she recommends.",
+        opts: [
+          { h: "那你推荐什么？", b: "那|你|推荐|什么", p: "Nà nǐ tuījiàn shénme?", e: "Then what do you recommend?", k: "good", r: ["我们的招牌面，很好吃！", "Wǒmen de zhāopái miàn, hěn hǎochī!", "Our house special, it's delicious!"], note: "推荐 tuījiàn means recommend. Letting a local choose often gets you the best dish." },
+          { h: "好，我要牛肉面。", p: "Hǎo, wǒ yào niúròu miàn.", e: "Okay, I'll have beef noodles.", k: "wrong", r: ["卖完了啊！没有了。", "Mài wán le a! Méiyǒu le.", "They're sold out! None left."], note: "卖完了 mài wán le means sold out. 完 wán is \"finished\": listen for it.", fix: ["那你推荐什么？", "Nà nǐ tuījiàn shénme?"] },
+          { h: "没问题。", p: "Méi wèntí.", e: "No problem.", k: "okay", r: ["那你要什么？招牌面怎么样？", "Nà nǐ yào shénme? Zhāopái miàn zěnmeyàng?", "So what will you have? How about the house special?"], note: "Polite, but you didn't choose anything. Ask 你推荐什么？", fix: ["那你推荐什么？", "Nà nǐ tuījiàn shénme?"] }
+        ] } }
+    ],
     goal: "Order a bowl of beef noodles, not spicy, and pay.",
     intro: "Lunch rush. Steam everywhere. The owner looks up from the counter.",
     turns: [
@@ -35,10 +43,18 @@ window.SCENES = [
         ] }
     ],
     end: ["好，你的牛肉面，不辣的。慢用！", "Hǎo, nǐ de niúròu miàn, bú là de. Màn yòng!", "Here are your beef noodles, not spicy. Enjoy!"],
-    endAlt: { spicy: ["好，你的牛肉面，特辣的！慢用！", "Hǎo, nǐ de niúròu miàn, tè là de! Màn yòng!", "Here are your beef noodles, extra spicy! Enjoy!"] },
+    endAlt: { soldout: ["好，你的招牌面来了。慢用！", "Hǎo, nǐ de zhāopái miàn lái le. Màn yòng!", "Here's your house special. Enjoy!"], spicy: ["好，你的牛肉面，特辣的！慢用！", "Hǎo, nǐ de niúròu miàn, tè là de! Màn yòng!", "Here are your beef noodles, extra spicy! Enjoy!"] },
     endNote: "慢用 màn yòng (literally \"use slowly\") is what staff say when they serve your food." },
 
   { id: "taxi", place: "打车", placePy: "dǎ chē", en: "Taking a taxi", who: "司机", whoPy: "sījī", whoEn: "the driver",
+    curveballs: [
+      { after: 0, what: "a chatty driver", turn: { npc: ["你是哪国人？中文说得不错啊！", "Nǐ shì nǎ guó rén? Zhōngwén shuō de búcuò a!", "Where are you from? Your Chinese isn't bad!"], prompt: "Answer the chatty driver.",
+        opts: [
+          { h: "哪里哪里。我是英国人。", b: "哪里|哪里|我|是|英国人", p: "Nǎlǐ nǎlǐ. Wǒ shì Yīngguó rén.", e: "Oh, not really. I'm British.", k: "good", r: ["英国人啊！欢迎欢迎！", "Yīngguó rén a! Huānyíng huānyíng!", "British! Welcome, welcome!"], note: "Drivers love to chat. Deflect the compliment with 哪里哪里, then answer." },
+          { h: "我在中国。", p: "Wǒ zài Zhōngguó.", e: "I'm in China.", k: "wrong", r: ["我知道你在中国，哈哈！你是哪国的？", "Wǒ zhīdào nǐ zài Zhōngguó, hāha! Nǐ shì nǎ guó de?", "I know you're in China, haha! Which country are you from?"], note: "He asked where you're FROM: 哪国人. Answer with 我是…人.", fix: ["我是英国人。", "Wǒ shì Yīngguó rén."] },
+          { h: "谢谢，我英国。", p: "Xièxie, wǒ Yīngguó.", e: "Thanks, me Britain.", k: "okay", r: ["英国人啊！", "Yīngguó rén a!", "Oh, British!"], note: "Understood. Add 是 and 人 for a full answer: 我是英国人.", fix: ["我是英国人。", "Wǒ shì Yīngguó rén."] }
+        ] } }
+    ],
     goal: "Get to the train station without overpaying.",
     intro: "You slide into the back seat. The meter clicks on.",
     turns: [
@@ -104,6 +120,14 @@ window.SCENES = [
     endNote: "You walked away with it under budget. The walk-away works because both sides know the game." },
 
   { id: "directions", place: "问路", placePy: "wèn lù", en: "Asking directions", who: "路人", whoPy: "lùrén", whoEn: "a passer-by",
+    curveballs: [
+      { after: 0, what: "a stranger who isn't local either", turn: { npc: ["哦……我也不是本地人。你问问别人吧。", "Ò… wǒ yě bú shì běndì rén. Nǐ wènwen biérén ba.", "Oh… I'm not from here either. Try asking someone else."], prompt: "Thank her anyway. (The next person knows.)",
+        opts: [
+          { h: "好的，谢谢！", b: "好的|谢谢", p: "Hǎo de, xièxie!", e: "Okay, thanks!", k: "good", note: "本地人 běndì rén means a local. In big cities, plenty of people are from somewhere else." },
+          { h: "你是哪国人？", p: "Nǐ shì nǎ guó rén?", e: "What country are you from?", k: "wrong", r: ["我是中国人啊，只是不是这儿的。", "Wǒ shì Zhōngguó rén a, zhǐ shì bú shì zhèr de.", "I'm Chinese! Just not from here."], note: "不是本地人 means not from this city, not \"not Chinese\".", fix: ["好的，谢谢！", "Hǎo de, xièxie!"] },
+          { h: "对不起。", p: "Duìbuqǐ.", e: "Sorry.", k: "okay", r: ["没事儿！", "Méi shìr!", "No worries!"], note: "Nothing to apologise for. 谢谢 is the natural reply.", fix: ["好的，谢谢！", "Hǎo de, xièxie!"] }
+        ] } }
+    ],
     goal: "Find the metro and the right entrance for Line 2.",
     intro: "Your phone is dead. A woman is waiting at the crossing.",
     turns: [
@@ -162,6 +186,14 @@ window.SCENES = [
     endNote: "Note that 吃药 chī yào is \"eat medicine\": in Chinese you eat pills, you don't take them." },
 
   { id: "store", place: "便利店", placePy: "biànlìdiàn", en: "Convenience store", who: "店员", whoPy: "diànyuán", whoEn: "the clerk",
+    curveballs: [
+      { after: 1, what: "a members' card question", turn: { npc: ["你有会员吗？", "Nǐ yǒu huìyuán ma?", "Are you a member?"], prompt: "You're not.",
+        opts: [
+          { h: "没有。", b: "没有", p: "Méiyǒu.", e: "No.", k: "good", note: "有…吗 questions are answered with 有 (yes) or 没有 (no)." },
+          { h: "有！", p: "Yǒu!", e: "Yes!", k: "wrong", r: ["好，报一下手机号。", "Hǎo, bào yíxià shǒujī hào.", "Okay, tell me your phone number."], note: "You said you're a member, so now she wants your number. No is 没有 méiyǒu.", fix: ["没有。", "Méiyǒu."] },
+          { h: "不是。", p: "Bú shì.", e: "I'm not.", k: "okay", r: ["没有会员是吧？好。", "Méiyǒu huìyuán shì ba? Hǎo.", "Not a member? Okay."], note: "是 questions take 是/不是, but 有 questions take 有/没有.", fix: ["没有。", "Méiyǒu."] }
+        ] } }
+    ],
     goal: "Buy a rice ball and a bottle of water, heated, no bag.",
     intro: "Late night. Fluorescent lights, a rice ball in your hand, and a queue of one.",
     turns: [
@@ -220,6 +252,14 @@ window.SCENES = [
     endNote: "Most metros now let you scan a QR code at the gate, but staff can still sell you a ticket when that fails." },
 
   { id: "hotel", place: "酒店", placePy: "jiǔdiàn", en: "Hotel check-in", who: "前台", whoPy: "qiántái", whoEn: "the front desk",
+    curveballs: [
+      { after: 1, what: "a deposit", turn: { npc: ["押金两百，退房的时候退给您。", "Yājīn liǎngbǎi, tuì fáng de shíhou tuì gěi nín.", "There's a 200 deposit, refunded when you check out."], prompt: "Fine. Pay it.",
+        opts: [
+          { h: "好的，我扫码。", b: "好的|我|扫码", p: "Hǎo de, wǒ sǎo mǎ.", e: "Sure, I'll scan.", k: "good", note: "押金 yājīn is a deposit. 退 tuì means give back; 退房 tuì fáng is checking out." },
+          { h: "两百？太贵了，一百吧！", p: "Liǎngbǎi? Tài guì le, yìbǎi ba!", e: "200? Too expensive, how about 100!", k: "wrong", r: ["这是押金，会退给您的。", "Zhè shì yājīn, huì tuì gěi nín de.", "It's a deposit. You'll get it back."], note: "A deposit isn't a price to bargain. 退给您 tuì gěi nín means it comes back to you.", fix: ["好的，我扫码。", "Hǎo de, wǒ sǎo mǎ."] },
+          { h: "押金是什么？", p: "Yājīn shì shénme?", e: "What's a deposit?", k: "good", note: "Asking is smart. 押金 yājīn is money held and returned at checkout." }
+        ] } }
+    ],
     goal: "Check in with your booking and get the Wi-Fi password.",
     intro: "You drag your suitcase up to a marble front desk after a long trip.",
     turns: [
