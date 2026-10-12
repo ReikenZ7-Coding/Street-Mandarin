@@ -68,6 +68,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 
 /* Scenario rail */
 .rail { display: flex; flex-direction: column; gap: 8px; }
+.rail-group { font-size: 12px; color: var(--muted); margin: 8px 2px 0; font-weight: 600; }
 .rail h2, .notebook h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 4px; font-weight: 600; }
 .scn { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 12px; align-items: center; }
 .scn .han { font-family: var(--f-han); font-weight: 900; font-size: 26px; grid-row: span 2; line-height: 1; }
@@ -364,8 +365,19 @@ function setHead(place, py, en, goalLabel, goal) {
   const g = $("#goal"); g.textContent = ""; g.append(el("b", null, goalLabel), goal);
 }
 
+const GROUPS = [
+  { name: "Eating and drinking", ids: ["noodles", "tea", "cafe", "bill", "delivery"] },
+  { name: "Getting around", ids: ["taxi", "metro", "train", "directions", "bike", "toilet"] },
+  { name: "Shopping", ids: ["market", "fruit", "store", "return", "haircut"] },
+  { name: "Sorting things out", ids: ["hotel", "sim", "pharmacy", "clinic", "lost"] },
+  { name: "People", ids: ["friend"] }
+];
+function railOrder() {
+  const ids = GROUPS.flatMap(g => g.ids);
+  return ids.map(id => S.find(s => s.id === id)).filter(Boolean).concat(S.filter(s => !ids.includes(s.id)));
+}
 function renderRail() {
-  const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub").forEach(n => n.remove());
+  const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub, .rail-group").forEach(n => n.remove());
   const due = dueItems().length, active = activeItems().length;
   const rv = el("button", "scn review"); rv.setAttribute("aria-current", mode === "review" ? "true" : "false");
   rv.append(el("span", "han", "复习"), el("span", "name", "Mistakes that came back"));
@@ -389,7 +401,7 @@ function renderRail() {
     rail.append(wd);
   }
   rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived` : "Places"));
-  S.forEach(s => {
+  const placeBtn = s => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
     b.append(el("span", "han", s.place), el("span", "name", s.en));
@@ -398,8 +410,18 @@ function renderRail() {
     else meta.append(miss ? `${plural(miss, "mistake")} so far` : "Not tried yet");
     b.append(meta);
     b.onclick = () => start(s.id);
-    rail.append(b);
+    return b;
+  };
+  const seen = new Set();
+  GROUPS.forEach(g => {
+    const list = g.ids.map(id => S.find(s => s.id === id)).filter(Boolean);
+    if (!list.length) return;
+    const n = list.filter(s => done[s.id]).length;
+    rail.append(el("h3", "rail-group", g.name + (n ? ` · ${n}/${list.length}` : "")));
+    list.forEach(s => { seen.add(s.id); rail.append(placeBtn(s)); });
   });
+  const rest = S.filter(s => !seen.has(s.id));
+  if (rest.length) { rail.append(el("h3", "rail-group", "More")); rest.forEach(s => rail.append(placeBtn(s))); }
 }
 
 /* ---------- scenes ---------- */
@@ -628,7 +650,9 @@ function renderEnd() {
   else if (S.find(x => x.id === cur.id).curveballs) res.append(el("p", null, "Replay it: real life doesn't follow the script, and next time this place might not either."));
   const row = el("div", "endcard");
   const again = el("button", "btn ghost", "Play it again"); again.onclick = () => start(cur.id);
-  const next = S[(S.findIndex(x => x.id === cur.id) + 1) % S.length];
+  const ord = railOrder(), at = ord.findIndex(x => x.id === cur.id);
+  const after = ord.slice(at + 1).concat(ord.slice(0, at));
+  const next = after.find(x => !done[x.id]) || after[0];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
   row.append(again, nx);
   m.append(head, res, row);
