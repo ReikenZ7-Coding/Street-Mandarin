@@ -351,7 +351,14 @@ function renderRail() {
   const nDone = S.filter(s => done[s.id]).length;
   pb.append(el("span", "han", "短语"), el("span", "name", "Your phrasebook"), el("span", "meta", nDone ? `Lines from ${plural(nDone, "place")}` : "Fills up as you survive places"));
   pb.onclick = () => startPhrasebook();
-  rail.append(rv, dr, pb, el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived` : "Places"));
+  rail.append(rv, dr, pb);
+  if (sample) {
+    const wd = el("button", "scn review"); wd.setAttribute("aria-current", mode === "wander" ? "true" : "false");
+    wd.append(el("span", "han", "随便逛"), el("span", "name", "Wander"), el("span", "meta", "Claude makes up a new situation"));
+    wd.onclick = () => startWander();
+    rail.append(wd);
+  }
+  rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived` : "Places"));
   S.forEach(s => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
@@ -397,6 +404,7 @@ function renderMove() {
   if (mode === "review") return renderReviewMove();
   if (mode === "drill") return renderDrillMove();
   if (mode === "phrases") return renderPhrasesMove();
+  if (mode === "wander") return renderWanderMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
@@ -628,7 +636,7 @@ function renderNotebook() {
     const s = S.find(x => x.id === n.sid);
     const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
     const top = el("div", "where");
-    top.append((s ? s.en : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
+    top.append((s ? s.en : n.sid === "wander" ? "Wander" : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
     const st = el("span", "when", whenText(n));
     const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
     GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
@@ -675,7 +683,7 @@ function reviewItem() {
     if (t.npc) addNpc(t.npc);
     order = shuffle(t.opts);
   } else {
-    addNarr(`${s ? s.en + ", off-script" : "Off-script"}. You said: ${n.said}`);
+    addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : "Off-script"}. You said: ${n.said}`);
     order = [];
   }
   renderReviewMove();
@@ -846,6 +854,106 @@ function renderPhrasesMove() {
   m.append(head, row);
 }
 
+/* ---------- wander: Claude makes up a fresh everyday situation and plays it out ---------- */
+let wTranscript = [], wDone = false, wGoal = false;
+async function startWander() {
+  if (!sample) return;
+  mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = [];
+  setHead("随便逛", "suíbiàn guàng", "Wander", "How it works: ", "Claude invents an everyday situation you haven't practised. Say whatever you'd say; there are no options.");
+  $("#log").textContent = ""; addNarr("Setting the scene…");
+  renderRail(); renderMove();
+  const known = S.map(s => s.en).join(", ");
+  const prompt = `Invent one short, realistic everyday situation a foreign visitor might face in mainland China, for a beginner Mandarin learner to role-play. Avoid these, which they've already practised: ${known}. Good ideas: returning a wrong item, asking a neighbour to keep the noise down, a courier delivering a package, buying fruit by the jin, a pharmacy for mosquito bites, asking to charge your phone, a photo request from strangers, a delayed train announcement.
+Return ONLY a JSON object with keys:
+"place_hanzi" (2 to 4 characters), "place_pinyin", "place_english" (2 to 4 words),
+"who_hanzi" (role, 2 to 3 characters), "who_english" (e.g. "the courier"),
+"goal" (one plain-English sentence: what the learner must achieve),
+"intro" (one or two plain-English sentences setting the scene),
+"opening_hanzi" (what the other person says first, short spoken simplified Chinese a beginner can follow), "opening_pinyin" (tone marks), "opening_english".`;
+  try {
+    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
+    cur = { id: "wander", place: r.place_hanzi, placePy: r.place_pinyin, en: r.place_english, who: String(r.who_hanzi || "路人").slice(0, 2), whoEn: r.who_english || "the local", goal: r.goal, intro: r.intro, turns: [] };
+    setHead(cur.place, cur.placePy, cur.en, "Your goal: ", cur.goal);
+    $("#log").textContent = ""; addNarr(cur.intro);
+    addNpc([r.opening_hanzi, r.opening_pinyin, r.opening_english]);
+    wTranscript.push({ who: "npc", text: r.opening_hanzi });
+  } catch (e) {
+    $("#log").textContent = "";
+    addNarr(e && e.code === "not_granted" ? "Wander needs permission to use Claude. The places on the left still work without it." : "Couldn't set the scene that time. Try Wander again in a moment.");
+    if (e && e.code === "not_granted") sample = null;
+    wDone = true;
+  }
+  busy = false; renderRail(); renderMove();
+}
+function renderWanderMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  if (wDone) {
+    head.append(el("h3", null, wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
+    const row = el("div", "endcard");
+    if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
+    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    row.append(back); m.append(head, row); return;
+  }
+  head.append(el("h3", null, "Your move"), el("span", "prompt", "No options here. Say what you'd really say."));
+  const form = el("form", "free");
+  const inp = el("input"); inp.id = "wander-input"; inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN"; inp.disabled = busy;
+  inp.placeholder = busy ? "…" : "Characters, pinyin, or English if you're stuck";
+  inp.setAttribute("aria-label", "What you say");
+  const send = el("button", "btn", busy ? "…" : "Say it"); send.type = "submit"; send.disabled = busy;
+  form.append(inp, send);
+  if (SR && !micBroken) {
+    const mic = el("button", "btn ghost", "Speak"); mic.type = "button"; mic.disabled = busy;
+    mic.onclick = () => listenOnce(inp, mic, () => { const v = inp.value.trim(); if (v) wanderSay(v); });
+    form.append(mic);
+  }
+  form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) wanderSay(v); };
+  const end = el("button", "btn ghost small", "End the scene"); end.type = "button"; end.onclick = () => { wDone = true; renderMove(); };
+  const row = el("div", "endcard"); row.append(end);
+  m.append(head, form, row);
+  setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+}
+async function wanderSay(text) {
+  if (busy) return;
+  busy = true;
+  addMe(text, "", "", "good");
+  wTranscript.push({ who: "me", text });
+  const think = el("div", "thinking", cur.whoEn.replace(/^./, c => c.toUpperCase()) + " is thinking…"); $("#log").append(think); scrollLog();
+  renderMove();
+  const history = wTranscript.slice(-14).map(x => (x.who === "npc" ? cur.who + ": " : "Learner: ") + x.text).join("\n");
+  const prompt = `You are role-playing ${cur.whoEn} (${cur.who}) in mainland China. Situation: ${cur.en}. ${cur.intro} The learner, a beginner in Mandarin, has this goal: ${cur.goal}
+
+Conversation so far:
+${history}
+
+The learner just said: "${text}" (they may write hanzi, pinyin with or without tones, or English if stuck).
+
+Reply in character like a real local: one or two short, natural spoken sentences in simplified Chinese a beginner can follow. React to what they literally said, including confusion or a realistic consequence if it was wrong (agreeing to something by accident sticks). Never lecture in character. Then step out of character to coach.
+
+Return ONLY a JSON object:
+"npc_hanzi", "npc_pinyin" (tone marks), "npc_english",
+"verdict": "good" | "okay" | "wrong" (wrong if a local would misunderstand, or if they used only English),
+"note": one or two plain-English sentences on what worked or exactly what went wrong, naming the key word with pinyin,
+"better_hanzi", "better_pinyin": a natural way to say what they meant (empty strings if good),
+"consequence": a short plain-English phrase if their mistake cost them something that sticks (e.g. "Paid 20 kuai too much"), else "",
+"goal_reached": true only if the learner has now fully achieved the goal.`;
+  try {
+    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
+    think.remove();
+    const kind = ["good", "okay", "wrong"].includes(r.verdict) ? r.verdict : "okay";
+    if (r.npc_hanzi) { addNpc([r.npc_hanzi, r.npc_pinyin || "", r.npc_english || ""]); wTranscript.push({ who: "npc", text: r.npc_hanzi }); }
+    addFeedback(kind, r.note || "", r.better_hanzi ? [r.better_hanzi, r.better_pinyin || ""] : null, r.consequence ? { label: "Didn't land, and it stuck", cost: r.consequence } : null);
+    if (r.consequence) outcomes.push(r.consequence);
+    if (kind !== "good") logMistake({ sid: "wander", turn: null, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: (cur.en ? cur.en + ": " : "") + (r.note || "") });
+    if (r.goal_reached === true) { wDone = wGoal = true; addNarr(outcomes.length ? "Goal reached, though it cost you: " + outcomes.join("; ") + "." : "Goal reached. Clean run."); }
+  } catch (e) {
+    think.remove();
+    addNarr(e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then try again." : "That didn't go through. Try saying it again.");
+    wTranscript.pop();
+  }
+  busy = false; renderMove();
+}
+
 /* ---------- off-script with Claude ---------- */
 let sample = null;
 function renderFree(m) {
@@ -928,7 +1036,7 @@ let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
 start(S.some(s => s.id === last) ? last : S[0].id);
 
 (async () => {
-  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderMove(); } } } catch {}
+  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); renderMove(); } } } catch {}
 })();
 </script>
 </body>
