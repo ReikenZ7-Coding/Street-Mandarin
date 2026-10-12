@@ -13,7 +13,9 @@ Open `index.html` in a browser. There's no build step.
 - Five scenarios: noodle shop, taxi, night market bargaining, asking directions, pharmacy
 - Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note
 - Pinyin toggle, tap-to-translate, and spoken audio through the browser's Chinese voice when it has one
-- A mistake notebook saved in the browser
+- A mistake notebook saved in the browser. Mistakes come back in review rounds after 1, 3 and 7 days, and leave once you get them right three times.
+- Consequences that carry: some wrong answers move the story on, like paying 20 kuai more for the expressway, and the end card shows what they cost you
+- Listening mode: hear each line first (with a slower replay) and see the text only after you answer
 
 The "say it your own way" free-typing mode uses Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, that box is hidden and the scripted scenarios still work.
 
