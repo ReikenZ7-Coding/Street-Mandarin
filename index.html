@@ -862,7 +862,7 @@ function reviewItem() {
   rAnswered = false; rReveal = false;
   const n = rq[ri], s = S.find(x => x.id === n.sid), t = s && n.cb != null && s.curveballs ? s.curveballs[n.cb].turn : s && n.turn != null ? s.turns[n.turn] : null;
   if (s) cur = s;
-  const pair = n.sid === "ears" && PAIRS.find(p => p.a[0] === n.fix || p.b[0] === n.fix);
+  const pair = n.sid === "ears" && PAIRS.concat(myPairs()).find(p => p.a[0] === n.fix || p.b[0] === n.fix);
   if (pair) {
     // A sound-alike: hear it again and pick the meaning, like the first time
     cur = LISTENER;
@@ -926,6 +926,24 @@ function renderReviewMove() {
   if (order.length) { head.append(el("span", "prompt", n.sid === "ears" ? "What did they say?" : "What do you say this time?")); m.append(optionButtons(order, reviewChoose)); return; }
   // Off-script mistake: recall it, then grade yourself honestly
   head.append(el("span", "prompt", "What should you have said?"));
+  if (!rReveal && n.fix) {
+    // Prove it rather than grade yourself: type the better line, characters or pinyin
+    const form = el("form", "free");
+    const inp = el("input"); inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN";
+    inp.placeholder = "Type it: characters or pinyin, tones optional"; inp.setAttribute("aria-label", "The better line");
+    const go = el("button", "btn", "Check"); go.type = "submit";
+    form.append(inp, go);
+    form.onsubmit = ev => {
+      ev.preventDefault(); const v = inp.value.trim(); if (!v) return;
+      const digits = x => (x.match(/\d/g) || []).join("");
+      const ok = digits(v) === digits(n.fix) && (normHan(v) === normHan(n.fix) || (n.fixPy && normPy(v) === normPy(n.fixPy)) || lev(normPy(v), normPy(n.fixPy || "")) <= 1 && normPy(v).length > 4);
+      addMe(v, "", "", ok ? "good" : "wrong"); rReveal = true;
+      addFeedback(ok ? "good" : "wrong", ok ? "That's it." : n.why, ok ? null : [n.fix, n.fixPy], ok ? null : { label: "Not quite" });
+      selfGrade(ok);
+    };
+    m.append(form);
+    setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+  }
   if (!rReveal) {
     const b = el("button", "btn ghost", "Show the answer"); b.onclick = () => { rReveal = true; addFeedback("okay", n.why, n.fix ? [n.fix, n.fixPy] : null, { label: "The better way" }); renderReviewMove(); };
     const wrap = el("div", "endcard"); wrap.append(b); m.append(wrap); return;
@@ -1034,9 +1052,23 @@ const PAIRS = [
 ];
 let eq = [], ei = 0, eRight = 0, eAnswered = false, ePick = null;
 const LISTENER = { who: "听", whoEn: "the speaker" };
+function myPairs() {
+  const out = [], seen = new Set();
+  activeItems().forEach(n => {
+    if (n.sid === "ears" || tagOf(n) !== "sounds") return;
+    const s = S.find(x => x.id === n.sid), t = scriptedTurn(s, n); if (!t) return;
+    const bad = t.opts.find(o => o.h === n.said), good = t.opts.find(o => o.k === "good" && o.h === n.fix) || t.opts.find(o => o.k === "good");
+    if (!bad || !good || seen.has(bad.h)) return; seen.add(bad.h);
+    out.push({ a: [good.h, good.p, good.e], b: [bad.h, bad.p, bad.e], why: bad.note, mine: true });
+  });
+  return out;
+}
 function startEars() {
   mode = "ears"; busy = false; cur = LISTENER;
-  eq = shuffle(PAIRS).slice(0, 8).map(p => { const flip = Math.random() < 0.5; return { said: flip ? p.b : p.a, other: flip ? p.a : p.b, why: p.why }; });
+  // Your own sound-alike slips from the places come first, then the classic pairs
+  const mine = myPairs().slice(0, 4);
+  eq = mine.concat(shuffle(PAIRS).slice(0, 8 - mine.length)).map(p => { const flip = Math.random() < 0.5; return { said: flip ? p.b : p.a, other: flip ? p.a : p.b, why: p.why, mine: p.mine }; });
+  eq = shuffle(eq);
   ei = 0; eRight = 0;
   setHead("听错", "tīng cuò", "Sound-alikes", "How it works: ", canSpeak ? "Hear a line and pick what was said. Each pair differs by one tone or sound, and getting it wrong changes everything." : "Read the pinyin and pick what it means. Each pair differs by one tone or sound.");
   $("#log").textContent = "";
@@ -1059,7 +1091,7 @@ function renderEarsMove() {
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
     row.append(again, back); m.append(head, row); return;
   }
-  head.append(el("h3", null, `Line ${ei + 1} of ${eq.length}`), el("span", "prompt", "What did they say?"));
+  head.append(el("h3", null, `Line ${ei + 1} of ${eq.length}`), el("span", "prompt", eq[ei].mine ? "One of your own slips. What did they say?" : "What did they say?"));
   m.append(head);
   if (eAnswered) {
     const nx = el("button", "btn", ei + 1 < eq.length ? "Next line" : "See how you did");
@@ -1357,8 +1389,15 @@ function renderPhrases() {
     hardHits.slice(0, 8).forEach(o => sec.append(phraseRow(o, null)));
     log.append(sec);
   }
+  const wl = store.get("sm-wander-lines", []).filter(o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q));
+  if (wl.length) {
+    const sec = el("section", "pb");
+    sec.append(el("h4", "pb-title", "Your own lines that worked, from wandering"));
+    wl.slice(0, 10).forEach(o => sec.append(phraseRow(o, null)));
+    log.append(sec);
+  }
   const places = S.filter(s => done[s.id]);
-  if (!places.length && !hard.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
+  if (!places.length && !hard.length && !wl.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
   let shown = 0;
   places.forEach(s => {
     const rows = [];
@@ -1515,6 +1554,11 @@ Return ONLY a JSON object:
     if (r.npc_hanzi) { addNpc([r.npc_hanzi, r.npc_pinyin || "", r.npc_english || ""]); wTranscript.push({ who: "npc", text: r.npc_hanzi }); }
     addFeedback(kind, r.note || "", r.better_hanzi ? [r.better_hanzi, r.better_pinyin || ""] : null, r.consequence ? { label: "Didn't land, and it stuck", cost: r.consequence } : null);
     if (r.consequence) outcomes.push(r.consequence);
+    if (kind === "good" && /[\u4e00-\u9fff]/.test(text)) {
+      // Lines you came up with yourself that worked go to the phrasebook
+      const wl = store.get("sm-wander-lines", []).filter(x => x.h !== text);
+      wl.unshift({ h: text, p: "", e: cur.en || "Wander" }); store.set("sm-wander-lines", wl.slice(0, 30));
+    }
     if (kind !== "good") logMistake({ sid: "wander", turn: null, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: (cur.en ? cur.en + ": " : "") + (r.note || "") });
     if (r.goal_reached === true) { wDone = wGoal = true; addNarr(outcomes.length ? "Goal reached, though it cost you: " + outcomes.join("; ") + "." : "Goal reached. Clean run."); }
   } catch (e) {
