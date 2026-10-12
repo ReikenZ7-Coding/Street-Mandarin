@@ -8,9 +8,14 @@ You walk into a noodle shop, a taxi, a night market, a street corner or a pharma
 
 Open `index.html` in a browser. There's no build step.
 
+## Adding a place
+
+Scenes live in `scenes.js`. The comment at the top explains each field. Copy an existing scene, change the lines, and give one good answer per moment a `b` field with its word tiles split by `|`.
+
 ## What's in it
 
-- Five scenarios: noodle shop, taxi, night market bargaining, asking directions, pharmacy
+- Ten places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill
+- Two ways to answer each moment: pick from three answers, or build the sentence yourself from word tiles
 - Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note
 - Pinyin toggle, tap-to-translate, and spoken audio through the browser's Chinese voice when it has one
 - A mistake notebook saved in the browser. Mistakes come back in review rounds after 1, 3 and 7 days, and leave once you get them right three times.

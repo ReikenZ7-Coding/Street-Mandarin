@@ -167,6 +167,14 @@ body.hint-off .opt .en-line { display: none; }
 .nb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .small { font-size: 13px; padding: 6px 10px; }
 .scn.review { border-style: dashed; }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.build { display: flex; flex-direction: column; gap: 10px; }
+.slots { min-height: 52px; border: 1px dashed var(--line); border-radius: 10px; padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--bg); }
+.slots-empty { color: var(--muted); font-size: 14px; padding-inline: 4px; }
+.bank { display: flex; flex-wrap: wrap; gap: 8px; }
+.tile { font-family: var(--f-han); font-weight: 600; font-size: 19px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; }
+.tile:hover { border-color: var(--fg); }
+.tile.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .scn.review .han { color: var(--cinnabar); }
 .ear { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ear-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
@@ -224,164 +232,9 @@ body.hint-off .opt .en-line { display: none; }
   </div>
 </div>
 
+<script src="scenes.js"></script>
 <script>
-const S = [
-  { id: "noodles", place: "面馆", placePy: "miànguǎn", en: "Noodle shop", who: "老板", whoPy: "lǎobǎn", whoEn: "the owner",
-    goal: "Order a bowl of beef noodles, not spicy, and pay.",
-    intro: "Lunch rush. Steam everywhere. The owner looks up from the counter.",
-    turns: [
-      { npc: ["你好！吃点儿什么？", "Nǐ hǎo! Chī diǎnr shénme?", "Hi! What'll you have?"], prompt: "Order beef noodles.",
-        opts: [
-          { h: "我要一碗牛肉面。", p: "Wǒ yào yì wǎn niúròu miàn.", e: "I'd like a bowl of beef noodles.", k: "good", note: "要 yào (want) + 一碗 yì wǎn (one bowl). Noodles are counted in bowls." },
-          { h: "我要一个牛肉面。", p: "Wǒ yào yí ge niúròu miàn.", e: "I want one beef noodle.", k: "okay", r: ["一碗牛肉面，好嘞！", "Yì wǎn niúròu miàn, hǎo lei!", "One bowl of beef noodles, coming up!"], note: "个 ge is the catch-all measure word, so she understood. Noodles come in bowls though: 一碗 yì wǎn.", fix: ["我要一碗牛肉面。", "Wǒ yào yì wǎn niúròu miàn."] },
-          { h: "我是牛肉面。", p: "Wǒ shì niúròu miàn.", e: "I am beef noodles.", k: "wrong", r: ["哈哈，你是牛肉面？你要牛肉面吧？", "Hāha, nǐ shì niúròu miàn? Nǐ yào niúròu miàn ba?", "Haha, you ARE beef noodles? You mean you want beef noodles?"], note: "是 shì links two things that are the same: \"I am beef noodles.\" In English \"I'm the beef noodles\" works when ordering. In Chinese you need 要 yào, want.", fix: ["我要一碗牛肉面。", "Wǒ yào yì wǎn niúròu miàn."] }
-        ] },
-      { npc: ["要辣的吗？", "Yào là de ma?", "Want it spicy?"], prompt: "You can't handle spice.",
-        opts: [
-          { h: "不要辣，谢谢。", p: "Bú yào là, xièxie.", e: "No spice, thanks.", k: "good", note: "Answer a 吗 ma question by repeating the verb: 要 (yes) or 不要 (no). 不 becomes bú before a falling tone." },
-          { h: "好的！", p: "Hǎo de!", e: "Okay!", k: "wrong", carry: "Got extra-spicy noodles", flag: "spicy", r: ["好嘞，特辣！", "Hǎo lei, tè là!", "You got it, extra spicy!"], note: "好的 means \"okay, yes\". She asked if you want it spicy and you agreed. Saying yes to everything is how you end up crying into your noodles.", fix: ["不要辣。", "Bú yào là."] },
-          { h: "我不辣。", p: "Wǒ bú là.", e: "I am not spicy.", k: "okay", r: ["你不辣？哦，不要辣，是吧？", "Nǐ bú là? Ò, bú yào là, shì ba?", "You're not spicy? Oh, you mean no spice, right?"], note: "我不辣 says \"I am not spicy\". She worked it out, but you need the verb: 不要辣, don't want spice.", fix: ["不要辣。", "Bú yào là."] }
-        ] },
-      { npc: ["在这儿吃还是带走？", "Zài zhèr chī háishi dàizǒu?", "Eat here or take away?"], prompt: "Pick one.",
-        opts: [
-          { h: "在这儿吃。", p: "Zài zhèr chī.", e: "Eat here.", k: "good", note: "还是 háishi offers a choice, so you answer by picking one." },
-          { h: "带走。", p: "Dàizǒu.", e: "Take away.", k: "good", note: "还是 háishi offers a choice, so you answer by picking one." },
-          { h: "是。", p: "Shì.", e: "Yes.", k: "wrong", r: ["是什么？在这儿吃还是带走？", "Shì shénme? Zài zhèr chī háishi dàizǒu?", "Yes what? Here or take away?"], note: "还是 háishi means \"or\" in a question. There's no yes/no answer. Pick one of the two options.", fix: ["在这儿吃。/ 带走。", "Zài zhèr chī. / Dàizǒu."] }
-        ] },
-      { npc: ["一共十八块。扫码还是现金？", "Yígòng shíbā kuài. Sǎo mǎ háishi xiànjīn?", "18 kuai in total. QR code or cash?"], prompt: "Pay.",
-        opts: [
-          { h: "扫码。我扫你吧。", p: "Sǎo mǎ. Wǒ sǎo nǐ ba.", e: "QR code. I'll scan yours.", k: "good", note: "Almost everyone in China pays by scanning a QR code. 我扫你 \"I scan you\" means you scan the shop's code." },
-          { h: "给你八十块。", p: "Gěi nǐ bāshí kuài.", e: "Here's 80 kuai.", k: "wrong", r: ["八十？不是八十，是十八！", "Bāshí? Bú shì bāshí, shì shíbā!", "Eighty? Not eighty, EIGHTEEN!"], note: "十八 shíbā is ten-eight = 18. 八十 bāshí is eight-ten = 80. Listen for which number comes first.", fix: ["十八块，扫码。", "Shíbā kuài, sǎo mǎ."] },
-          { h: "多少钱？", p: "Duōshao qián?", e: "How much?", k: "wrong", r: ["十八块！十……八。扫码还是现金？", "Shíbā kuài! Shí… bā. Sǎo mǎ háishi xiànjīn?", "Eighteen! Eigh-teen. QR or cash?"], note: "She already told you. 一共 yígòng means \"in total\", and the price comes right after it. Train your ear to catch that word.", fix: ["扫码。", "Sǎo mǎ."] }
-        ] }
-    ],
-    end: ["好，你的牛肉面，不辣的。慢用！", "Hǎo, nǐ de niúròu miàn, bú là de. Màn yòng!", "Here are your beef noodles, not spicy. Enjoy!"],
-    endAlt: { spicy: ["好，你的牛肉面，特辣的！慢用！", "Hǎo, nǐ de niúròu miàn, tè là de! Màn yòng!", "Here are your beef noodles, extra spicy! Enjoy!"] },
-    endNote: "慢用 màn yòng (literally \"use slowly\") is what staff say when they serve your food." },
-
-  { id: "taxi", place: "打车", placePy: "dǎ chē", en: "Taking a taxi", who: "司机", whoPy: "sījī", whoEn: "the driver",
-    goal: "Get to the train station without overpaying.",
-    intro: "You slide into the back seat. The meter clicks on.",
-    turns: [
-      { npc: ["去哪儿？", "Qù nǎr?", "Where to?"], prompt: "Tell him: the train station.",
-        opts: [
-          { h: "去火车站。", p: "Qù huǒchēzhàn.", e: "To the train station.", k: "good", note: "去 qù + place. Short is normal in a taxi; no \"please take me\" needed." },
-          { h: "我去火车。", p: "Wǒ qù huǒchē.", e: "I go train.", k: "okay", r: ["火车站，是吧？", "Huǒchēzhàn, shì ba?", "The train station, right?"], note: "火车 huǒchē is the train itself. 站 zhàn is the station. Without it you're heading to \"the train\".", fix: ["去火车站。", "Qù huǒchēzhàn."] },
-          { h: "火车站在哪儿？", p: "Huǒchēzhàn zài nǎr?", e: "Where is the train station?", k: "wrong", r: ["你问我？我是司机啊。你要去火车站吗？", "Nǐ wèn wǒ? Wǒ shì sījī a. Nǐ yào qù huǒchēzhàn ma?", "You're asking me? I'm the driver. You want to GO to the station?"], note: "在哪儿 zài nǎr asks where something is. To tell a driver where to go, use 去 qù + place.", fix: ["去火车站。", "Qù huǒchēzhàn."] }
-        ] },
-      { npc: ["赶时间吗？走高速要多二十块。", "Gǎn shíjiān ma? Zǒu gāosù yào duō èrshí kuài.", "In a hurry? The expressway is 20 extra."], prompt: "You're not in a hurry.",
-        opts: [
-          { h: "不急，不走高速。", p: "Bù jí, bù zǒu gāosù.", e: "No rush, skip the expressway.", k: "good", note: "急 jí means in a hurry. Saying no up front keeps the fare down." },
-          { h: "对对对。", p: "Duì duì duì.", e: "Yes yes yes.", k: "wrong", carry: "Paid 20 kuai extra for the expressway", flag: "highway", r: ["好，那走高速。", "Hǎo, nà zǒu gāosù.", "Great, expressway it is."], note: "Nodding along with 对对对 agrees to whatever was just said, including paying 20 more. When you don't follow, say 什么？shénme? (what?) or 慢一点 màn yìdiǎn (slower).", fix: ["不急，不走高速。", "Bù jí, bù zǒu gāosù."] },
-          { h: "我不赶时间吗。", p: "Wǒ bù gǎn shíjiān ma.", e: "I'm not in a hurry?", k: "okay", r: ["不赶啊？好，那不走高速。", "Bù gǎn a? Hǎo, nà bù zǒu gāosù.", "Not in a hurry? Fine, no expressway."], note: "吗 ma turns a sentence into a question, so you just asked whether you're in a hurry. Drop it when you're answering.", fix: ["我不赶时间。", "Wǒ bù gǎn shíjiān."] }
-        ] },
-      { npc: ["快到了。在哪儿停？", "Kuài dào le. Zài nǎr tíng?", "Almost there. Where do I stop?"], prompt: "Ask him to stop just ahead.",
-        opts: [
-          { h: "前面停一下，谢谢。", p: "Qiánmiàn tíng yíxià, xièxie.", e: "Stop up ahead, thanks.", k: "good", note: "一下 yíxià softens a request, like \"just\" in \"just stop here\"." },
-          { h: "我停。", p: "Wǒ tíng.", e: "I stop.", k: "wrong", r: ["你停？你又不开车！", "Nǐ tíng? Nǐ yòu bù kāichē!", "YOU stop? You're not even driving!"], note: "Leave out the subject. 停 or 这儿停 (stop here) is a request; 我停 means you're the one stopping.", fix: ["前面停一下。", "Qiánmiàn tíng yíxià."] },
-          { h: "就在这儿停吧。", p: "Jiù zài zhèr tíng ba.", e: "Right here is fine.", k: "good", note: "吧 ba at the end makes it a friendly suggestion rather than an order." }
-        ] },
-      { npc: ["好，四十二块。", "Hǎo, sìshí'èr kuài.", "Okay, 42 kuai."],
-        npcAlt: { highway: ["好，四十二，加高速二十，一共六十二块。", "Hǎo, sìshí'èr, jiā gāosù èrshí, yígòng liùshí'èr kuài.", "Okay, 42, plus 20 for the expressway. 62 in total."] }, prompt: "Pay the fare.",
-        opts: [
-          { h: "好，我扫码。能开发票吗？", p: "Hǎo, wǒ sǎo mǎ. Néng kāi fāpiào ma?", e: "Sure, I'll scan. Can I get a receipt?", k: "good", note: "发票 fāpiào is the official receipt. It also puts the trip on record if you leave something in the car." },
-          { h: "十四？给你十四块。", p: "Shísì? Gěi nǐ shísì kuài.", e: "Fourteen? Here's 14.", k: "wrong", r: ["不是十四，是四十二！四十……二。", "Bú shì shísì, shì sìshí'èr! Sìshí… èr.", "Not fourteen, FORTY-TWO!"], note: "四十二 is four-ten-two = 42. 十四 is ten-four = 14. Also, sì (4) falls in tone while shí (10) rises. Listen for that.", fix: ["四十二块，我扫码。", "Sìshí'èr kuài, wǒ sǎo mǎ."] },
-          { h: "太贵了，三十吧！", p: "Tài guì le, sānshí ba!", e: "Too expensive, how about 30!", k: "wrong", r: ["朋友，这是打表的，不能讲价。", "Péngyou, zhè shì dǎbiǎo de, bù néng jiǎngjià.", "Friend, it's on the meter. No bargaining."], note: "打表 dǎbiǎo means the meter is running, and metered fares are fixed. Bargaining is for markets, not taxis.", fix: ["好，我扫码。", "Hǎo, wǒ sǎo mǎ."] }
-        ] }
-    ],
-    end: ["谢谢，慢走！", "Xièxie, màn zǒu!", "Thanks, take care!"],
-    endNote: "慢走 màn zǒu (\"walk slowly\") is a common goodbye: take care." },
-
-  { id: "market", place: "夜市", placePy: "yèshì", en: "Night market", who: "老板娘", whoPy: "lǎobǎnniáng", whoEn: "the stall owner",
-    goal: "Buy a T-shirt for 60 kuai or less.",
-    intro: "Rows of stalls under bare bulbs. A stall owner holds up a T-shirt the second you slow down.",
-    turns: [
-      { npc: ["朋友，看看！这件T恤一百五。", "Péngyou, kànkan! Zhè jiàn T xù yìbǎi wǔ.", "Have a look, friend! This T-shirt is 150."], prompt: "That's way too much.",
-        opts: [
-          { h: "太贵了！便宜一点儿吧。", p: "Tài guì le! Piányi yìdiǎnr ba.", e: "Too expensive! A bit cheaper?", k: "good", note: "一百五 yìbǎi wǔ is short for 150, not 105. The opening price is an invitation to bargain." },
-          { h: "便宜！", p: "Piányi!", e: "Cheap!", k: "wrong", r: ["对啊，很便宜！买吧！", "Duì a, hěn piányi! Mǎi ba!", "Right, so cheap! Buy it!"], note: "便宜 piányi alone means \"cheap!\", so you just praised her price. To ask for a discount say 便宜一点儿 piányi yìdiǎnr, a bit cheaper.", fix: ["便宜一点儿吧。", "Piányi yìdiǎnr ba."] },
-          { h: "好，我买。", p: "Hǎo, wǒ mǎi.", e: "Okay, I'll take it.", k: "wrong", carry: "Paid 150 kuai. Locals pay about 50.", end: true, r: ["好嘞！一百五！", "Hǎo lei! Yìbǎi wǔ!", "Wonderful! 150!"], note: "150 is the tourist opening price. Locals often pay a third to a half of the first number. Never accept the first price at a market.", fix: ["太贵了！", "Tài guì le!"] }
-        ] },
-      { npc: ["那你说多少？", "Nà nǐ shuō duōshao?", "So what's your price?"], prompt: "Make an opening offer.",
-        opts: [
-          { h: "四十块。", p: "Sìshí kuài.", e: "40 kuai.", k: "good", note: "Start low, around a quarter to a third of her price. You need room to move up." },
-          { h: "一百四。", p: "Yìbǎi sì.", e: "140.", k: "wrong", carry: "Paid 140 kuai for a T-shirt worth about 50", end: true, r: ["好啊！一百四，卖给你！", "Hǎo a! Yìbǎi sì, mài gěi nǐ!", "Sure! 140, it's yours!"], note: "If she says yes instantly, you offered too much. 一百四 is 140, just 10 off.", fix: ["四十块。", "Sìshí kuài."] },
-          { h: "四块。", p: "Sì kuài.", e: "4 kuai.", k: "wrong", r: ["四块？你开玩笑吧！", "Sì kuài? Nǐ kāi wánxiào ba!", "Four kuai? You're joking!"], note: "四块 is 4 kuai, too low to take seriously. You probably meant 四十 sìshí, 40.", fix: ["四十块。", "Sìshí kuài."] }
-        ] },
-      { npc: ["四十？不行不行，最少一百。", "Sìshí? Bù xíng bù xíng, zuì shǎo yìbǎi.", "Forty? No way. 100 minimum."], prompt: "Hold your ground.",
-        opts: [
-          { h: "那算了，我不要了。", p: "Nà suàn le, wǒ bú yào le.", e: "Forget it then, I don't want it.", k: "good", note: "算了 suàn le, \"forget it\", plus starting to walk away is the strongest move in any market." },
-          { h: "五十，行不行？", p: "Wǔshí, xíng bu xíng?", e: "50, okay?", k: "good", note: "行不行 xíng bu xíng, \"does it work?\", is the classic way to float a counteroffer." },
-          { h: "好吧，一百。", p: "Hǎo ba, yìbǎi.", e: "Fine, 100.", k: "wrong", carry: "Paid 100 kuai, about double the going price", end: true, r: ["好嘞！", "Hǎo lei!", "Deal!"], note: "You gave in at the first pushback. Counter in small steps, or start to walk away.", fix: ["那算了，我不要了。", "Nà suàn le, wǒ bú yào le."] }
-        ] },
-      { npc: ["哎，回来回来！五十五，给你了！", "Āi, huílái huílái! Wǔshíwǔ, gěi nǐ le!", "Hey, come back! 55, it's yours!"], prompt: "Close the deal.",
-        opts: [
-          { h: "五十吧，我买两件。", p: "Wǔshí ba, wǒ mǎi liǎng jiàn.", e: "50 each and I'll take two.", k: "good", note: "Buying more for a better price usually works. And it's 两件 liǎng jiàn, two pieces." },
-          { h: "好，成交！", p: "Hǎo, chéngjiāo!", e: "Okay, deal!", k: "good", note: "成交 chéngjiāo means \"deal\". 55 is under your 60 limit." },
-          { h: "好，我买二件。", p: "Hǎo, wǒ mǎi èr jiàn.", e: "Okay, I'll buy two.", k: "okay", r: ["两件？好，两件。", "Liǎng jiàn? Hǎo, liǎng jiàn.", "Two? Okay, two."], note: "Before a measure word, \"two\" is 两 liǎng, not 二 èr: 两件, 两碗, 两个. 二 is for counting and numbers like 十二.", fix: ["我买两件。", "Wǒ mǎi liǎng jiàn."] }
-        ] }
-    ],
-    end: ["拿好，欢迎再来！", "Ná hǎo, huānyíng zài lái!", "Here you go, come again!"],
-    endNote: "You walked away with it under budget. The walk-away works because both sides know the game." },
-
-  { id: "directions", place: "问路", placePy: "wèn lù", en: "Asking directions", who: "路人", whoPy: "lùrén", whoEn: "a passer-by",
-    goal: "Find the metro and the right entrance for Line 2.",
-    intro: "Your phone is dead. A woman is waiting at the crossing.",
-    turns: [
-      { npc: null, prompt: "Get her attention and ask where the metro station is.",
-        opts: [
-          { h: "你好，请问，地铁站在哪儿？", p: "Nǐ hǎo, qǐngwèn, dìtiězhàn zài nǎr?", e: "Hi, excuse me, where's the metro station?", k: "good", note: "请问 qǐngwèn, \"may I ask\", is the polite opener for any question to a stranger." },
-          { h: "喂！地铁在哪儿？", p: "Wèi! Dìtiě zài nǎr?", e: "Oi! Where's the metro?", k: "wrong", r: ["你叫谁“喂”啊？", "Nǐ jiào shéi \"wèi\" a?", "Who are you calling \"oi\"?"], note: "喂 wèi is how you answer the phone. Shouted at a stranger it sounds like \"Oi!\". Use 你好 or 不好意思 bù hǎoyìsi, excuse me.", fix: ["你好，请问，地铁站在哪儿？", "Nǐ hǎo, qǐngwèn, dìtiězhàn zài nǎr?"] },
-          { h: "你好吗？地铁站？", p: "Nǐ hǎo ma? Dìtiězhàn?", e: "How are you? Metro station?", k: "okay", r: ["呃……我挺好的。你找地铁站？", "È… wǒ tǐng hǎo de. Nǐ zhǎo dìtiězhàn?", "Uh… I'm fine. You're looking for the metro?"], note: "你好吗 is a textbook phrase that strangers rarely say. It sounds like you're asking about her health. Just 你好 or 请问.", fix: ["请问，地铁站在哪儿？", "Qǐngwèn, dìtiězhàn zài nǎr?"] }
-        ] },
-      { npc: ["往前走，到红绿灯往左拐，大概五分钟。", "Wǎng qián zǒu, dào hónglǜdēng wǎng zuǒ guǎi, dàgài wǔ fēnzhōng.", "Go straight, turn left at the traffic light, about five minutes."], prompt: "Check you understood.",
-        opts: [
-          { h: "到红绿灯往左拐，对吗？", p: "Dào hónglǜdēng wǎng zuǒ guǎi, duì ma?", e: "Left at the traffic light, right?", k: "good", note: "Repeating directions back catches mistakes before you walk five minutes the wrong way." },
-          { h: "往右拐，对吗？", p: "Wǎng yòu guǎi, duì ma?", e: "Turn right, correct?", k: "wrong", r: ["不是右，是左！左边。", "Bú shì yòu, shì zuǒ! Zuǒbian.", "Not right, LEFT! Left side."], note: "左 zuǒ is left, 右 yòu is right. They look alike, so check the bottom: 左 has 工, 右 has 口.", fix: ["往左拐，对吗？", "Wǎng zuǒ guǎi, duì ma?"] },
-          { h: "五分钟？很远吗？", p: "Wǔ fēnzhōng? Hěn yuǎn ma?", e: "Five minutes? Is it far?", k: "okay", r: ["不远不远，往左拐就到了。", "Bù yuǎn bù yuǎn, wǎng zuǒ guǎi jiù dào le.", "Not far at all, turn left and you're there."], note: "Fine to ask, but you skipped the important part. Confirm the turn: 往左拐 wǎng zuǒ guǎi, turn left.", fix: ["往左拐，对吗？", "Wǎng zuǒ guǎi, duì ma?"] }
-        ] },
-      { npc: ["对。你坐几号线？", "Duì. Nǐ zuò jǐ hào xiàn?", "Right. Which line are you taking?"], prompt: "You need Line 2.",
-        opts: [
-          { h: "二号线。", p: "Èr hào xiàn.", e: "Line 2.", k: "good", note: "Line numbers use 二 èr, even though \"two of something\" is 两 liǎng." },
-          { h: "两号线。", p: "Liǎng hào xiàn.", e: "Line \"a pair\".", k: "okay", r: ["二号线吧？", "Èr hào xiàn ba?", "Line 2, you mean?"], note: "Numbers used as names (Line 2, Room 2, the 2nd) take 二 èr. 两 liǎng is only for amounts: 两张票, two tickets.", fix: ["二号线。", "Èr hào xiàn."] },
-          { h: "我坐地铁。", p: "Wǒ zuò dìtiě.", e: "I'm taking the metro.", k: "wrong", r: ["我知道你坐地铁……几号线？", "Wǒ zhīdào nǐ zuò dìtiě… jǐ hào xiàn?", "I know you're taking the metro… which LINE?"], note: "几 jǐ asks \"which number\". Answer with the number: 二号线, Line 2.", fix: ["二号线。", "Èr hào xiàn."] }
-        ] },
-      { npc: ["二号线啊，那你从B口进，离二号线近。", "Èr hào xiàn a, nà nǐ cóng B kǒu jìn, lí èr hào xiàn jìn.", "Line 2? Then go in at entrance B, it's closer to Line 2."], prompt: "Thank her.",
-        opts: [
-          { h: "明白了，太谢谢你了！", p: "Míngbai le, tài xièxie nǐ le!", e: "Got it, thank you so much!", k: "good", note: "太……了 tài… le is \"so…\": 太谢谢你了, thank you so much." },
-          { h: "不客气！", p: "Bú kèqi!", e: "You're welcome!", k: "wrong", r: ["哈哈，应该我说“不客气”吧！", "Hāha, yīnggāi wǒ shuō \"bú kèqi\" ba!", "Haha, I think I'M supposed to say that!"], note: "不客气 bú kèqi means \"you're welcome\". She helped you, so you say 谢谢.", fix: ["谢谢你！", "Xièxie nǐ!"] },
-          { h: "对不起，对不起。", p: "Duìbuqǐ, duìbuqǐ.", e: "Sorry, sorry.", k: "okay", r: ["没事儿！", "Méi shìr!", "No worries!"], note: "对不起 is a real apology for doing something wrong. For bothering someone, 不好意思 bù hǎoyìsi fits better, and after help, just 谢谢.", fix: ["谢谢你！", "Xièxie nǐ!"] }
-        ] }
-    ],
-    end: ["不客气，慢走！", "Bú kèqi, màn zǒu!", "You're welcome, take care!"],
-    endNote: "Look for the big letter on the station sign. Entrances are labelled A, B, C, and the wrong one can mean a long walk underground." },
-
-  { id: "pharmacy", place: "药店", placePy: "yàodiàn", en: "Pharmacy", who: "药师", whoPy: "yàoshī", whoEn: "the pharmacist",
-    goal: "Get something for a headache and understand how to take it.",
-    intro: "Your head is pounding. Green cross, glass counter, a pharmacist in a white coat.",
-    turns: [
-      { npc: ["你好，哪里不舒服？", "Nǐ hǎo, nǎlǐ bù shūfu?", "Hi, what's bothering you?"], prompt: "Your head hurts.",
-        opts: [
-          { h: "我头疼。", p: "Wǒ tóu téng.", e: "I have a headache.", k: "good", note: "Body part + 疼 téng: 头疼 headache, 肚子疼 dùzi téng stomachache." },
-          { h: "我有头。", p: "Wǒ yǒu tóu.", e: "I have a head.", k: "wrong", r: ["呃……我也有头啊。头怎么了？", "È… wǒ yě yǒu tóu a. Tóu zěnme le?", "Uh… I have a head too. What's wrong with it?"], note: "有 yǒu means \"have\". \"I have a head\" is true, but it isn't a symptom. Say 头疼, head hurts.", fix: ["我头疼。", "Wǒ tóu téng."] },
-          { h: "我疼头。", p: "Wǒ téng tóu.", e: "I hurt head.", k: "okay", r: ["头疼，是吧？", "Tóu téng, shì ba?", "Headache, right?"], note: "Word order: the body part comes first, then 疼. 头疼, not 疼头.", fix: ["我头疼。", "Wǒ tóu téng."] }
-        ] },
-      { npc: ["疼了多久了？发烧吗？", "Téng le duō jiǔ le? Fāshāo ma?", "How long has it hurt? Any fever?"], prompt: "Two days, no fever.",
-        opts: [
-          { h: "两天了，不发烧。", p: "Liǎng tiān le, bù fāshāo.", e: "Two days, no fever.", k: "good", note: "了 le after a time means \"it's been\": 两天了, it's been two days." },
-          { h: "二天，没有发烧。", p: "Èr tiān, méiyǒu fāshāo.", e: "Two days, no fever.", k: "okay", r: ["两天，好。", "Liǎng tiān, hǎo.", "Two days, okay."], note: "Two of something is 两 liǎng: 两天 two days. 二 èr is for counting and numbers.", fix: ["两天了。", "Liǎng tiān le."] },
-          { h: "很久。", p: "Hěn jiǔ.", e: "A long time.", k: "wrong", r: ["很久是多久？一天？一个星期？", "Hěn jiǔ shì duō jiǔ? Yì tiān? Yí ge xīngqī?", "How long is long? A day? A week?"], note: "She needs a number. 多久 duō jiǔ asks how long, so answer with a time: 两天 two days, 一个星期 a week.", fix: ["两天了。", "Liǎng tiān le."] }
-        ] },
-      { npc: ["这个药一天三次，一次两片，饭后吃。", "Zhège yào yì tiān sān cì, yí cì liǎng piàn, fàn hòu chī.", "This one: three times a day, two tablets each time, after meals."], prompt: "Repeat the dosage back.",
-        opts: [
-          { h: "一天三次，一次两片，饭后。好的。", p: "Yì tiān sān cì, yí cì liǎng piàn, fàn hòu. Hǎo de.", e: "Three a day, two each, after meals. Got it.", k: "good", note: "Repeating a dosage back is exactly what locals do too." },
-          { h: "一天两次，一次三片？", p: "Yì tiān liǎng cì, yí cì sān piàn?", e: "Twice a day, three each?", k: "wrong", r: ["不对，是一天三次，一次两片。", "Bú duì, shì yì tiān sān cì, yí cì liǎng piàn.", "No: three times a day, two each time."], note: "次 cì counts times, 片 piàn counts tablets. 一天三次 three times a day; 一次两片 two per time.", fix: ["一天三次，一次两片。", "Yì tiān sān cì, yí cì liǎng piàn."] },
-          { h: "饭前吃，对吧？", p: "Fàn qián chī, duì ba?", e: "Before meals, right?", k: "wrong", r: ["不是饭前，是饭后！吃了饭再吃药。", "Bú shì fàn qián, shì fàn hòu! Chī le fàn zài chī yào.", "Not before, AFTER! Eat first, then the medicine."], note: "饭前 fàn qián is before meals; 饭后 fàn hòu is after meals.", fix: ["饭后吃。", "Fàn hòu chī."] }
-        ] }
-    ],
-    end: ["多喝水，好好休息。", "Duō hē shuǐ, hǎohǎo xiūxi.", "Drink plenty of water and get some rest."],
-    endNote: "Note that 吃药 chī yào is \"eat medicine\": in Chinese you eat pills, you don't take them." }
-];
+const S = window.SCENES;
 
 /* ---------- storage (per-viewer convenience only) ---------- */
 const store = {
@@ -390,7 +243,7 @@ const store = {
 };
 let notebook = store.get("sm-notebook", []);
 let done = store.get("sm-done", {});
-let prefs = Object.assign({ py: true, hint: false, listen: false }, store.get("sm-prefs", {}));
+let prefs = Object.assign({ py: true, hint: false, listen: false, build: false }, store.get("sm-prefs", {}));
 
 /* ---------- state ---------- */
 let mode = "scene"; // "scene" | "review"
@@ -523,8 +376,64 @@ function renderMove() {
   const t = cur.turns[turn];
   const head = el("div", "move-head");
   head.append(el("h3", null, `Your move · ${turn + 1} of ${cur.turns.length}`), el("span", "prompt", t.prompt));
-  m.append(head, optionButtons(order, choose));
+  const good = t.opts.find(o => o.k === "good" && o.b);
+  const modes = el("div", "modes"); modes.setAttribute("role", "group"); modes.setAttribute("aria-label", "How to answer");
+  [["Pick an answer", false], ["Build it yourself", true]].forEach(([label, v]) => {
+    const c = el("button", "chip", label); c.setAttribute("aria-pressed", prefs.build === v);
+    c.onclick = () => { prefs.build = v; store.set("sm-prefs", prefs); renderMove(); };
+    modes.append(c);
+  });
+  m.append(head);
+  if (good) m.append(modes);
+  if (prefs.build && good) m.append(builder(t, good)); else m.append(optionButtons(order, choose));
   renderFree(m);
+}
+
+/* ---------- build mode: put the words in order yourself ---------- */
+let bState = null; // { key, ans, tiles, chosen }
+function builder(t, good) {
+  const key = cur.id + ":" + turn;
+  if (!bState || bState.key !== key) {
+    const ans = good.b.split("|");
+    const pool = [...new Set(cur.turns.flatMap(x => x.opts.filter(o => o.b).flatMap(o => o.b.split("|"))))].filter(w => !ans.includes(w));
+    const extra = shuffle(pool).slice(0, 2);
+    bState = { key, ans, tiles: shuffle(ans.concat(extra)).map((w, i) => ({ w, i })), chosen: [] };
+  }
+  const box = el("div", "build");
+  const slots = el("div", "slots"); slots.setAttribute("aria-label", "Your sentence");
+  if (!bState.chosen.length) slots.append(el("span", "slots-empty", "Tap the words in order"));
+  bState.chosen.forEach(tile => {
+    const b = el("button", "tile on", tile.w); b.disabled = busy;
+    b.onclick = () => { bState.chosen = bState.chosen.filter(x => x !== tile); renderMove(); };
+    slots.append(b);
+  });
+  const bank = el("div", "bank");
+  bState.tiles.filter(x => !bState.chosen.includes(x)).forEach(tile => {
+    const b = el("button", "tile", tile.w); b.disabled = busy;
+    b.onclick = () => { bState.chosen.push(tile); renderMove(); };
+    bank.append(b);
+  });
+  const row = el("div", "endcard");
+  const check = el("button", "btn", "Say it"); check.disabled = busy || !bState.chosen.length;
+  check.onclick = () => checkBuild(good);
+  const clear = el("button", "btn ghost", "Start over"); clear.disabled = !bState.chosen.length;
+  clear.onclick = () => { bState.chosen = []; renderMove(); };
+  row.append(check, clear);
+  box.append(slots, bank, row);
+  return box;
+}
+function checkBuild(good) {
+  const built = bState.chosen.map(x => x.w), ans = bState.ans;
+  bState = null;
+  if (built.join("|") === ans.join("|")) return choose(good);
+  const sameWords = built.length === ans.length && [...built].sort().join() === [...ans].sort().join();
+  const why = sameWords ? "Right words, wrong order. Word order carries a lot of the meaning in Chinese." :
+    built.length < ans.length && built.every(w => ans.includes(w)) ? "Close, but something's missing." :
+    "Some of those words don't belong in this answer.";
+  addMe(built.join(""), "", "", "wrong");
+  addFeedback("wrong", why, [good.h, good.p]);
+  logMistake({ sid: cur.id, turn, kind: "wrong", said: built.join(""), fix: good.h, fixPy: good.p, why });
+  renderMove();
 }
 
 function optionButtons(list, onPick) {
