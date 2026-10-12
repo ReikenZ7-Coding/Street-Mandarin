@@ -12,6 +12,8 @@ Open `index.html` in a browser. There's no build step.
 
 Scenes live in `scenes.js`. The comment at the top explains each field. Copy an existing scene, change the lines, and give one good answer per moment a `b` field with its word tiles split by `|`. Optional `curveballs` add a surprise moment on replays: `after` is the index of the moment it follows.
 
+After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
+
 ## What's in it
 
 - Twenty-five places, grouped by theme: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt, café and wifi, bike share, hospital registration, dumpling house, no hot water (calling the landlord), swapping WeChat
@@ -30,8 +32,6 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 - Consequences that carry: some wrong answers move the story on, like paying 20 kuai more for the expressway, and the end card shows what they cost you
 - Listening mode: hear each line first (with a slower replay) and see the text only after you answer
 
-After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
-
-The "say it your own way" free-typing mode and Wander use Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, those are hidden and the scripted scenarios still work.
+The "say it your own way" free-typing mode, Wander and "Why, exactly?" use Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, those are hidden and the scripted scenarios still work.
 
 Live prototype: https://claude.ai/artifact/P1t7AavyFEdwh3Rfx6FtNE
