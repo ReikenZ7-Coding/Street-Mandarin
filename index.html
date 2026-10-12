@@ -855,6 +855,12 @@ function renderNotebook() {
     it.append(el("div", "said" + (n.kind === "okay" ? " okay" : ""), n.said));
     if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
     it.append(el("div", "why", n.why));
+    if (sample && !n.learned) {
+      const sc = S.find(x => x.id === n.sid), t = scriptedTurn(sc, n);
+      const ask = el("button", "why-btn", "Why, exactly?");
+      ask.onclick = () => explainWhy(ask, { place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null });
+      it.append(ask);
+    }
     list.append(it);
   });
   const a = $("#nb-actions"); a.textContent = "";
