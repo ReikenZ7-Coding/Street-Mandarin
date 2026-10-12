@@ -610,6 +610,14 @@ window.SCENES = [
   { id: "cafe", place: "咖啡馆", placePy: "kāfēiguǎn", en: "Café and wifi", who: "店员", whoPy: "diànyuán", whoEn: "the barista",
     goal: "Get an iced latte and the wifi password.",
     intro: "A small café with good chairs. You need coffee, and you need to get online.",
+    curveballs: [
+      { after: 0, what: "a sugar question", turn: { npc: ["要加糖吗？", "Yào jiā táng ma?", "Do you want sugar added?"], prompt: "No sugar, thanks.",
+        opts: [
+          { h: "不加糖，谢谢。", b: "不加糖|谢谢", p: "Bù jiā táng, xièxie.", e: "No sugar, thanks.", k: "good", note: "加 jiā is to add. Answer with the verb: 加 or 不加." },
+          { h: "不加汤，谢谢。", p: "Bù jiā tāng, xièxie.", e: "No soup, thanks.", k: "wrong", r: ["……汤？我们是咖啡店哦。不加糖是吧？", "…Tāng? Wǒmen shì kāfēi diàn o. Bù jiā táng shì ba?", "…Soup? We're a café. No sugar, right?"], note: "糖 táng (rising) is sugar; 汤 tāng (high and flat) is soup.", fix: ["不加糖。", "Bù jiā táng."] },
+          { h: "要。", p: "Yào.", e: "Yes.", k: "okay", carry: "Got a very sweet latte", r: ["好的，加糖。", "Hǎo de, jiā táng.", "OK, with sugar."], note: "要 yào says yes. For no sugar: 不加糖.", fix: ["不加糖，谢谢。", "Bù jiā táng, xièxie."] }
+        ] } }
+    ],
     turns: [
       { npc: ["你好，喝点什么？", "Nǐ hǎo, hē diǎn shénme?", "Hi, what would you like to drink?"], prompt: "Order an iced latte.",
         opts: [
@@ -660,6 +668,14 @@ window.SCENES = [
   { id: "clinic", place: "医院", placePy: "yīyuàn", en: "Hospital registration", who: "护士", whoPy: "hùshi", whoEn: "the nurse",
     goal: "Register to see a doctor for a bad stomach.",
     intro: "A busy hospital lobby. Before you see any doctor, you have to 挂号 guàhào, register, at the desk.",
+    curveballs: [
+      { after: 0, what: "an ID check", turn: { npc: ["身份证或者护照给我看一下。", "Shēnfènzhèng huòzhě hùzhào gěi wǒ kàn yíxià.", "Let me see your ID card or passport."], prompt: "Hand over your passport.",
+        opts: [
+          { h: "这是我的护照。", b: "这是|我的|护照", p: "Zhè shì wǒ de hùzhào.", e: "Here's my passport.", k: "good", note: "Hospitals register you by ID. Foreigners use their passport, 护照 hùzhào." },
+          { h: "我没有身份证。", p: "Wǒ méiyǒu shēnfènzhèng.", e: "I don't have an ID card.", k: "okay", r: ["护照也行。", "Hùzhào yě xíng.", "A passport works too."], note: "True, but she offered a passport as the alternative. Just hand it over.", fix: ["这是我的护照。", "Zhè shì wǒ de hùzhào."] },
+          { h: "我不看。", p: "Wǒ bú kàn.", e: "I won't look.", k: "wrong", r: ["不是你看，是我看！", "Bú shì nǐ kàn, shì wǒ kàn!", "Not YOU look, I look!"], note: "给我看一下 means \"let me see\". She wants to look at it.", fix: ["这是我的护照。", "Zhè shì wǒ de hùzhào."] }
+        ] } }
+    ],
     turns: [
       { npc: ["你好，挂什么科？", "Nǐ hǎo, guà shénme kē?", "Hello, which department?"], prompt: "Say your stomach hurts; you don't know which department.",
         opts: [
