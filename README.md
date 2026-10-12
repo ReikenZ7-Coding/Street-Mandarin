@@ -32,7 +32,8 @@ After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing 
 - Numbers by ear: prices (十八 vs 八十, 一百五 vs 一百零五, 块五), phone numbers read with 幺, and meeting times (两点半, 一刻, 下午), with the exact digit you misheard pointed out
 - No two visits the same: every place has a pool of surprises (sold out, a chatty driver, a deposit, a stranger who isn't local, a broken card machine…). Each run mixes in none, one or two, favouring ones you haven't met, and the end card counts how many you've met so far
 - Claude keeps the pool growing: after each run it quietly invents one more realistic surprise for that place, stored on your device, which can turn up next time
-- Play it live: from any place's end card, play it again with no script at all. Claude plays the same person, picks a hidden twist and springs it on you early
+- Play it live: from any place's end card, play it again with no script at all, somewhere of the same kind (the noodle shop might become a baozi stall or a jianbing cart). Claude plays the other person, picks a hidden twist and springs it on you early
+- A calm side list: Practice tools sit in the order you'd use them on a real day, and places live in folders (Eat and drink, Get around, Shop, Sort things out, Meet people), one open at a time, easiest first, with a Next up marker. Each place stands for a kind of place, so the list can grow without getting busy
 - A phrasebook of every line that worked, from the places you've survived
 - Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note
 - Pinyin toggle, tap-to-translate, and spoken audio through the browser's Chinese voice when it has one

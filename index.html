@@ -84,6 +84,8 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
   .rail { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
   .rail h2, .rail .rail-group { display: none; }
   .scn { flex: 0 0 auto; min-width: 150px; }
+  .folder { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); padding: 8px 12px; align-items: center; }
+  .folder .f-next { display: none; }
 }
 
 /* Scene */
@@ -192,6 +194,19 @@ body.hint-off .opt .en-line { display: none; }
 .pt-hint { font-size: 12px; color: var(--muted); }
 .small { font-size: 13px; padding: 6px 10px; }
 .scn.review { border-style: dashed; }
+/* Practice tools: compact, so places stay the main thing */
+.scn.tool { padding: 7px 10px; gap: 0 10px; }
+.scn.tool .han { font-size: 18px; }
+.scn.tool .meta { font-size: 11.5px; }
+/* Place folders: one open at a time */
+.folder { text-align: left; border: 0; border-top: 1px solid var(--line); background: none; padding: 10px 2px 4px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 0 8px; align-items: baseline; }
+.folder .f-name { font-weight: 600; font-size: 14px; }
+.folder .f-count { font-size: 12px; color: var(--muted); }
+.folder .f-next { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.folder .f-chev { display: inline-block; width: 12px; color: var(--muted); transition: transform .15s; }
+.folder[aria-expanded="true"] .f-chev { transform: rotate(90deg); }
+.folder:hover .f-name { text-decoration: underline; text-underline-offset: 3px; }
+.next-up { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--jade); border: 1px solid var(--jade); border-radius: 999px; padding: 0 6px; margin-left: 4px; }
 .rail .rail-sub { margin-top: 10px; }
 .pb { display: flex; flex-direction: column; gap: 6px; }
 .pb-title { margin: 6px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
@@ -475,68 +490,79 @@ function setHead(place, py, en, goalLabel, goal) {
 }
 
 const GROUPS = [
-  { name: "Eating and drinking", ids: ["noodles", "dumplings", "hotpot", "tea", "cafe", "bill", "delivery"] },
-  { name: "Getting around", ids: ["taxi", "metro", "train", "directions", "bike", "toilet"] },
-  { name: "Shopping", ids: ["market", "fruit", "store", "return", "haircut"] },
-  { name: "Sorting things out", ids: ["hotel", "landlord", "parcel", "sim", "pharmacy", "clinic", "lost"] },
-  { name: "People", ids: ["friend", "wechat", "photo"] },
-  { name: "Your places, from wandering", get ids() { return S.filter(s => s.custom).map(s => s.id); } }
+  // Each folder runs from what you need on day one to what comes up later
+  { key: "eat", name: "Eat and drink", ids: ["noodles", "dumplings", "cafe", "tea", "hotpot", "bill", "delivery"] },
+  { key: "move", name: "Get around", ids: ["directions", "toilet", "taxi", "metro", "bike", "train"] },
+  { key: "shop", name: "Shop", ids: ["store", "fruit", "market", "return", "haircut"] },
+  { key: "sort", name: "Sort things out", ids: ["sim", "hotel", "pharmacy", "parcel", "lost", "clinic", "landlord"] },
+  { key: "people", name: "Meet people", ids: ["friend", "wechat", "photo"] },
+  { key: "mine", name: "Your places, from wandering", get ids() { return S.filter(s => s.custom).map(s => s.id); } }
 ];
+const groupOf = id => (GROUPS.find(g => g.ids.includes(id)) || { key: "more" }).key;
+let railOpen = (() => { try { return localStorage.getItem("sm-rail-open"); } catch { return null; } })();
+function setRailOpen(k) { railOpen = k; try { localStorage.setItem("sm-rail-open", k || ""); } catch {} }
 function railOrder() {
   const ids = GROUPS.flatMap(g => g.ids);
   return ids.map(id => S.find(s => s.id === id)).filter(Boolean).concat(S.filter(s => !ids.includes(s.id)));
 }
 function renderRail() {
-  const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub, .rail-group").forEach(n => n.remove());
+  const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub, .rail-group, .folder").forEach(n => n.remove());
   const due = dueItems().length, active = activeItems().length;
-  const rv = el("button", "scn review"); rv.setAttribute("aria-current", mode === "review" ? "true" : "false");
+  const rv = el("button", "scn review tool"); rv.setAttribute("aria-current", mode === "review" ? "true" : "false");
   rv.append(el("span", "han", "复习"), el("span", "name", "Mistakes that came back"));
   rv.append(el("span", "meta", due ? `${due} due now` : active ? "Nothing due yet" : "No mistakes yet"));
   rv.onclick = () => startReview();
-  const dr = el("button", "scn review"); dr.setAttribute("aria-current", mode === "drill" || mode === "reader" ? "true" : "false");
+  const dr = el("button", "scn review tool"); dr.setAttribute("aria-current", mode === "drill" || mode === "reader" ? "true" : "false");
   dr.append(el("span", "han", "数字"), el("span", "name", "Numbers by ear"), el("span", "meta", "Prices, phone numbers, times"));
   dr.onclick = () => startDrill();
-  const pb = el("button", "scn review"); pb.setAttribute("aria-current", mode === "phrases" ? "true" : "false");
+  const pb = el("button", "scn review tool"); pb.setAttribute("aria-current", mode === "phrases" ? "true" : "false");
   const nDone = S.filter(s => done[s.id]).length;
   pb.append(el("span", "han", "短语"), el("span", "name", "Your phrasebook"), el("span", "meta", nDone ? `Lines from ${plural(nDone, "place")}` : "Fills up as you survive places"));
   pb.onclick = () => startPhrasebook();
-  const ea = el("button", "scn review"); ea.setAttribute("aria-current", mode === "ears" ? "true" : "false");
+  const ea = el("button", "scn review tool"); ea.setAttribute("aria-current", mode === "ears" ? "true" : "false");
   ea.append(el("span", "han", "听错"), el("span", "name", "Sound-alikes"), el("span", "meta", "One tone off, a different word"));
   ea.onclick = () => startEars();
-  const tr = el("button", "scn review"); tr.setAttribute("aria-current", mode === "trip" ? "true" : "false");
+  const tr = el("button", "scn review tool"); tr.setAttribute("aria-current", mode === "trip" ? "true" : "false");
   const today = trip.day === dayKey() && trip.ids.length;
   tr.append(el("span", "han", "出门"), el("span", "name", "Heading out"), el("span", "meta", today ? `Ready for ${plural(trip.ids.length, "place")} today` : "Prep where you're going today"));
   tr.onclick = () => startTrip();
+  // In the order you'd use them on a real day: before you go, after a slip, sharpening up, keeping what you learn
   rail.append(tr, rv, dr, ea, pb);
   if (sample) {
-    const wd = el("button", "scn review"); wd.setAttribute("aria-current", mode === "wander" ? "true" : "false");
+    const wd = el("button", "scn review tool"); wd.setAttribute("aria-current", mode === "wander" ? "true" : "false");
     wd.append(el("span", "han", "随便逛"), el("span", "name", "Wander"), el("span", "meta", "Claude makes up a new situation"));
     wd.onclick = () => startWander();
     rail.append(wd);
   }
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
   rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived${nMast ? ` · ${nMast} mastered` : ""}` : "Places"));
-  const placeBtn = s => {
+  const placeBtn = (s, next) => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
     b.append(el("span", "han", s.place), el("span", "name", s.en));
     const meta = el("span", "meta");
     if (done[s.id]) meta.append(marksEl(s.id), miss ? ` ${plural(miss, "mistake")}` : "");
     else meta.append(miss ? `${plural(miss, "mistake")} so far` : "Not tried yet");
+    if (next) meta.append(el("span", "next-up", "Next up"));
     b.append(meta);
     b.onclick = () => start(s.id);
     return b;
   };
-  const seen = new Set();
-  GROUPS.forEach(g => {
-    const list = g.ids.map(id => S.find(s => s.id === id)).filter(Boolean);
-    if (!list.length) return;
-    const n = list.filter(s => done[s.id]).length;
-    rail.append(el("h3", "rail-group", g.name + (n ? ` · ${n}/${list.length}` : "")));
-    list.forEach(s => { seen.add(s.id); rail.append(placeBtn(s)); });
+  const seen = new Set(GROUPS.flatMap(g => g.ids));
+  const folders = GROUPS.map(g => ({ key: g.key, name: g.name, list: g.ids.map(id => S.find(s => s.id === id)).filter(Boolean) }))
+    .concat([{ key: "more", name: "More", list: S.filter(s => !seen.has(s.id)) }]).filter(f => f.list.length);
+  // Only one folder open at a time, so the list stays calm however many places there are
+  if (!folders.some(f => f.key === railOpen)) setRailOpen(mode === "scene" && cur ? groupOf(cur.id) : (folders.find(f => f.list.some(s => !done[s.id])) || folders[0]).key);
+  folders.forEach(f => {
+    const n = f.list.filter(s => done[s.id]).length, next = f.list.find(s => !done[s.id]), open = f.key === railOpen;
+    const h = el("button", "folder"); h.setAttribute("aria-expanded", open ? "true" : "false");
+    const nm = el("span", "f-name"); nm.append(el("span", "f-chev", "›"), " " + f.name);
+    h.append(nm, el("span", "f-count", n === f.list.length ? "All survived" : `${n} of ${f.list.length}`));
+    if (!open && next) h.append(el("span", "f-next", `Next up: ${next.en}`));
+    h.onclick = () => { setRailOpen(open ? "" : f.key); renderRail(); };
+    rail.append(h);
+    if (open) f.list.forEach(s => rail.append(placeBtn(s, s === next)));
   });
-  const rest = S.filter(s => !seen.has(s.id));
-  if (rest.length) { rail.append(el("h3", "rail-group", "More")); rest.forEach(s => rail.append(placeBtn(s))); }
   // On a phone the rail is a sideways strip: keep the current place in view without moving the page
   const on = rail.querySelector('.scn[aria-current="true"]');
   if (on && rail.scrollWidth > rail.clientWidth) rail.scrollLeft = Math.max(0, on.offsetLeft - rail.offsetLeft - 16);
@@ -544,7 +570,7 @@ function renderRail() {
 
 /* ---------- scenes ---------- */
 function start(id) {
-  mode = "scene";
+  mode = "scene"; if (groupOf(id) !== railOpen) setRailOpen(groupOf(id));
   const base = S.find(s => s.id === id);
   turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
   // Each run gets its own copy of the turns, with surprises slipped in: real life never goes the same way twice
@@ -851,7 +877,7 @@ function renderEnd() {
   const next = after.find(x => !done[x.id]) || after[0];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
   row.append(again, nx);
-  if (sample && !cur._rematch) { const live = el("button", "btn ghost", "Play it live, unscripted"); live.onclick = () => startLive(cur.id); row.append(live); }
+  if (sample && !cur._rematch) { const live = el("button", "btn ghost", "Play it live, somewhere like this"); live.onclick = () => startLive(cur.id); row.append(live); }
   if (S.find(x => x.id === cur.id).custom) {
     const rm = el("button", "btn ghost", "Remove this place");
     rm.onclick = () => {
@@ -1661,12 +1687,16 @@ async function startLive(id) {
   renderRail(); renderMove();
   const prompt = `Set up a fresh, unscripted version of this everyday situation in mainland China for a beginner Mandarin learner: ${base.en} (${base.place}), talking to ${base.whoEn} (${base.who}). Their goal: ${base.goal}
 The scripted version goes like this, so make this one feel different: ${base.turns.map(t => t.npc ? t.npc[2] : t.prompt).join(" / ")}
+Each practice place stands for a whole kind of place, so this time set it somewhere else of the same kind that a visitor really meets (for a noodle shop: a baozi stall, a jianbing cart, a malatang shop; for a taxi: a ride-hailing car, a pedicab), where the same skills work. Keep the goal the same in spirit, adjusted to the new place.
 Pick a realistic twist that will come up early (something unexpected: a question they won't expect, a problem, a custom, a chatty or rushed person). Don't reveal it in the intro.
-Return ONLY JSON: "intro" (one or two plain-English sentences setting the scene, slightly different from usual), "twist" (one short private sentence describing the twist, for the role-player), "opening_hanzi" (the other person's first line, short spoken simplified Chinese), "opening_pinyin", "opening_english".`;
+Return ONLY JSON: "place_hanzi" (2 to 4 characters), "place_pinyin", "place_english" (2 to 4 words), "who_hanzi" (2 to 3 characters), "who_english", "goal" (one plain-English sentence), "intro" (one or two plain-English sentences setting the scene), "twist" (one short private sentence describing the twist, for the role-player), "opening_hanzi" (the other person's first line, short spoken simplified Chinese), "opening_pinyin", "opening_english".`;
   try {
     const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
-    cur = { id: "wander", live: base.id, twist: r.twist || "", place: base.place, placePy: base.placePy, en: base.en, who: base.who, whoEn: base.whoEn, goal: base.goal, intro: r.intro || base.intro, turns: [] };
-    $("#log").textContent = ""; addNarr(cur.intro);
+    const moved = r.place_hanzi && r.place_english;
+    cur = { id: "wander", live: base.id, twist: r.twist || "", place: moved ? String(r.place_hanzi).slice(0, 5) : base.place, placePy: moved ? r.place_pinyin || "" : base.placePy, en: moved ? r.place_english : base.en,
+      who: moved && r.who_hanzi ? String(r.who_hanzi).slice(0, 3) : base.who, whoEn: moved && r.who_english ? r.who_english : base.whoEn, goal: r.goal || base.goal, intro: r.intro || base.intro, turns: [] };
+    setHead(cur.place, cur.placePy, cur.en + ", live", "Your goal: ", cur.goal);
+    $("#log").textContent = ""; addNarr(cur.intro + (moved && cur.en !== base.en ? ` Same skills as the ${base.en.toLowerCase()}, different place.` : ""));
     addNpc([r.opening_hanzi, r.opening_pinyin, r.opening_english]);
     wTranscript.push({ who: "npc", text: r.opening_hanzi });
   } catch (e) {
@@ -1709,7 +1739,7 @@ function renderWanderMove() {
   if (wDone) {
     head.append(el("h3", null, wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
     const row = el("div", "endcard");
-    if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", "Live again, something else will happen"); again.onclick = () => startLive(lv); row.append(again); }
+    if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
     else if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
     if (sample && wTranscript.length >= 4 && !cur.saved && !cur.live) { const keep = el("button", "btn ghost", "Turn this into a practice place"); keep.onclick = () => saveWander(keep); row.append(keep); }
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
