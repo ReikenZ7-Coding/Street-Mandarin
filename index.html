@@ -155,6 +155,8 @@ body.hint-off .opt .en-line { display: none; }
 .btn[disabled] { opacity: 0.5; cursor: default; }
 .free-note { font-size: 12px; color: var(--muted); margin: -4px 0 0; }
 .endcard { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ghost { align-self: center; font-size: 13px; color: var(--ochre); border: 1px dashed var(--ochre); border-radius: 999px; padding: 3px 12px; }
+.ghost .han-inline { font-family: var(--f-han); font-weight: 600; text-decoration: line-through; }
 .thinking { color: var(--muted); font-size: 14px; font-style: italic; }
 
 /* Notebook */
@@ -173,6 +175,16 @@ body.hint-off .opt .en-line { display: none; }
 .nb-item .why { color: var(--muted); font-size: 13px; }
 .nb-empty { color: var(--muted); font-size: 14px; }
 .nb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.patterns { display: flex; flex-direction: column; gap: 6px; padding: 10px 0 4px; border-top: 1px solid var(--line); }
+.pt-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.pt-row { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 2px 8px; align-items: baseline; text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 8px; }
+.pt-row:hover { border-color: var(--fg); }
+.pt-zh { font-family: var(--f-han); font-weight: 900; color: var(--cinnabar); }
+.pt-en { font-size: 13px; font-weight: 600; }
+.pt-n { font-size: 12px; color: var(--muted); }
+.pt-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.pt-bar i { display: block; height: 100%; background: var(--cinnabar); border-radius: 2px; }
+.pt-hint { font-size: 12px; color: var(--muted); }
 .small { font-size: 13px; padding: 6px 10px; }
 .scn.review { border-style: dashed; }
 .rail .rail-sub { margin-top: 10px; }
@@ -240,6 +252,7 @@ body.hint-off .opt .en-line { display: none; }
     <aside class="notebook" aria-label="Mistake notebook">
       <div class="nb-head"><span class="nb-title">错题本</span><span class="nb-count" id="nb-count">0</span></div>
       <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you got wrong lands here, then comes back to test you after 1, 3 and 7 days.</p>
+      <div id="nb-patterns"></div>
       <div class="nb-list" id="nb-list"></div>
       <div class="nb-actions" id="nb-actions"></div>
     </aside>
@@ -285,7 +298,8 @@ if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 /* ---------- state ---------- */
 let mode = "scene"; // "scene" | "review" | "drill" | "phrases"
 let cur = null, turn = 0, order = [], busy = false, finished = false;
-let flags = {}, outcomes = [], curveball = null;  // consequences that carry through a scene; a replay surprise
+let flags = {}, outcomes = [], curveball = null, runMisses = [];
+let ghost = store.get("sm-ghost", {}); // what you said last time at moments that went wrong  // consequences that carry through a scene; a replay surprise
 let transcript = []; // [{who:'npc'|'me', text}] for Claude context
 const $ = s => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
@@ -461,7 +475,7 @@ function renderRail() {
 function start(id) {
   mode = "scene";
   const base = S.find(s => s.id === id);
-  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null;
+  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = [];
   // Each run gets its own copy of the turns, so a curveball can be slipped in on a replay
   const turns = base.turns.map((t, i) => Object.assign({}, t, { _orig: i }));
   if (done[id] && base.curveballs && base.curveballs.length && Math.random() < 0.6) {
@@ -477,10 +491,13 @@ function start(id) {
   renderRail(); beginTurn();
 }
 
+const moveKey = t => t._cb != null ? "c" + t._cb : "t" + t._orig;
 function beginTurn() {
   const t = cur.turns[turn];
   const alt = t.npcAlt && Object.keys(t.npcAlt).find(f => flags[f]);
   if (t.npc) addNpc(alt ? t.npcAlt[alt] : t.npc);
+  const last = (ghost[cur.id] || {})[moveKey(t)];
+  if (last) { const g = el("div", "ghost"); g.append("Last time here you said ", el("span", "han-inline", last.replace(/[。！？.!?]+$/, "")), ". This time?"); $("#log").append(g); scrollLog(); }
   order = shuffle(t.opts);
   renderMove();
 }
@@ -491,6 +508,7 @@ function renderMove() {
   if (mode === "phrases") return renderPhrasesMove();
   if (mode === "wander") return renderWanderMove();
   if (mode === "ears") return renderEarsMove();
+  if (mode === "pattern") return renderPatternMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
@@ -638,8 +656,13 @@ function optionButtons(list, onPick) {
   return opts;
 }
 
+function clearGhost() {
+  const t = cur.turns[turn], g = ghost[cur.id];
+  if (t && g && g[moveKey(t)] && !runMisses.includes(t)) { delete g[moveKey(t)]; store.set("sm-ghost", ghost); }
+}
 function choose(o) {
   if (busy) return;
+  if (o.k === "good") clearGhost();
   if (o.quiet) return advance();
   addMe(o.h, o.p, o.e, o.k);
   if (o.r) addNpc(o.r);
@@ -669,10 +692,19 @@ function finish(cutShort) {
   done[cur.id] = true; store.set("sm-done", done); renderRail(); renderMove();
 }
 
+function rematch() {
+  // Just the moments that went wrong, straight away, while the mistake is fresh
+  const base = S.find(s => s.id === cur.id), turns = runMisses.map(t => Object.assign({}, t));
+  mode = "scene"; turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = [];
+  cur = Object.assign({}, base, { turns, _rematch: true });
+  setHead(cur.place, cur.placePy, cur.en, "Rematch: ", turns.length === 1 ? "the one moment that went wrong. Get it right this time." : `the ${turns.length} moments that went wrong. Get them right this time.`);
+  $("#log").textContent = ""; addNarr("Same place, same people. Only the moments you missed.");
+  renderRail(); beginTurn();
+}
 function renderEnd() {
   const m = $("#move");
   const head = el("div", "move-head");
-  head.append(el("h3", null, outcomes.length ? "You made it, at a price" : "You survived"));
+  head.append(el("h3", null, cur._rematch ? (runMisses.length ? "Rematch over, still a slip or two" : "Rematch won") : outcomes.length ? "You made it, at a price" : "You survived"));
   const res = el("div", "outcome");
   if (outcomes.length) {
     res.append(el("div", "outcome-title", "How it went"));
@@ -682,6 +714,11 @@ function renderEnd() {
   if (curveball) res.append(el("p", null, "This run had a curveball: " + curveball.what + ". Replays can surprise you."));
   else if (S.find(x => x.id === cur.id).curveballs) res.append(el("p", null, "Replay it: real life doesn't follow the script, and next time this place might not either."));
   const row = el("div", "endcard");
+  if (runMisses.length) {
+    const rm = el("button", "btn", runMisses.length === 1 ? "Rematch the moment you missed" : `Rematch the ${runMisses.length} moments you missed`);
+    rm.onclick = () => rematch();
+    row.append(rm);
+  }
   const again = el("button", "btn ghost", "Play it again"); again.onclick = () => start(cur.id);
   const ord = railOrder(), at = ord.findIndex(x => x.id === cur.id);
   const after = ord.slice(at + 1).concat(ord.slice(0, at));
@@ -699,6 +736,11 @@ const dueItems = () => activeItems().filter(n => (n.due || 0) <= Date.now());
 function saveNotebook() { store.set("sm-notebook", notebook); renderNotebook(); renderRail(); }
 function logMistake(entry) {
   const now = Date.now();
+  if (mode === "scene" && cur && cur.turns && cur.turns[turn]) {
+    const t = cur.turns[turn];
+    if (!runMisses.includes(t)) runMisses.push(t);
+    (ghost[cur.id] = ghost[cur.id] || {})[moveKey(t)] = entry.said; store.set("sm-ghost", ghost);
+  }
   const same = notebook.find(n => !n.learned && n.sid === entry.sid && n.said === entry.said);
   if (same) notebook.splice(notebook.indexOf(same), 1);
   notebook.unshift(Object.assign(entry, { t: now, step: 0, due: now + GAPS[0] * DAY }));
@@ -719,6 +761,7 @@ let confirmClear = false;
 function renderNotebook() {
   $("#nb-count").textContent = activeItems().length;
   const list = $("#nb-list"); list.textContent = "";
+  const pbox = $("#nb-patterns"); pbox.textContent = ""; renderPatterns(pbox);
   if (!notebook.length) list.append(el("div", "nb-empty", "Empty for now. Pick a wrong answer on purpose if you're curious what happens; that's the point."));
   notebook.forEach(n => {
     const s = S.find(x => x.id === n.sid);
@@ -988,6 +1031,103 @@ function renderEarsMove() {
     list.append(btn);
   });
   m.append(list);
+}
+/* ---------- mistake patterns: what kind of mistake you keep making, and a drill for it ---------- */
+const PATTERNS = [
+  { id: "sounds", zh: "发音", en: "Tones and sound-alikes", tip: "One tone or sound off turns it into a different word." },
+  { id: "numbers", zh: "数字", en: "Numbers and prices", tip: "Ten-eight is 18, eight-ten is 80. Counting uses 两." },
+  { id: "agreeing", zh: "答应", en: "Saying yes by accident", tip: "Repeating a word, or 好的, agrees to it." },
+  { id: "listening", zh: "听懂", en: "Missing what they asked", tip: "Answer the question they asked, not the one you expected." },
+  { id: "grammar", zh: "语法", en: "Building the sentence", tip: "是 links two equal things; most sentences need a real verb." },
+  { id: "where", zh: "方向", en: "Places and directions", tip: "楼 floor, 号 number, 旁边 next to, 里面 inside." },
+  { id: "words", zh: "用词", en: "The wrong word", tip: "Close in meaning isn't the same word." },
+  { id: "manners", zh: "语气", en: "Too blunt", tip: "一下, 能…吗 and 不用了 soften almost anything." }
+];
+const scriptedTurn = (s, n) => s && (n.cb != null && s.curveballs ? (s.curveballs[n.cb] || {}).turn : n.turn != null ? s.turns[n.turn] : null);
+function tagOf(n) {
+  if (n.tag) return n.tag;
+  if (n.sid === "ears") return "sounds";
+  const t = scriptedTurn(S.find(x => x.id === n.sid), n);
+  const o = t && t.opts.find(o => o.h === n.said);
+  return o && o.tag || null;
+}
+function patternCounts() {
+  const c = {};
+  notebook.forEach(n => { const g = tagOf(n); if (!g) return; c[g] = c[g] || { all: 0, open: 0 }; c[g].all++; if (!n.learned) c[g].open++; });
+  return c;
+}
+function renderPatterns(box) {
+  const c = patternCounts(), list = PATTERNS.filter(p => c[p.id]).sort((a, b) => c[b.id].open - c[a.id].open || c[b.id].all - c[a.id].all);
+  if (list.reduce((t, p) => t + c[p.id].all, 0) < 2) return;
+  const wrap = el("div", "patterns");
+  wrap.append(el("div", "pt-title", "What keeps tripping you up"));
+  const max = Math.max(...list.map(p => c[p.id].all));
+  list.slice(0, 4).forEach(p => {
+    const row = el("button", "pt-row"); row.title = p.tip;
+    const bar = el("span", "pt-bar"); const fill = el("i"); fill.style.width = Math.round(100 * c[p.id].all / max) + "%"; bar.append(fill);
+    row.append(el("span", "pt-zh", p.zh), el("span", "pt-en", p.en), el("span", "pt-n", c[p.id].open ? `${c[p.id].open} open` : "all learned"), bar);
+    row.onclick = () => startPattern(p.id);
+    row.setAttribute("aria-label", `${p.en}: ${c[p.id].all} mistakes. Drill this pattern`);
+    wrap.append(row);
+  });
+  wrap.append(el("div", "pt-hint", "Tap one to drill that kind of moment, from every place."));
+  box.append(wrap);
+}
+let pq = [], pi = 0, pRight = 0, pAnswered = false, pPat = null;
+function startPattern(id) {
+  const p = PATTERNS.find(x => x.id === id); if (!p) return;
+  mode = "pattern"; busy = false; transcript = []; pPat = p;
+  // Every scripted moment that has a trap of this kind, places you've played first
+  const items = [];
+  S.forEach(s => {
+    s.turns.forEach((t, i) => { if (t.opts.some(o => o.k !== "good" && o.tag === id)) items.push({ sid: s.id, turn: i, cb: null }); });
+    (s.curveballs || []).forEach((cb, i) => { if (cb.turn.opts.some(o => o.k !== "good" && o.tag === id)) items.push({ sid: s.id, turn: null, cb: i }); });
+  });
+  const played = new Set(notebook.map(n => n.sid).concat(Object.keys(done)));
+  pq = shuffle(items.filter(x => played.has(x.sid))).concat(shuffle(items.filter(x => !played.has(x.sid)))).slice(0, 8);
+  pq = shuffle(pq); pi = 0; pRight = 0;
+  setHead(p.zh, "", p.en, "The trap: ", p.tip);
+  $("#log").textContent = "";
+  addNarr(`${pq.length} moments from different places, each with a trap of this kind. Spot it.`);
+  renderRail(); patternItem();
+}
+function patternItem() {
+  pAnswered = false;
+  const it = pq[pi], s = S.find(x => x.id === it.sid), t = scriptedTurn(s, it);
+  cur = s;
+  addNarr(`${s.en}. ${t.prompt}`);
+  if (t.npc) addNpc(t.npc);
+  order = shuffle(t.opts);
+  renderMove();
+}
+function patternChoose(o) {
+  const it = pq[pi];
+  pAnswered = true;
+  addMe(o.h, o.p, o.e, o.k);
+  if (o.k !== "good" && o.r) addNpc(o.r);
+  addFeedback(o.k, o.note, o.fix, o.k === "good" ? null : { label: o.tag === pPat.id ? "That's the trap" : undefined });
+  if (o.k === "good") pRight++;
+  else logMistake({ sid: it.sid, turn: it.turn, cb: it.cb, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note });
+  renderMove();
+}
+function renderPatternMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  if (pi >= pq.length) {
+    head.append(el("h3", null, "Drill done"), el("span", "prompt", `${pRight} of ${pq.length} clean.`));
+    const row = el("div", "endcard");
+    const again = el("button", "btn", "Another round"); again.onclick = () => startPattern(pPat.id);
+    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    row.append(again, back); m.append(head, row); return;
+  }
+  head.append(el("h3", null, `Moment ${pi + 1} of ${pq.length}`), el("span", "prompt", "What do you say?"));
+  m.append(head);
+  if (pAnswered) {
+    const nx = el("button", "btn", pi + 1 < pq.length ? "Next moment" : "See how you did");
+    nx.onclick = () => { pi++; if (pi < pq.length) patternItem(); else { addNarr(`Done: ${pRight} of ${pq.length} clean.`); renderMove(); } };
+    const row = el("div", "endcard"); row.append(nx); m.append(row); return;
+  }
+  m.append(optionButtons(order, patternChoose));
 }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 

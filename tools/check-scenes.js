@@ -1,6 +1,7 @@
 // Sanity-checks scenes.js: run `node tools/check-scenes.js` after adding or editing a place.
 global.window = {};
 require("../scenes.js");
+const TAGS = ["sounds", "numbers", "agreeing", "listening", "grammar", "where", "words", "manners"];
 const S = window.SCENES, ids = new Set(), problems = [];
 const strip = h => h.replace(/[，。！？、,.!?…“”"'：:；;（）() ]/g, "");
 const line = (x, where) => { if (!Array.isArray(x) || x.length !== 3 || x.some(v => typeof v !== "string")) problems.push(`${where}: expected [hanzi, pinyin, English]`); };
@@ -15,6 +16,7 @@ function checkTurn(t, where, flags) {
     for (const f of ["h", "p", "e", "k", "note"]) if (!o[f]) problems.push(`${w}: missing ${f}`);
     if (!["good", "okay", "wrong"].includes(o.k)) problems.push(`${w}: k must be good, okay or wrong`);
     if (o.k !== "good" && !o.r && !o.quiet) problems.push(`${w}: not good but has no reaction (r)`);
+    if (o.k !== "good" && !TAGS.includes(o.tag)) problems.push(`${w}: needs a tag, one of ${TAGS.join(", ")}`);
     if (o.r) line(o.r, w + " r");
     if (o.fix && (!Array.isArray(o.fix) || o.fix.length !== 2)) problems.push(`${w}: fix should be [hanzi, pinyin]`);
     if (o.b && o.b.split("|").join("") !== strip(o.h)) problems.push(`${w}: tiles "${o.b}" don't spell the line`);
