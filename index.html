@@ -285,12 +285,21 @@ body.hint-off .opt .en-line { display: none; }
 <script src="scenes.js"></script>
 <script>
 const S = window.SCENES;
+// Places you made from your own wanders live alongside the built-in ones
+const TAGSET = ["sounds", "numbers", "agreeing", "listening", "grammar", "where", "words", "manners"];
+function validScene(x) {
+  const line = l => Array.isArray(l) && l.length === 3 && l.every(v => typeof v === "string" && v);
+  return x && typeof x.id === "string" && x.place && x.en && x.who && x.whoEn && x.goal && x.intro && line(x.end) && Array.isArray(x.turns) && x.turns.length >= 2 &&
+    x.turns.every(t => t.prompt && (t.npc == null || line(t.npc)) && Array.isArray(t.opts) && t.opts.length === 3 && t.opts.some(o => o.k === "good") &&
+      t.opts.every(o => o.h && o.p && o.e && ["good", "okay", "wrong"].includes(o.k) && o.note && (o.k === "good" || line(o.r))));
+}
 
 /* ---------- storage (per-viewer convenience only) ---------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 };
+store.get("sm-custom", []).filter(validScene).forEach(x => { x.custom = true; if (!S.some(s => s.id === x.id)) S.push(x); });
 let notebook = store.get("sm-notebook", []);
 let done = store.get("sm-done", {});
 let days = store.get("sm-days", []), said = store.get("sm-said", 0);
@@ -455,7 +464,8 @@ const GROUPS = [
   { name: "Getting around", ids: ["taxi", "metro", "train", "directions", "bike", "toilet"] },
   { name: "Shopping", ids: ["market", "fruit", "store", "return", "haircut"] },
   { name: "Sorting things out", ids: ["hotel", "landlord", "parcel", "sim", "pharmacy", "clinic", "lost"] },
-  { name: "People", ids: ["friend", "wechat", "photo"] }
+  { name: "People", ids: ["friend", "wechat", "photo"] },
+  { name: "Your places, from wandering", get ids() { return S.filter(s => s.custom).map(s => s.id); } }
 ];
 function railOrder() {
   const ids = GROUPS.flatMap(g => g.ids);
@@ -786,6 +796,14 @@ function renderEnd() {
   const next = after.find(x => !done[x.id]) || after[0];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
   row.append(again, nx);
+  if (S.find(x => x.id === cur.id).custom) {
+    const rm = el("button", "btn ghost", "Remove this place");
+    rm.onclick = () => {
+      const id = cur.id; store.set("sm-custom", store.get("sm-custom", []).filter(x => x.id !== id));
+      S.splice(S.findIndex(x => x.id === id), 1); start(lastScene());
+    };
+    row.append(rm);
+  }
   m.append(head, res, row);
   renderFree(m);
 }
@@ -1563,6 +1581,7 @@ function renderWanderMove() {
     head.append(el("h3", null, wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
     const row = el("div", "endcard");
     if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
+    if (sample && wTranscript.length >= 4 && !cur.saved) { const keep = el("button", "btn ghost", "Turn this into a practice place"); keep.onclick = () => saveWander(keep); row.append(keep); }
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
     row.append(back); m.append(head, row);
     if (sample) {
@@ -1593,6 +1612,35 @@ function renderWanderMove() {
   const row = el("div", "endcard"); row.append(end);
   m.append(head, form, row);
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+}
+async function saveWander(btn) {
+  btn.disabled = true; btn.textContent = "Writing it up…";
+  const convo = wTranscript.map(x => (x.who === "npc" ? cur.who + ": " : "Learner: ") + x.text).join("\n");
+  const prompt = `Turn this role-play into a short scripted practice scene for a beginner Mandarin learner, in the exact JSON shape below. Keep the same place, person and goal, and build the moments around what actually happened, especially where the learner went wrong.
+Place: ${cur.en} (${cur.place}). Person: ${cur.whoEn} (${cur.who}). Goal: ${cur.goal}
+Conversation:
+${convo}
+
+Return ONLY JSON:
+{"place": hanzi 2-4 chars, "placePy": pinyin, "en": English name 2-4 words, "who": hanzi 2-3 chars, "whoPy", "whoEn": e.g. "the clerk", "goal": one sentence, "intro": one or two sentences,
+ "turns": [3 items, each {"npc": [hanzi, pinyin, English] or null for the first if the learner speaks first, "prompt": what the learner must do, in English,
+   "opts": exactly 3 options, each {"h": hanzi, "p": pinyin with tone marks, "e": English, "k": "good"|"okay"|"wrong", "note": one or two coaching sentences naming the key word with pinyin,
+     and for okay/wrong also "r": [hanzi, pinyin, English] the person's in-character reaction, "fix": [hanzi, pinyin], "tag": one of ${TAGSET.join(", ")}}.
+   Exactly one good option per turn; for that good option add "b": its hanzi split into 2 to 5 word tiles with "|" (tiles joined must equal h without punctuation)}],
+ "end": [hanzi, pinyin, English] the person's closing line, "endNote": one sentence takeaway}
+Use natural spoken simplified Chinese a beginner can follow, with realistic mistakes.`;
+  try {
+    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
+    const sc = Object.assign({}, r, { id: "my-" + Date.now().toString(36), custom: true });
+    (sc.turns || []).forEach(t => (t.opts || []).forEach(o => { if (o.b && o.b.split("|").join("") !== normHan(o.h)) delete o.b; if (o.k !== "good" && !TAGSET.includes(o.tag)) o.tag = "words"; }));
+    if (!validScene(sc)) throw new Error("shape");
+    const list = store.get("sm-custom", []); list.push(sc); store.set("sm-custom", list.slice(-12));
+    S.push(sc); cur.saved = true;
+    addNarr(`Saved as a place: ${sc.en}. It's in your list under "Your places", ready to replay like any other.`);
+    renderRail(); renderMove();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = e && e.code === "rate_limited" ? "Busy, try again in a moment" : "Couldn't write it up. Try again?";
+  }
 }
 async function wanderSay(text) {
   if (busy) return;
