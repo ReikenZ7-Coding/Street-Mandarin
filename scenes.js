@@ -772,5 +772,80 @@ window.SCENES = [
         ] }
     ],
     end: ["好，微信上聊！", "Hǎo, Wēixìn shang liáo!", "OK, chat on WeChat!"],
-    endNote: "加微信 is the handshake of modern China. 扫一扫 is scan; 二维码 is the QR code; 常联系 is keep in touch." }
+    endNote: "加微信 is the handshake of modern China. 扫一扫 is scan; 二维码 is the QR code; 常联系 is keep in touch." },
+  { id: "hotpot", place: "火锅", placePy: "huǒguō", en: "Hotpot", who: "服务员", whoPy: "fúwùyuán", whoEn: "the waiter",
+    goal: "Order a hotpot you can actually eat: half spicy, half not.",
+    intro: "A packed Chongqing-style hotpot place. The air itself is spicy. A waiter arrives with an iPad.",
+    turns: [
+      { npc: ["几位？锅底要什么？", "Jǐ wèi? Guōdǐ yào shénme?", "How many? Which broth?"], prompt: "Say two people, and ask for a split pot.",
+        opts: [
+          { h: "两位。要鸳鸯锅。", b: "两位|要|鸳鸯锅", p: "Liǎng wèi. Yào yuānyang guō.", e: "Two. A split pot, please.", k: "good", note: "位 wèi is the polite measure word for people. 鸳鸯锅 yuānyang guō (\"mandarin-duck pot\") is the half-spicy, half-plain pot." },
+          { h: "两个人。一半辣一半不辣。", p: "Liǎng ge rén. Yíbàn là yíbàn bú là.", e: "Two people. Half spicy, half not.", k: "good", note: "Describing it works perfectly. The menu name is 鸳鸯锅 yuānyang guō." },
+          { h: "两位。要红锅。", p: "Liǎng wèi. Yào hóng guō.", e: "Two. The red pot.", k: "wrong", carry: "Faced a full pot of chilli oil", r: ["红锅，好的！", "Hóng guō, hǎo de!", "Red pot, sure!"], note: "红锅 hóng guō is the all-spicy red broth. Half and half is 鸳鸯锅.", fix: ["要鸳鸯锅。", "Yào yuānyang guō."] }
+        ] },
+      { npc: ["红锅要什么辣度？微辣、中辣、特辣。", "Hóng guō yào shénme làdù? Wēi là, zhōng là, tè là.", "How spicy for the red side? Mild, medium, extra."], prompt: "Go for mild.",
+        opts: [
+          { h: "微辣。", b: "微辣", p: "Wēi là.", e: "Mild.", k: "good", note: "微 wēi means slight. A warning: in Sichuan and Chongqing, 微辣 is still properly spicy." },
+          { h: "特辣！", p: "Tè là!", e: "Extra spicy!", k: "wrong", carry: "Cried a little into the extra-spicy broth", r: ["特辣？你确定？好……", "Tè là? Nǐ quèdìng? Hǎo…", "Extra? You sure? OK…"], note: "特 tè is \"especially\". The waiter's \"are you sure?\" was a warning.", fix: ["微辣。", "Wēi là."] },
+          { h: "不辣。", p: "Bú là.", e: "Not spicy.", k: "okay", r: ["红锅没有不辣的，最少微辣。", "Hóng guō méiyǒu bú là de, zuì shǎo wēi là.", "The red side can't be not spicy. Mild at least."], note: "The red side is spicy by definition. The plain side is for 不辣.", fix: ["微辣。", "Wēi là."] }
+        ] },
+      { npc: ["蘸料在那边自己拿，一个人五块。", "Zhànliào zài nàbiān zìjǐ ná, yí ge rén wǔ kuài.", "Dipping sauce is self-serve over there, five kuai each."], prompt: "Check you understood: you get it yourself?",
+        opts: [
+          { h: "我们自己去拿，对吧？", b: "我们|自己|去拿|对吧", p: "Wǒmen zìjǐ qù ná, duì ba?", e: "We go and get it ourselves, right?", k: "good", note: "自己 zìjǐ, yourself. The sauce bar is half the fun: sesame oil, garlic and coriander is the classic." },
+          { h: "你给我们拿吧。", p: "Nǐ gěi wǒmen ná ba.", e: "You get it for us.", k: "wrong", r: ["不好意思，是自助的。", "Bù hǎoyìsi, shì zìzhù de.", "Sorry, it's self-service."], note: "自己拿 zìjǐ ná means help yourself. 自助 zìzhù is self-service.", fix: ["我们自己去拿，对吧？", "Wǒmen zìjǐ qù ná, duì ba?"] },
+          { h: "好的。", p: "Hǎo de.", e: "OK.", k: "good", note: "Fine. Just follow the crowd to the sauce bar." }
+        ] }
+    ],
+    end: ["对。锅开了就可以下菜，慢慢吃！", "Duì. Guō kāi le jiù kěyǐ xià cài, mànmān chī!", "Right. Once it boils, put the food in. Enjoy!"],
+    endNote: "鸳鸯锅 is the safe bet. Spice levels: 微辣 mild, 中辣 medium, 特辣 extra. 位 wèi counts guests politely." },
+  { id: "photo", place: "拍照", placePy: "pāizhào", en: "Taking a photo", who: "游客", whoPy: "yóukè", whoEn: "a tourist",
+    goal: "Get a stranger to take your photo, with the whole tower in it.",
+    intro: "On the Bund at sunset. You want a photo of yourself with the skyline. A friendly-looking tourist walks past.",
+    turns: [
+      { npc: null, prompt: "Ask them to take a photo of you.",
+        opts: [
+          { h: "不好意思，能帮我拍张照吗？", b: "不好意思|能|帮我|拍张照吗", p: "Bù hǎoyìsi, néng bāng wǒ pāi zhāng zhào ma?", e: "Sorry, could you take a photo for me?", k: "good", note: "拍照 pāizhào is to take a photo; 张 zhāng is its measure word. 不好意思 opens any favour." },
+          { h: "拍我。", p: "Pāi wǒ.", e: "Shoot me.", k: "okay", r: ["哦，帮你拍？好吧。", "Ò, bāng nǐ pāi? Hǎo ba.", "Oh, take one of you? OK then."], note: "拍 pāi does mean take a photo, but a bare order to a stranger is blunt. Ask it as a favour: 能帮我拍张照吗？", fix: ["能帮我拍张照吗？", "Néng bāng wǒ pāi zhāng zhào ma?"] },
+          { h: "照片，可以吗？", p: "Zhàopiàn, kěyǐ ma?", e: "Photo, OK?", k: "okay", r: ["你要我帮你拍吗？好啊。", "Nǐ yào wǒ bāng nǐ pāi ma? Hǎo a.", "You want me to take one? Sure."], note: "They worked it out. 帮我拍张照 makes the favour clear.", fix: ["能帮我拍张照吗？", "Néng bāng wǒ pāi zhāng zhào ma?"] },
+        ] },
+      { npc: ["好啊。横的还是竖的？", "Hǎo a. Héng de háishi shù de?", "Sure. Landscape or portrait?"], prompt: "Ask for portrait, with the whole tower in.",
+        opts: [
+          { h: "竖的，把塔都拍进去。", b: "竖的|把塔|都|拍进去", p: "Shù de, bǎ tǎ dōu pāi jìnqù.", e: "Portrait, get the whole tower in.", k: "good", note: "横 héng is horizontal, 竖 shù vertical. 拍进去 pāi jìnqù, \"get it into the shot\"." },
+          { h: "竖的。", p: "Shù de.", e: "Portrait.", k: "good", note: "Clear. Adding 把塔拍进去 saves you a photo with the tower cut off." },
+          { h: "横的，只拍我。", p: "Héng de, zhǐ pāi wǒ.", e: "Landscape, just me.", k: "wrong", carry: "Got a great photo of your face and no tower", r: ["好，只拍你。", "Hǎo, zhǐ pāi nǐ.", "OK, just you."], note: "只拍我 means \"only me\", so the tower's out. You wanted it in: 把塔拍进去.", fix: ["竖的，把塔都拍进去。", "Shù de, bǎ tǎ dōu pāi jìnqù."] }
+        ] },
+      { npc: ["一、二、三，茄子！你看看行不行？", "Yī, èr, sān, qiézi! Nǐ kànkan xíng bu xíng?", "One, two, three, cheese! Have a look, is it OK?"], prompt: "It's great. Thank them.",
+        opts: [
+          { h: "拍得真好，谢谢你！", b: "拍得|真好|谢谢你", p: "Pāi de zhēn hǎo, xièxie nǐ!", e: "That's a really good shot, thank you!", k: "good", note: "Verb + 得 de + how: 拍得真好, \"shot really well\". 茄子 qiézi (aubergine) is China's \"cheese\"." },
+          { h: "茄子！", p: "Qiézi!", e: "Aubergine!", k: "okay", r: ["哈哈，已经拍好了！", "Hāhā, yǐjīng pāi hǎo le!", "Haha, it's already taken!"], note: "That's for smiling, not thanking. Try 拍得真好，谢谢！", fix: ["拍得真好，谢谢你！", "Pāi de zhēn hǎo, xièxie nǐ!"] },
+          { h: "很好看，谢谢！", p: "Hěn hǎokàn, xièxie!", e: "Looks great, thanks!", k: "good", note: "好看 hǎokàn, good-looking. Warm and natural." }
+        ] }
+    ],
+    end: ["不客气！要不要再来一张？", "Bú kèqi! Yào bu yào zài lái yì zhāng?", "No problem! Want another one?"],
+    endNote: "帮我拍张照 is the favour; 横 landscape, 竖 portrait. People say 茄子 qiézi to smile." },
+  { id: "parcel", place: "快递站", placePy: "kuàidì zhàn", en: "Parcel pickup", who: "店员", whoPy: "diànyuán", whoEn: "the clerk",
+    goal: "Collect your online order from the parcel station.",
+    intro: "A tiny shop stacked to the ceiling with parcels. You got a text with a pickup code.",
+    turns: [
+      { npc: ["取件吗？取件码多少？", "Qǔjiàn ma? Qǔjiànmǎ duōshao?", "Picking up? What's the pickup code?"], prompt: "Read your code: 3-1-7-4.",
+        opts: [
+          { h: "三一七四。", b: "三|一|七|四", p: "Sān yāo qī sì.", e: "3-1-7-4.", k: "good", note: "In codes and phone numbers, 1 is read 幺 yāo so it isn't mixed up with 七 qī. The character stays 一." },
+          { h: "三千一百七十四。", p: "Sānqiān yìbǎi qīshísì.", e: "Three thousand one hundred seventy-four.", k: "okay", r: ["……三一七四是吧？", "…Sān yāo qī sì shì ba?", "…3-1-7-4, right?"], note: "Codes are read digit by digit, like a phone number.", fix: ["三一七四。", "Sān yāo qī sì."] },
+          { h: "三一七十。", p: "Sān yāo qī shí.", e: "3-1-7-10.", k: "wrong", r: ["七十？没有这个号。你再看看。", "Qīshí? Méiyǒu zhège hào. Nǐ zài kànkan.", "Seventy? No such code. Look again."], note: "十 shí is ten; 四 sì is four. The classic mix-up.", fix: ["三一七四。", "Sān yāo qī sì."] }
+        ] },
+      { npc: ["手机号后四位？", "Shǒujī hào hòu sì wèi?", "Last four digits of your phone number?"], prompt: "Give the last four: 8-8-2-0.",
+        opts: [
+          { h: "八八二零。", b: "八|八|二|零", p: "Bā bā èr líng.", e: "8-8-2-0.", k: "good", note: "后四位 hòu sì wèi, the last four digits. 零 líng is zero. In digit strings, 2 stays 二 èr." },
+          { h: "八八两零。", p: "Bā bā liǎng líng.", e: "8-8-2-0.", k: "okay", r: ["八八二零，好。", "Bā bā èr líng, hǎo.", "8-8-2-0, OK."], note: "两 liǎng is for counting things. In digits, it's 二 èr.", fix: ["八八二零。", "Bā bā èr líng."] },
+          { h: "前四位是一三九八。", p: "Qián sì wèi shì yāo sān jiǔ bā.", e: "The first four are 1398.", k: "wrong", r: ["我要后四位，不是前四位。", "Wǒ yào hòu sì wèi, bú shì qián sì wèi.", "I need the LAST four, not the first."], note: "后 hòu is after or last; 前 qián is before or first.", fix: ["八八二零。", "Bā bā èr líng."] }
+        ] },
+      { npc: ["找到了，这个箱子。在这儿签个字。", "Zhǎo dào le, zhège xiāngzi. Zài zhèr qiān ge zì.", "Found it, this box. Sign here."], prompt: "Sign and thank them.",
+        opts: [
+          { h: "好的，谢谢！", b: "好的|谢谢", p: "Hǎo de, xièxie!", e: "OK, thanks!", k: "good", note: "签字 qiānzì is to sign. 签个字 is the casual \"sign here\"." },
+          { h: "这不是我的。", p: "Zhè bú shì wǒ de.", e: "This isn't mine.", k: "wrong", r: ["不是你的？名字对啊……你再看看。", "Bú shì nǐ de? Míngzi duì a… nǐ zài kànkan.", "Not yours? The name matches… take another look."], note: "Only say this if it really isn't. Check the label first: 我看一下 wǒ kàn yíxià, let me look.", fix: ["好的，谢谢！", "Hǎo de, xièxie!"] },
+          { h: "签哪儿？", p: "Qiān nǎr?", e: "Sign where?", k: "good", note: "A good question if you can't see where. They'll point." }
+        ] }
+    ],
+    end: ["好了，拿走吧。", "Hǎo le, ná zǒu ba.", "Done, take it away."],
+    endNote: "Read codes digit by digit, with 1 as 幺 yāo. 后四位 is the last four digits. 签字 is to sign." }
 ];

@@ -16,7 +16,7 @@ After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing 
 
 ## What's in it
 
-- Twenty-five places, grouped by theme: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt, café and wifi, bike share, hospital registration, dumpling house, no hot water (calling the landlord), swapping WeChat
+- Twenty-eight places, grouped by theme: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt, café and wifi, bike share, hospital registration, dumpling house, no hot water (calling the landlord), swapping WeChat, hotpot, asking for a photo, parcel pickup
 - Sound-alikes: hear a line and tell it from its tonal twin (买 vs 卖, 问 vs 吻, 十四 vs 四十)
 - A practice streak and a count of lines answered
 - "Why, exactly?" on any mistake: Claude explains the grammar or sound behind it, with a memory trick
