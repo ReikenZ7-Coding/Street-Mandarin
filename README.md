@@ -14,7 +14,9 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 
 ## What's in it
 
-- Nineteen places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt
+- Twenty-two places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt, café and wifi, bike share, hospital registration
+- Sound-alikes: hear a line and tell it from its tonal twin (买 vs 卖, 问 vs 吻, 十四 vs 四十)
+- A practice streak and a count of lines answered
 - Wander: Claude invents a situation you haven't practised and plays the other person, with no options to pick from
 - Three ways to answer each moment: pick from three answers, build the sentence from word tiles, or type it (characters or pinyin, tones optional). In browsers with Chinese speech recognition, such as Chrome, you can also say it out loud.
 - Prices by ear: a quick drill on the numbers that trip people up (十八 vs 八十, 一百五 vs 一百零五, 块五)

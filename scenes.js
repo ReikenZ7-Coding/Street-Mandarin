@@ -606,5 +606,80 @@ window.SCENES = [
         ] }
     ],
     end: ["好的，给你装起来。下次再来！", "Hǎo de, gěi nǐ zhuāng qǐlái. Xià cì zài lái!", "Great, I'll bag it for you. Come again!"],
-    endNote: "换 huàn is exchange, 退 tuì is refund. Sale items (打折 dǎzhé) are often exchange-only." }
+    endNote: "换 huàn is exchange, 退 tuì is refund. Sale items (打折 dǎzhé) are often exchange-only." },
+  { id: "cafe", place: "咖啡馆", placePy: "kāfēiguǎn", en: "Café and wifi", who: "店员", whoPy: "diànyuán", whoEn: "the barista",
+    goal: "Get an iced latte and the wifi password.",
+    intro: "A small café with good chairs. You need coffee, and you need to get online.",
+    turns: [
+      { npc: ["你好，喝点什么？", "Nǐ hǎo, hē diǎn shénme?", "Hi, what would you like to drink?"], prompt: "Order an iced latte.",
+        opts: [
+          { h: "一杯冰拿铁，谢谢。", b: "一杯|冰|拿铁|谢谢", p: "Yì bēi bīng nátiě, xièxie.", e: "One iced latte, thanks.", k: "good", note: "Drinks take 杯 bēi, a cup. 冰 bīng is iced; 热 rè is hot. 拿铁 nátiě is just \"latte\" borrowed." },
+          { h: "一个冰拿铁。", p: "Yí ge bīng nátiě.", e: "One iced latte.", k: "okay", r: ["一杯冰拿铁，好的。", "Yì bēi bīng nátiě, hǎo de.", "One iced latte, sure."], note: "Understood; she swapped in 杯 bēi. Drinks are counted in cups.", fix: ["一杯冰拿铁。", "Yì bēi bīng nátiě."] },
+          { h: "一杯病拿铁。", p: "Yì bēi bìng nátiě.", e: "One sick latte.", k: "wrong", r: ["……病？你是说冰的吗？", "…Bìng? Nǐ shì shuō bīng de ma?", "…Sick? You mean iced?"], note: "冰 bīng (high and flat) is ice; 病 bìng (falling) is illness.", fix: ["一杯冰拿铁。", "Yì bēi bīng nátiě."] }
+        ] },
+      { npc: ["大杯还是中杯？", "Dà bēi háishi zhōng bēi?", "Large or medium?"], prompt: "Medium is fine.",
+        opts: [
+          { h: "中杯就行。", b: "中杯|就行", p: "Zhōng bēi jiù xíng.", e: "Medium is fine.", k: "good", note: "就行 jiù xíng, \"that'll do\". 大/中/小 dà, zhōng, xiǎo for large, medium, small." },
+          { h: "中杯。", p: "Zhōng bēi.", e: "Medium.", k: "good", note: "Answering with the choice is completely natural." },
+          { h: "还是。", p: "Háishi.", e: "(\"or\")", k: "wrong", r: ["……还是什么？", "…Háishi shénme?", "…Or what?"], note: "还是 háishi means \"or\" in a question. Answer with one of the choices: 中杯.", fix: ["中杯就行。", "Zhōng bēi jiù xíng."] }
+        ] },
+      { npc: ["好的，二十八。", "Hǎo de, èrshíbā.", "OK, 28."], prompt: "Ask for the wifi password.",
+        opts: [
+          { h: "Wi-Fi密码是多少？", b: "Wi-Fi|密码|是|多少", p: "Wi-Fi mìmǎ shì duōshao?", e: "What's the wifi password?", k: "good", note: "密码 mìmǎ is password (and PIN). Codes and numbers take 多少 duōshao, not 什么." },
+          { h: "有Wi-Fi吗？", p: "Yǒu Wi-Fi ma?", e: "Is there wifi?", k: "okay", r: ["有，密码在桌子上。", "Yǒu, mìmǎ zài zhuōzi shang.", "Yes, the password's on the table."], note: "Works. Asking for the 密码 directly saves a step.", fix: ["Wi-Fi密码是多少？", "Wi-Fi mìmǎ shì duōshao?"] },
+          { h: "Wi-Fi的名字是什么？", p: "Wi-Fi de míngzi shì shénme?", e: "What's the wifi called?", k: "okay", r: ["就是店名。密码要吗？", "Jiù shì diàn míng. Mìmǎ yào ma?", "Same as the café. Need the password?"], note: "Fair question, but the password is the bit you need: 密码 mìmǎ.", fix: ["Wi-Fi密码是多少？", "Wi-Fi mìmǎ shì duōshao?"] }
+        ] }
+    ],
+    end: ["密码是八个八。拿铁好了叫你。", "Mìmǎ shì bā ge bā. Nátiě hǎo le jiào nǐ.", "The password is eight 8s. I'll call you when the latte's ready."],
+    endNote: "Most Chinese say wifi as \"wai-fai\". 密码 mìmǎ is password, PIN, any code. Ask with 多少." },
+  { id: "bike", place: "共享单车", placePy: "gòngxiǎng dānchē", en: "Bike share", who: "大爷", whoPy: "dàye", whoEn: "an older man",
+    goal: "Unlock a share bike, with a little help.",
+    intro: "Rows of share bikes outside the metro. Your app keeps failing. An older man is fixing his own bike nearby.",
+    turns: [
+      { npc: null, prompt: "Ask him if he can help you.",
+        opts: [
+          { h: "大爷，能帮我一下吗？", b: "大爷|能|帮我|一下吗", p: "Dàye, néng bāng wǒ yíxià ma?", e: "Uncle, could you help me a moment?", k: "good", note: "大爷 dàye is a warm way to address an older man; 阿姨 āyí for a woman. 一下 yíxià softens any request." },
+          { h: "喂！帮我！", p: "Wèi! Bāng wǒ!", e: "Hey! Help me!", k: "wrong", r: ["哎哟，出什么事了？！", "Āiyō, chū shénme shì le?!", "Whoa, what happened?!"], note: "That sounds like an emergency. Add 能…一下吗 to make it a favour.", fix: ["大爷，能帮我一下吗？", "Dàye, néng bāng wǒ yíxià ma?"] },
+          { h: "你好，可以帮忙吗？", p: "Nǐ hǎo, kěyǐ bāngmáng ma?", e: "Hello, can you help?", k: "good", note: "Polite and clear. 大爷 would be warmer, but this is fine." }
+        ] },
+      { npc: ["怎么了？", "Zěnme le?", "What's up?"], prompt: "Say you scanned the code but it won't unlock.",
+        opts: [
+          { h: "我扫了码，可是打不开。", b: "我|扫了码|可是|打不开", p: "Wǒ sǎo le mǎ, kěshì dǎ bu kāi.", e: "I scanned the code, but it won't open.", k: "good", note: "打不开 dǎ bu kāi, \"can't get it open\", works for locks, doors, apps and jars." },
+          { h: "不开。", p: "Bù kāi.", e: "Not open.", k: "okay", r: ["什么不开？车锁？", "Shénme bù kāi? Chē suǒ?", "What won't open? The lock?"], note: "He gets the gist. The pattern for \"can't\" is verb + 不 + result: 打不开.", fix: ["我扫了码，可是打不开。", "Wǒ sǎo le mǎ, kěshì dǎ bu kāi."] },
+          { h: "我扫了地，可是打不开。", p: "Wǒ sǎo le dì, kěshì dǎ bu kāi.", e: "I swept the floor, but it won't open.", k: "wrong", r: ["扫地？哈哈，你扫码了吗？", "Sǎo dì? Hāhā, nǐ sǎo mǎ le ma?", "Swept the floor? Haha, did you scan the code?"], note: "扫 sǎo is both sweep and scan. 扫地 is sweeping; 扫码 is scanning a QR code.", fix: ["我扫了码。", "Wǒ sǎo le mǎ."] }
+        ] },
+      { npc: ["这辆坏了，你看，车座歪了。换一辆吧。", "Zhè liàng huài le, nǐ kàn, chēzuò wāi le. Huàn yí liàng ba.", "This one's broken, look, the seat's crooked. Try another one."], prompt: "Thank him warmly.",
+        opts: [
+          { h: "哦，原来是这样。谢谢大爷！", b: "哦|原来是这样|谢谢大爷", p: "Ó, yuánlái shì zhèyàng. Xièxie dàye!", e: "Oh, so that's it. Thanks, uncle!", k: "good", note: "原来是这样 yuánlái shì zhèyàng, \"oh, so that's why\", is a lovely thing to say when someone explains." },
+          { h: "谢谢！", p: "Xièxie!", e: "Thanks!", k: "good", note: "Always enough." },
+          { h: "你的车坏了。", p: "Nǐ de chē huài le.", e: "Your bike is broken.", k: "wrong", r: ["不是我的，是你那辆！", "Bú shì wǒ de, shì nǐ nà liàng!", "Not mine, YOURS!"], note: "这辆坏了 meant the one you picked. 换一辆 huàn yí liàng: switch to another.", fix: ["谢谢大爷！", "Xièxie dàye!"] }
+        ] }
+    ],
+    end: ["不客气！骑车小心点儿。", "Bú kèqi! Qí chē xiǎoxīn diǎnr.", "You're welcome! Ride carefully."],
+    endNote: "Before scanning, check the bike: tyres, seat, chain. 坏了 huài le means broken. 辆 liàng counts vehicles." },
+  { id: "clinic", place: "医院", placePy: "yīyuàn", en: "Hospital registration", who: "护士", whoPy: "hùshi", whoEn: "the nurse",
+    goal: "Register to see a doctor for a bad stomach.",
+    intro: "A busy hospital lobby. Before you see any doctor, you have to 挂号 guàhào, register, at the desk.",
+    turns: [
+      { npc: ["你好，挂什么科？", "Nǐ hǎo, guà shénme kē?", "Hello, which department?"], prompt: "Say your stomach hurts; you don't know which department.",
+        opts: [
+          { h: "我肚子疼，不知道挂什么科。", b: "我|肚子疼|不知道|挂什么科", p: "Wǒ dùzi téng, bù zhīdào guà shénme kē.", e: "My stomach hurts, I don't know which department.", k: "good", note: "肚子 dùzi is belly; 疼 téng is hurts. Saying you don't know is fine: they'll direct you." },
+          { h: "我兔子疼。", p: "Wǒ tùzi téng.", e: "My rabbit hurts.", k: "wrong", r: ["……兔子？你是说肚子吗？", "…Tùzi? Nǐ shì shuō dùzi ma?", "…Rabbit? You mean stomach?"], note: "兔子 tùzi is a rabbit; 肚子 dùzi is your belly. d vs t: d is unaspirated, no puff of air.", fix: ["我肚子疼。", "Wǒ dùzi téng."] },
+          { h: "肚子。", p: "Dùzi.", e: "Stomach.", k: "okay", r: ["肚子怎么了？疼吗？", "Dùzi zěnme le? Téng ma?", "What about your stomach? Does it hurt?"], note: "She gets the area. Add what's wrong: 疼 téng.", fix: ["我肚子疼。", "Wǒ dùzi téng."] }
+        ] },
+      { npc: ["那挂消化内科。有医保卡吗？", "Nà guà xiāohuà nèikē. Yǒu yībǎo kǎ ma?", "Then gastroenterology. Do you have a medical insurance card?"], prompt: "You don't. Say you'll pay yourself.",
+        opts: [
+          { h: "没有，我自费。", b: "没有|我|自费", p: "Méiyǒu, wǒ zìfèi.", e: "No, I'll pay myself.", k: "good", note: "医保 yībǎo is national insurance; foreigners usually pay 自费 zìfèi, out of pocket, and claim later." },
+          { h: "没有。", p: "Méiyǒu.", e: "No.", k: "good", note: "That's enough; she'll tell you how to pay." },
+          { h: "有。", p: "Yǒu.", e: "Yes.", k: "wrong", r: ["好，卡给我。", "Hǎo, kǎ gěi wǒ.", "OK, give me the card."], note: "有 says yes, you have one. No is 没有 méiyǒu.", fix: ["没有，我自费。", "Méiyǒu, wǒ zìfèi."] }
+        ] },
+      { npc: ["挂号费二十。三楼，等叫号。", "Guàhào fèi èrshí. Sān lóu, děng jiào hào.", "Registration is 20. Third floor, wait for your number."], prompt: "Check: third floor, wait for the number?",
+        opts: [
+          { h: "三楼，等叫号，对吗？", b: "三楼|等|叫号|对吗", p: "Sān lóu, děng jiào hào, duì ma?", e: "Third floor, wait for my number, right?", k: "good", note: "Checking back is the single best survival habit. 叫号 jiào hào is having your number called." },
+          { h: "三号？", p: "Sān hào?", e: "Number three?", k: "wrong", r: ["不是三号，是三楼！", "Bú shì sān hào, shì sān lóu!", "Not number three, THIRD FLOOR!"], note: "楼 lóu is floor; 号 hào is number.", fix: ["三楼，对吗？", "Sān lóu, duì ma?"] },
+          { h: "好的。", p: "Hǎo de.", e: "OK.", k: "okay", r: ["去吧。", "Qù ba.", "Off you go."], note: "Fine if you caught it all. In a hospital, repeating it back is worth the extra second.", fix: ["三楼，等叫号，对吗？", "Sān lóu, děng jiào hào, duì ma?"] }
+        ] }
+    ],
+    end: ["对。拿好单子，祝你早日康复。", "Duì. Ná hǎo dānzi, zhù nǐ zǎorì kāngfù.", "Right. Keep the slip, and get well soon."],
+    endNote: "挂号 guàhào is registering, and you do it before anything else. 科 kē is a department; 自费 zìfèi is paying yourself." }
 ];
