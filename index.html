@@ -199,6 +199,9 @@ body.hint-off .opt .en-line { display: none; }
 .pb-row .han { font-size: 18px; }
 .pb-tools { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
 .pb.hard .pb-title { color: var(--cinnabar); }
+.trip-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
+.trip-goal { margin: 0; font-size: 14px; color: var(--muted); }
+.trip-pick { display: flex; flex-wrap: wrap; gap: 6px; max-height: 40vh; overflow-y: auto; }
 .pb-hear { border-top: 1px dashed var(--line); padding-top: 6px; font-size: 14px; }
 .pb-hear summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
 .pb-heard { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 4px 0; }
@@ -475,7 +478,11 @@ function renderRail() {
   const ea = el("button", "scn review"); ea.setAttribute("aria-current", mode === "ears" ? "true" : "false");
   ea.append(el("span", "han", "听错"), el("span", "name", "Sound-alikes"), el("span", "meta", "One tone off, a different word"));
   ea.onclick = () => startEars();
-  rail.append(rv, dr, ea, pb);
+  const tr = el("button", "scn review"); tr.setAttribute("aria-current", mode === "trip" ? "true" : "false");
+  const today = trip.day === dayKey() && trip.ids.length;
+  tr.append(el("span", "han", "出门"), el("span", "name", "Heading out"), el("span", "meta", today ? `Ready for ${plural(trip.ids.length, "place")} today` : "Prep where you're going today"));
+  tr.onclick = () => startTrip();
+  rail.append(tr, rv, dr, ea, pb);
   if (sample) {
     const wd = el("button", "scn review"); wd.setAttribute("aria-current", mode === "wander" ? "true" : "false");
     wd.append(el("span", "han", "随便逛"), el("span", "name", "Wander"), el("span", "meta", "Claude makes up a new situation"));
@@ -549,6 +556,7 @@ function renderMove() {
   if (mode === "ears") return renderEarsMove();
   if (mode === "pattern") return renderPatternMove();
   if (mode === "reader") return renderReaderMove();
+  if (mode === "trip") return renderTripMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
@@ -1160,7 +1168,7 @@ function renderPatterns(box) {
   wrap.append(el("div", "pt-hint", "Tap one to drill that kind of moment, from every place."));
   box.append(wrap);
 }
-let pq = [], pi = 0, pRight = 0, pAnswered = false, pPat = null;
+let pq = [], pi = 0, pRight = 0, pAnswered = false, pPat = null, pAgain = null;
 function startPattern(id) {
   const p = PATTERNS.find(x => x.id === id); if (!p) return;
   mode = "pattern"; busy = false; transcript = []; pPat = p;
@@ -1172,7 +1180,7 @@ function startPattern(id) {
   });
   const played = new Set(notebook.map(n => n.sid).concat(Object.keys(done)));
   pq = shuffle(items.filter(x => played.has(x.sid))).concat(shuffle(items.filter(x => !played.has(x.sid)))).slice(0, 8);
-  pq = shuffle(pq); pi = 0; pRight = 0;
+  pq = shuffle(pq); pi = 0; pRight = 0; pAgain = () => startPattern(id);
   setHead(p.zh, "", p.en, "The trap: ", p.tip);
   $("#log").textContent = "";
   addNarr(`${pq.length} moments from different places, each with a trap of this kind. Spot it.`);
@@ -1192,7 +1200,7 @@ function patternChoose(o) {
   pAnswered = true;
   addMe(o.h, o.p, o.e, o.k);
   if (o.k !== "good" && o.r) addNpc(o.r);
-  addFeedback(o.k, o.note, o.fix, o.k === "good" ? null : { label: o.tag === pPat.id ? "That's the trap" : undefined });
+  addFeedback(o.k, o.note, o.fix, o.k === "good" ? null : { label: pPat && o.tag === pPat.id ? "That's the trap" : undefined });
   if (o.k === "good") pRight++;
   else logMistake({ sid: it.sid, turn: it.turn, cb: it.cb, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note });
   renderMove();
@@ -1203,7 +1211,7 @@ function renderPatternMove() {
   if (pi >= pq.length) {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${pRight} of ${pq.length} clean.`));
     const row = el("div", "endcard");
-    const again = el("button", "btn", "Another round"); again.onclick = () => startPattern(pPat.id);
+    const again = el("button", "btn", "Another round"); again.onclick = () => pAgain();
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
     row.append(again, back); m.append(head, row); return;
   }
@@ -1350,6 +1358,69 @@ function renderReaderMove() {
   const row = el("div", "endcard"); row.append(back);
   m.append(head, chips, form, row);
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+}
+/* ---------- heading out: prep the places you're actually going to today ---------- */
+let trip = store.get("sm-trip", { ids: [], day: "" }), tripEditing = false;
+function startTrip() {
+  mode = "trip"; busy = false; cur = { who: "出门", whoEn: "you" };
+  if (trip.day !== dayKey()) tripEditing = true; // a new day, a new plan
+  setHead("出门", "chūmén", "Heading out", "What it's for: ", "Pick where you're actually going today. You get a cheat sheet for just those places and a quick warm-up, even for places you haven't played.");
+  renderTrip(); renderRail(); renderMove();
+}
+function tripPlaces() { return trip.ids.map(id => S.find(s => s.id === id)).filter(Boolean); }
+function renderTrip() {
+  const log = $("#log"); log.textContent = "";
+  if (tripEditing || !trip.ids.length) { addNarr("Where are you going today? Pick a few places below."); return; }
+  addNarr(`Today: ${tripPlaces().map(s => s.en).join(", ")}. Read it through on the way, tap Show to hand your phone over.`);
+  tripPlaces().forEach(s => {
+    const sec = el("section", "pb trip-card");
+    const h = el("h4", "pb-title", `${s.place} · ${s.en}`); sec.append(h);
+    sec.append(el("p", "trip-goal", s.goal));
+    s.turns.forEach((t, ti) => { const g = t.opts.find(o => o.k === "good"); if (g) sec.append(phraseRow(g, replyAfter(s, ti))); });
+    // The trap most worth knowing here: the first wrong option of each moment, by kind
+    const traps = []; s.turns.forEach(t => { const w = t.opts.find(o => o.k === "wrong"); if (w) traps.push(w); });
+    if (traps.length) {
+      const tw = el("details", "pb-hear"); tw.append(el("summary", null, "Traps here"));
+      traps.forEach(w => { const r = el("div", "pb-heard"); r.append(el("span", "han", "✗ " + w.h), el("span", "en-line", w.note)); tw.append(r); });
+      sec.append(tw);
+    }
+    const hear = el("details", "pb-hear"); hear.append(el("summary", null, "What you'll hear"));
+    s.turns.filter(t => t.npc).forEach(t => { const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]), el("span", "en-line", t.npc[2])); hear.append(r); });
+    sec.append(hear);
+    log.append(sec);
+  });
+  log.scrollTop = 0;
+}
+function renderTripMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  if (tripEditing || !trip.ids.length) {
+    head.append(el("h3", null, "Where to today?"), el("span", "prompt", `${trip.ids.length} picked`));
+    const grid = el("div", "trip-pick");
+    railOrder().forEach(s => {
+      const c = el("button", "chip", `${s.place} ${s.en}`); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false");
+      c.onclick = () => { trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); renderMove(); };
+      grid.append(c);
+    });
+    const go = el("button", "btn", "Get me ready"); go.disabled = !trip.ids.length;
+    go.onclick = () => { trip.day = dayKey(); store.set("sm-trip", trip); tripEditing = false; renderTrip(); renderRail(); renderMove(); };
+    const row = el("div", "endcard"); row.append(go);
+    m.append(head, grid, row); return;
+  }
+  head.append(el("h3", null, "Ready?"), el("span", "prompt", plural(trip.ids.length, "place") + " today"));
+  const row = el("div", "endcard");
+  const warm = el("button", "btn", "Warm up on every moment"); warm.onclick = () => startTripWarmup();
+  const edit = el("button", "btn ghost", "Change places"); edit.onclick = () => { tripEditing = true; renderTrip(); renderMove(); };
+  row.append(warm, edit); m.append(head, row);
+}
+function startTripWarmup() {
+  mode = "pattern"; busy = false; transcript = []; pPat = null;
+  pq = []; tripPlaces().forEach(s => s.turns.forEach((t, i) => pq.push({ sid: s.id, turn: i, cb: null })));
+  pi = 0; pRight = 0; pAgain = () => startTripWarmup();
+  setHead("出门", "chūmén", "Warm-up for today", "Places: ", tripPlaces().map(s => s.en).join(", ") + ".");
+  $("#log").textContent = "";
+  addNarr(`Every moment from today's places, in order. ${pq.length} in all.`);
+  renderRail(); patternItem();
 }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
