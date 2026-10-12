@@ -90,6 +90,14 @@ window.SCENES = [
   { id: "market", place: "夜市", placePy: "yèshì", en: "Night market", who: "老板娘", whoPy: "lǎobǎnniáng", whoEn: "the stall owner",
     goal: "Buy a T-shirt for 60 kuai or less.",
     intro: "Rows of stalls under bare bulbs. A stall owner holds up a T-shirt the second you slow down.",
+    curveballs: [
+      { after: 0, what: "a sudden 'how many?'", turn: { npc: ["你要几个？买三个更便宜。", "Nǐ yào jǐ ge? Mǎi sān ge gèng piányi.", "How many do you want? Three is cheaper."], prompt: "You only want one.",
+        opts: [
+          { h: "一个就够了。", b: "一个|就够了", p: "Yí ge jiù gòu le.", e: "One is enough.", k: "good", note: "就够了 jiù gòu le, \"that's enough\", is a polite way to turn down the upsell." },
+          { h: "三个。", p: "Sān ge.", e: "Three.", k: "wrong", carry: "Bought three when you wanted one", r: ["三个，好嘞！", "Sān ge, hǎo lei!", "Three, coming up!"], note: "Repeating her number agrees to it. Say what you want: 一个就够了.", fix: ["一个就够了。", "Yí ge jiù gòu le."] },
+          { h: "一个。", p: "Yí ge.", e: "One.", k: "good", note: "Short and clear. 个 gè is the all-purpose measure word." }
+        ] } }
+    ],
     turns: [
       { npc: ["朋友，看看！这件T恤一百五。", "Péngyou, kànkan! Zhè jiàn T xù yìbǎi wǔ.", "Have a look, friend! This T-shirt is 150."], prompt: "That's way too much.",
         opts: [
@@ -162,6 +170,14 @@ window.SCENES = [
   { id: "pharmacy", place: "药店", placePy: "yàodiàn", en: "Pharmacy", who: "药师", whoPy: "yàoshī", whoEn: "the pharmacist",
     goal: "Get something for a headache and understand how to take it.",
     intro: "Your head is pounding. Green cross, glass counter, a pharmacist in a white coat.",
+    curveballs: [
+      { after: 1, what: "an allergy check", turn: { npc: ["你对什么药过敏吗？", "Nǐ duì shénme yào guòmǐn ma?", "Are you allergic to any medicine?"], prompt: "You're not allergic to anything.",
+        opts: [
+          { h: "没有，我不过敏。", b: "没有|我|不过敏", p: "Méiyǒu, wǒ bú guòmǐn.", e: "No, I'm not allergic.", k: "good", note: "过敏 guòmǐn is allergic. Worth knowing before anyone hands you pills." },
+          { h: "过敏。", p: "Guòmǐn.", e: "Allergic.", k: "wrong", r: ["过敏？对什么过敏？青霉素？", "Guòmǐn? Duì shénme guòmǐn? Qīngméisù?", "Allergic? To what? Penicillin?"], note: "Repeating the key word says yes. To say no: 不过敏 bú guòmǐn.", fix: ["我不过敏。", "Wǒ bú guòmǐn."] },
+          { h: "什么是过敏？", p: "Shénme shì guòmǐn?", e: "What's 过敏?", k: "good", note: "Asking is always better than guessing, especially at a pharmacy. 过敏 is allergic." }
+        ] } }
+    ],
     turns: [
       { npc: ["你好，哪里不舒服？", "Nǐ hǎo, nǎlǐ bù shūfu?", "Hi, what's bothering you?"], prompt: "Your head hurts.",
         opts: [
@@ -228,6 +244,14 @@ window.SCENES = [
   { id: "metro", place: "地铁", placePy: "dìtiě", en: "Metro ticket", who: "工作人员", whoPy: "gōngzuò rényuán", whoEn: "the station staff",
     goal: "Get a ticket to East Station and find out where to get off.",
     intro: "Rush hour. The ticket machine keeps spitting your card back out. A staff member in a vest is nearby.",
+    curveballs: [
+      { after: 2, what: "a bag check", turn: { npc: ["包放上来，安检。", "Bāo fàng shànglái, ānjiǎn.", "Put your bag up here, security check."], prompt: "Say OK and put it on the belt.",
+        opts: [
+          { h: "好的。", b: "好的", p: "Hǎo de.", e: "OK.", k: "good", note: "安检 ānjiǎn, security check, happens at every metro entrance. Just put your bag through." },
+          { h: "不用了，谢谢。", p: "Búyòng le, xièxie.", e: "No need, thanks.", k: "wrong", r: ["不行，必须安检。", "Bù xíng, bìxū ānjiǎn.", "No, it's required."], note: "不用了 politely refuses an offer, but this isn't an offer. 安检 is mandatory.", fix: ["好的。", "Hǎo de."] },
+          { h: "水可以带吗？", p: "Shuǐ kěyǐ dài ma?", e: "Can I bring water?", k: "good", note: "Sensible question. Usually yes, though they may ask you to take a sip to prove it's water." }
+        ] } }
+    ],
     turns: [
       { npc: null, prompt: "Ask the staff member if the machine is broken.",
         opts: [
@@ -495,6 +519,14 @@ window.SCENES = [
   { id: "delivery", place: "外卖", placePy: "wàimài", en: "Food delivery call", who: "外卖员", whoPy: "wàimàiyuán", whoEn: "the delivery rider",
     goal: "Get your takeaway without it going to the wrong building.",
     intro: "You ordered dinner on an app. Your phone rings: an unknown number, a lot of traffic noise.",
+    curveballs: [
+      { after: 1, what: "a rider who can't get in", turn: { npc: ["保安不让我进去，你能出来吗？", "Bǎo'ān bú ràng wǒ jìnqù, nǐ néng chūlái ma?", "The guard won't let me in, can you come out?"], prompt: "Say yes, you're coming out.",
+        opts: [
+          { h: "可以，我现在出来。", b: "可以|我|现在|出来", p: "Kěyǐ, wǒ xiànzài chūlái.", e: "Sure, I'm coming out now.", k: "good", note: "Many compounds don't let riders in. 出来 chūlái is come out; 现在 xiànzài is now." },
+          { h: "你进来吧。", p: "Nǐ jìnlái ba.", e: "Just come in.", k: "wrong", r: ["我进不去啊！保安不让！", "Wǒ jìn bú qù a! Bǎo'ān bú ràng!", "I CAN'T get in! The guard won't let me!"], note: "He just told you he can't. 不让 bú ràng means won't allow.", fix: ["我现在出来。", "Wǒ xiànzài chūlái."] },
+          { h: "好的。", p: "Hǎo de.", e: "OK.", k: "good", note: "Enough. Then go." }
+        ] } }
+    ],
     turns: [
       { npc: ["喂，你好，外卖到了。你在哪个门？", "Wéi, nǐ hǎo, wàimài dào le. Nǐ zài nǎge mén?", "Hello, your delivery's here. Which gate are you at?"], prompt: "Answer the phone and say you're coming down to the south gate.",
         opts: [
@@ -520,6 +552,14 @@ window.SCENES = [
   { id: "train", place: "火车站", placePy: "huǒchēzhàn", en: "Train station", who: "售票员", whoPy: "shòupiàoyuán", whoEn: "the ticket clerk",
     goal: "Get a high-speed train ticket to Hangzhou, today.",
     intro: "The ticket hall at Shanghai Hongqiao. Foreign passports often can't use the machines, so you queue at the window.",
+    curveballs: [
+      { after: 0, what: "a sold-out train", turn: { npc: ["今天的二等座卖完了，只有一等座。", "Jīntiān de èrděngzuò mài wán le, zhǐ yǒu yīděngzuò.", "Second class is sold out today, only first class left."], prompt: "Ask how much first class is.",
+        opts: [
+          { h: "一等座多少钱？", b: "一等座|多少钱", p: "Yīděngzuò duōshao qián?", e: "How much is first class?", k: "good", note: "二等座 èrděngzuò is standard class, 一等座 yīděngzuò first. Ask before you agree." },
+          { h: "好，一等座。", p: "Hǎo, yīděngzuò.", e: "OK, first class.", k: "okay", carry: "Paid nearly double for first class without asking", r: ["好，一百五十九。", "Hǎo, yìbǎi wǔshíjiǔ.", "OK, 159."], note: "Fine if you're in a hurry, but you agreed before hearing the price.", fix: ["一等座多少钱？", "Yīděngzuò duōshao qián?"] },
+          { h: "那我站着。", p: "Nà wǒ zhànzhe.", e: "Then I'll stand.", k: "okay", r: ["无座票也卖完了。", "Wú zuò piào yě mài wán le.", "Standing tickets are sold out too."], note: "Standing tickets are called 无座 wú zuò, \"no seat\". Good instinct, just not today.", fix: ["一等座多少钱？", "Yīděngzuò duōshao qián?"] }
+        ] } }
+    ],
     turns: [
       { npc: ["去哪儿？", "Qù nǎr?", "Where to?"], prompt: "Say one ticket to Hangzhou, today.",
         opts: [
