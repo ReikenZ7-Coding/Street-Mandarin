@@ -330,16 +330,31 @@ if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 /* ---------- state ---------- */
 let mode = "scene"; // "scene" | "review" | "drill" | "phrases"
 let cur = null, turn = 0, order = [], busy = false, finished = false;
-let flags = {}, outcomes = [], curveball = null, runMisses = [], lastGained = [], runMissTags = [];
+let flags = {}, outcomes = [], curveball = null, surprises = [], runMisses = [], lastGained = [], runMissTags = [];
 let ghost = store.get("sm-ghost", {});
+// Surprises: the place's own curveballs plus fresh ones Claude has invented for it, kept per place
+let twists = store.get("sm-twists", {}), seenCb = store.get("sm-seen-cb", {});
+const twistPool = id => (twists[id] || []).filter(x => x && x.turn && validTurn(x.turn));
+function cbFor(s, key) {
+  // key is a number (the place's own curveball) or "g…" (a generated one)
+  if (key == null || !s) return null;
+  return typeof key === "string" ? twistPool(s.id).find(x => x.id === key) || null : (s.curveballs || [])[key] || null;
+}
+function validTurn(t) {
+  const line = l => Array.isArray(l) && l.length === 3 && l.every(v => typeof v === "string" && v);
+  return t && t.prompt && (t.npc == null || line(t.npc)) && Array.isArray(t.opts) && t.opts.length === 3 && t.opts.some(o => o.k === "good") &&
+    t.opts.every(o => o.h && o.p && o.e && ["good", "okay", "wrong"].includes(o.k) && o.note && (o.k === "good" || line(o.r)));
+}
 // Three marks per place: survived it, a clean run, a clean run through a curveball
 let mastery = store.get("sm-mastery", {});
-const MARKS = [["survived", "Survived"], ["clean", "Clean run"], ["curve", "Clean through a curveball"]];
+const MARKS = [["survived", "Survived"], ["clean", "Clean run"], ["curve", "Clean through a surprise"]];
+const poolSize = id => { const s = S.find(x => x.id === id); return (s && s.curveballs || []).length + twistPool(id).length; };
+let twistNote = "";
 function earnMarks(cutShort) {
   const m = mastery[cur.id] = mastery[cur.id] || {}, gained = [];
   const give = k => { if (!m[k]) { m[k] = Date.now(); gained.push(k); } };
   give("survived");
-  if (!cur._rematch && !cutShort && !runMisses.length && !outcomes.length) { give("clean"); if (curveball) give("curve"); }
+  if (!cur._rematch && !cutShort && !runMisses.length && !outcomes.length) { give("clean"); if (surprises.length) give("curve"); }
   store.set("sm-mastery", mastery);
   return gained;
 }
@@ -499,7 +514,7 @@ function renderRail() {
     wd.onclick = () => startWander();
     rail.append(wd);
   }
-  const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !s.curveballs)).length;
+  const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
   rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived${nMast ? ` · ${nMast} mastered` : ""}` : "Places"));
   const placeBtn = s => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
@@ -531,14 +546,25 @@ function renderRail() {
 function start(id) {
   mode = "scene";
   const base = S.find(s => s.id === id);
-  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = []; runMissTags = []; lastGained = [];
-  // Each run gets its own copy of the turns, so a curveball can be slipped in on a replay
+  turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
+  // Each run gets its own copy of the turns, with surprises slipped in: real life never goes the same way twice
   const turns = base.turns.map((t, i) => Object.assign({}, t, { _orig: i }));
-  if (done[id] && base.curveballs && base.curveballs.length && Math.random() < 0.6) {
-    const ci = Math.floor(Math.random() * base.curveballs.length), cb = base.curveballs[ci];
-    turns.splice(cb.after + 1, 0, Object.assign({}, cb.turn, { _cb: ci }));
-    if (cb.flag) flags[cb.flag] = true;
-    curveball = cb;
+  const pool = (base.curveballs || []).map((cb, i) => ({ cb, key: i })).concat(twistPool(id).map(cb => ({ cb, key: cb.id })))
+    .filter(x => x.cb.after >= 0 && x.cb.after < base.turns.length);
+  if (pool.length) {
+    // First visit: maybe one surprise. After that: one or two, favouring ones you haven't met yet
+    const want = !done[id] ? (Math.random() < 0.5 ? 1 : 0) : (Math.random() < 0.45 ? 2 : 1);
+    const seen = new Set(seenCb[id] || []);
+    const fresh = shuffle(pool.filter(x => !seen.has(String(x.key)))), old = shuffle(pool.filter(x => seen.has(String(x.key))));
+    surprises = fresh.concat(old).slice(0, Math.min(want, pool.length));
+    surprises.slice().sort((a, b) => b.cb.after - a.cb.after).forEach(({ cb, key }) => {
+      turns.splice(cb.after + 1, 0, Object.assign({}, cb.turn, { _cb: key }));
+      if (cb.flag) flags[cb.flag] = true;
+    });
+    if (surprises.length) {
+      curveball = surprises[0].cb;
+      seenCb[id] = [...new Set([...(seenCb[id] || []), ...surprises.map(x => String(x.key))])]; store.set("sm-seen-cb", seenCb);
+    }
   }
   cur = Object.assign({}, base, { turns });
   try { localStorage.setItem("sm-last", id); } catch {}
@@ -749,12 +775,39 @@ function finish(cutShort) {
   }
   lastGained = earnMarks(cutShort);
   done[cur.id] = true; store.set("sm-done", done); renderRail(); renderMove();
+  if (sample && !cur.custom) inventTwist(S.find(x => x.id === cur.id));
+}
+let twistBusy = false;
+async function inventTwist(s) {
+  // Quietly have Claude invent one more thing that could happen here, for a future visit
+  if (twistBusy || !s || twistPool(s.id).length >= 8) return;
+  twistBusy = true;
+  const known = (s.curveballs || []).concat(twistPool(s.id)).map(c => c.what).join("; ");
+  const story = s.turns.map((t, i) => `${i}. ${t.npc ? t.npc[0] + " (" + t.npc[2] + ") / " : ""}learner: ${t.prompt}`).join("\n");
+  const prompt = `A Mandarin role-play for beginners takes place here: ${s.en} (${s.place}), talking to ${s.whoEn} (${s.who}) in mainland China. Goal: ${s.goal}
+The scripted moments, numbered:
+${story}
+Surprises that already exist (do not repeat): ${known || "none"}.
+Invent ONE new, realistic surprise moment that could happen here in real life: an unexpected question, a small problem, a custom, or something surprising. It is inserted after moment "after".
+Return ONLY JSON: {"after": number 0-${s.turns.length - 1}, "what": short lowercase phrase, "turn": {"npc": [hanzi, pinyin with tone marks, English], "prompt": what the learner must do (English),
+ "opts": exactly 3 of {"h": hanzi, "p": pinyin, "e": English, "k": "good"|"okay"|"wrong", "note": one coaching sentence naming the key word with pinyin,
+   for okay/wrong also "r": [hanzi, pinyin, English] the in-character reaction, "fix": [hanzi, pinyin], "tag": one of ${TAGSET.join(", ")}}]}}
+Exactly one good option, and give it "b": its hanzi split into 2-5 word tiles with "|". Wrong answers should be realistic beginner mistakes. Natural, short, spoken simplified Chinese.`;
+  try {
+    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
+    if (!r || typeof r.after !== "number" || r.after < 0 || r.after >= s.turns.length || !r.what || !validTurn(r.turn)) throw new Error("shape");
+    r.turn.opts.forEach(o => { if (o.b && o.b.split("|").join("") !== normHan(o.h)) delete o.b; if (o.k !== "good" && !TAGSET.includes(o.tag)) o.tag = "words"; delete o.carry; delete o.flag; delete o.end; });
+    r.id = "g" + Date.now().toString(36); r.what = String(r.what).slice(0, 60);
+    (twists[s.id] = twists[s.id] || []).push({ id: r.id, after: r.after, what: r.what, turn: r.turn }); store.set("sm-twists", twists);
+    twistNote = `Something new can now happen here: ${r.what}. Play it again and you might meet it.`;
+    if (mode === "scene" && finished && cur.id === s.id) renderMove();
+  } catch {} finally { twistBusy = false; }
 }
 
 function rematch() {
   // Just the moments that went wrong, straight away, while the mistake is fresh
   const base = S.find(s => s.id === cur.id), turns = runMisses.map(t => Object.assign({}, t));
-  mode = "scene"; turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; runMisses = []; runMissTags = []; lastGained = [];
+  mode = "scene"; turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
   cur = Object.assign({}, base, { turns, _rematch: true });
   setHead(cur.place, cur.placePy, cur.en, "Rematch: ", turns.length === 1 ? "the one moment that went wrong. Get it right this time." : `the ${turns.length} moments that went wrong. Get them right this time.`);
   $("#log").textContent = ""; addNarr("Same place, same people. Only the moments you missed.");
@@ -771,8 +824,8 @@ function renderEnd() {
     res.append(el("p", null, "Play it again to get a better result."));
   } else res.append(el("p", null, "Clean run. Nothing you said cost you anything."));
   const mk = mastery[cur.id] || {};
-  if (lastGained.includes("curve")) res.append(el("p", "gain", "New mark: you got through a curveball without a slip. This place is mastered."));
-  else if (lastGained.includes("clean")) res.append(el("p", "gain", "New mark: a clean run." + (S.find(x => x.id === cur.id).curveballs ? " One left: get through a curveball cleanly." : "")));
+  if (lastGained.includes("curve")) res.append(el("p", "gain", "New mark: you got through a surprise without a slip. This place is mastered."));
+  else if (lastGained.includes("clean")) res.append(el("p", "gain", "New mark: a clean run." + (poolSize(cur.id) ? " One left: get through a surprise cleanly." : "")));
   else if (!mk.clean && !cur._rematch) res.append(el("p", null, "Next mark: a clean run, with no slips at all."));
   // Which kind of mistake this run was mostly made of, with a way to drill it
   const kinds = {}; runMissTags.forEach(t => kinds[t] = (kinds[t] || 0) + 1);
@@ -782,8 +835,10 @@ function renderEnd() {
     go.onclick = () => startPattern(pat.id);
     nudge.append(`This run's slip${kinds[top] > 1 ? "s were" : " was"} ${pat.en.toLowerCase()}. `, go); res.append(nudge);
   }
-  if (curveball) res.append(el("p", null, "This run had a curveball: " + curveball.what + ". Replays can surprise you."));
-  else if (S.find(x => x.id === cur.id).curveballs) res.append(el("p", null, "Replay it: real life doesn't follow the script, and next time this place might not either."));
+  const base = S.find(x => x.id === cur.id), poolN = (base.curveballs || []).length + twistPool(cur.id).length, met = (seenCb[cur.id] || []).length;
+  if (surprises.length) res.append(el("p", null, `This run's surprise${surprises.length > 1 ? "s" : ""}: ${surprises.map(x => x.cb.what).join(" and ")}.`));
+  if (!cur._rematch && poolN) res.append(el("p", null, `You've met ${Math.min(met, poolN)} of ${poolN} things that can happen here${sample ? ", and Claude keeps inventing more" : ""}. No two visits are the same.`));
+  if (twistNote) { res.append(el("p", "gain", twistNote)); twistNote = ""; }
   const row = el("div", "endcard");
   if (runMisses.length) {
     const rm = el("button", "btn", runMisses.length === 1 ? "Rematch the moment you missed" : `Rematch the ${runMisses.length} moments you missed`);
@@ -796,6 +851,7 @@ function renderEnd() {
   const next = after.find(x => !done[x.id]) || after[0];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
   row.append(again, nx);
+  if (sample && !cur._rematch) { const live = el("button", "btn ghost", "Play it live, unscripted"); live.onclick = () => startLive(cur.id); row.append(live); }
   if (S.find(x => x.id === cur.id).custom) {
     const rm = el("button", "btn ghost", "Remove this place");
     rm.onclick = () => {
@@ -892,7 +948,7 @@ function startReview() {
 }
 function reviewItem() {
   rAnswered = false; rReveal = false;
-  const n = rq[ri], s = S.find(x => x.id === n.sid), t = s && n.cb != null && s.curveballs ? s.curveballs[n.cb].turn : s && n.turn != null ? s.turns[n.turn] : null;
+  const n = rq[ri], s = S.find(x => x.id === n.sid), t = scriptedTurn(s, n);
   if (s) cur = s;
   const pair = n.sid === "ears" && PAIRS.concat(myPairs()).find(p => p.a[0] === n.fix || p.b[0] === n.fix);
   if (pair) {
@@ -1207,7 +1263,7 @@ const PATTERNS = [
   { id: "words", zh: "用词", en: "The wrong word", tip: "Close in meaning isn't the same word." },
   { id: "manners", zh: "语气", en: "Too blunt", tip: "一下, 能…吗 and 不用了 soften almost anything." }
 ];
-const scriptedTurn = (s, n) => s && (n.cb != null && s.curveballs ? (s.curveballs[n.cb] || {}).turn : n.turn != null ? s.turns[n.turn] : null);
+const scriptedTurn = (s, n) => s && (n.cb != null ? (cbFor(s, n.cb) || {}).turn : n.turn != null ? s.turns[n.turn] : null);
 function tagOf(n) {
   if (n.tag) return n.tag;
   if (n.sid === "ears") return "sounds";
@@ -1596,6 +1652,28 @@ function renderPhrasesMove() {
 
 /* ---------- wander: Claude makes up a fresh everyday situation and plays it out ---------- */
 let wTranscript = [], wDone = false, wGoal = false;
+async function startLive(id) {
+  // The same place, unscripted: Claude plays it and throws in its own surprise
+  const base = S.find(x => x.id === id); if (!sample || !base) return;
+  mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = [];
+  setHead(base.place, base.placePy, base.en + ", live", "Your goal: ", base.goal);
+  $("#log").textContent = ""; addNarr("No script this time. Anything can happen…");
+  renderRail(); renderMove();
+  const prompt = `Set up a fresh, unscripted version of this everyday situation in mainland China for a beginner Mandarin learner: ${base.en} (${base.place}), talking to ${base.whoEn} (${base.who}). Their goal: ${base.goal}
+The scripted version goes like this, so make this one feel different: ${base.turns.map(t => t.npc ? t.npc[2] : t.prompt).join(" / ")}
+Pick a realistic twist that will come up early (something unexpected: a question they won't expect, a problem, a custom, a chatty or rushed person). Don't reveal it in the intro.
+Return ONLY JSON: "intro" (one or two plain-English sentences setting the scene, slightly different from usual), "twist" (one short private sentence describing the twist, for the role-player), "opening_hanzi" (the other person's first line, short spoken simplified Chinese), "opening_pinyin", "opening_english".`;
+  try {
+    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
+    cur = { id: "wander", live: base.id, twist: r.twist || "", place: base.place, placePy: base.placePy, en: base.en, who: base.who, whoEn: base.whoEn, goal: base.goal, intro: r.intro || base.intro, turns: [] };
+    $("#log").textContent = ""; addNarr(cur.intro);
+    addNpc([r.opening_hanzi, r.opening_pinyin, r.opening_english]);
+    wTranscript.push({ who: "npc", text: r.opening_hanzi });
+  } catch (e) {
+    $("#log").textContent = ""; addNarr("Couldn't set the scene that time. Try again in a moment."); wDone = true;
+  }
+  busy = false; renderRail(); renderMove();
+}
 async function startWander(theme) {
   if (!sample) return;
   mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = [];
@@ -1631,8 +1709,9 @@ function renderWanderMove() {
   if (wDone) {
     head.append(el("h3", null, wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
     const row = el("div", "endcard");
-    if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
-    if (sample && wTranscript.length >= 4 && !cur.saved) { const keep = el("button", "btn ghost", "Turn this into a practice place"); keep.onclick = () => saveWander(keep); row.append(keep); }
+    if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", "Live again, something else will happen"); again.onclick = () => startLive(lv); row.append(again); }
+    else if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
+    if (sample && wTranscript.length >= 4 && !cur.saved && !cur.live) { const keep = el("button", "btn ghost", "Turn this into a practice place"); keep.onclick = () => saveWander(keep); row.append(keep); }
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
     row.append(back); m.append(head, row);
     if (sample) {
@@ -1701,7 +1780,7 @@ async function wanderSay(text) {
   const think = el("div", "thinking", cur.whoEn.replace(/^./, c => c.toUpperCase()) + " is thinking…"); $("#log").append(think); scrollLog();
   renderMove();
   const history = wTranscript.slice(-14).map(x => (x.who === "npc" ? cur.who + ": " : "Learner: ") + x.text).join("\n");
-  const prompt = `You are role-playing ${cur.whoEn} (${cur.who}) in mainland China. Situation: ${cur.en}. ${cur.intro} The learner, a beginner in Mandarin, has this goal: ${cur.goal}
+  const prompt = `You are role-playing ${cur.whoEn} (${cur.who}) in mainland China. Situation: ${cur.en}. ${cur.intro} The learner, a beginner in Mandarin, has this goal: ${cur.goal}${cur.twist ? `\nYour private twist for this run (bring it in naturally, early): ${cur.twist}. Real life rarely goes to plan, so you may add one more small realistic complication later.` : ""}
 
 Conversation so far:
 ${history}
