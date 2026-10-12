@@ -1026,14 +1026,14 @@ function renderPhrasesMove() {
 
 /* ---------- wander: Claude makes up a fresh everyday situation and plays it out ---------- */
 let wTranscript = [], wDone = false, wGoal = false;
-async function startWander() {
+async function startWander(theme) {
   if (!sample) return;
   mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = [];
   setHead("随便逛", "suíbiàn guàng", "Wander", "How it works: ", "Claude invents an everyday situation you haven't practised. Say whatever you'd say; there are no options.");
   $("#log").textContent = ""; addNarr("Setting the scene…");
   renderRail(); renderMove();
   const known = S.map(s => s.en).join(", ");
-  const prompt = `Invent one short, realistic everyday situation a foreign visitor might face in mainland China, for a beginner Mandarin learner to role-play. Avoid these, which they've already practised: ${known}. Good ideas: returning a wrong item, asking a neighbour to keep the noise down, a courier delivering a package, buying fruit by the jin, a pharmacy for mosquito bites, asking to charge your phone, a photo request from strangers, a delayed train announcement.
+  const prompt = `Invent one short, realistic everyday situation a foreign visitor might face in mainland China, for a beginner Mandarin learner to role-play. ${theme ? `The learner asked for this situation: "${String(theme).slice(0, 120)}". Build the scene around it if it's a reasonable everyday situation.` : `Avoid these, which they've already practised: ${known}.`} Good ideas: returning a wrong item, asking a neighbour to keep the noise down, a courier delivering a package, buying fruit by the jin, a pharmacy for mosquito bites, asking to charge your phone, a photo request from strangers, a delayed train announcement.
 Return ONLY a JSON object with keys:
 "place_hanzi" (2 to 4 characters), "place_pinyin", "place_english" (2 to 4 words),
 "who_hanzi" (role, 2 to 3 characters), "who_english" (e.g. "the courier"),
@@ -1063,7 +1063,17 @@ function renderWanderMove() {
     const row = el("div", "endcard");
     if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
-    row.append(back); m.append(head, row); return;
+    row.append(back); m.append(head, row);
+    if (sample) {
+      const form = el("form", "free");
+      const inp = el("input"); inp.type = "text"; inp.autocomplete = "off"; inp.maxLength = 120;
+      inp.placeholder = "Or name a situation: buying shoes, a noisy neighbour…"; inp.setAttribute("aria-label", "A situation to practise");
+      const go = el("button", "btn ghost", "Go there"); go.type = "submit";
+      form.append(inp, go);
+      form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) startWander(v); };
+      m.append(form);
+    }
+    return;
   }
   head.append(el("h3", null, "Your move"), el("span", "prompt", "No options here. Say what you'd really say."));
   const form = el("form", "free");

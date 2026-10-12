@@ -21,7 +21,7 @@ After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing 
 - A practice streak and a count of lines answered
 - "Why, exactly?" on any mistake: Claude explains the grammar or sound behind it, with a memory trick
 - Number keys 1–9 pick answers; Enter moves on
-- Wander: Claude invents a situation you haven't practised and plays the other person, with no options to pick from
+- Wander: Claude invents a situation you haven't practised (or one you name, like "buying shoes") and plays the other person, with no options to pick from
 - Three ways to answer each moment: pick from three answers, build the sentence from word tiles, or type it (characters or pinyin, tones optional). In browsers with Chinese speech recognition, such as Chrome, you can also say it out loud.
 - Prices by ear: a quick drill on the numbers that trip people up (十八 vs 八十, 一百五 vs 一百零五, 块五)
 - Curveballs: replay a place you've survived and something may not go to plan (sold out, a chatty driver, a deposit, a stranger who isn't local)
