@@ -14,7 +14,8 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 
 ## What's in it
 
-- Fifteen places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet
+- Nineteen places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt
+- Wander: Claude invents a situation you haven't practised and plays the other person, with no options to pick from
 - Three ways to answer each moment: pick from three answers, build the sentence from word tiles, or type it (characters or pinyin, tones optional). In browsers with Chinese speech recognition, such as Chrome, you can also say it out loud.
 - Prices by ear: a quick drill on the numbers that trip people up (十八 vs 八十, 一百五 vs 一百零五, 块五)
 - Curveballs: replay a place you've survived and something may not go to plan (sold out, a chatty driver, a deposit, a stranger who isn't local)
@@ -25,6 +26,6 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 - Consequences that carry: some wrong answers move the story on, like paying 20 kuai more for the expressway, and the end card shows what they cost you
 - Listening mode: hear each line first (with a slower replay) and see the text only after you answer
 
-The "say it your own way" free-typing mode uses Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, that box is hidden and the scripted scenarios still work.
+The "say it your own way" free-typing mode and Wander use Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, those are hidden and the scripted scenarios still work.
 
 Live prototype: https://claude.ai/artifact/P1t7AavyFEdwh3Rfx6FtNE

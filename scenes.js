@@ -465,5 +465,106 @@ window.SCENES = [
         ] }
     ],
     end: ["二楼有卖纸巾的机器，扫码就行。", "Èr lóu yǒu mài zhǐjīn de jīqì, sǎo mǎ jiù xíng.", "There's a tissue machine on the second floor. Just scan the code."],
-    endNote: "Carry a small pack of tissues in China. Many public toilets don't stock paper." }
+    endNote: "Carry a small pack of tissues in China. Many public toilets don't stock paper." },
+  { id: "fruit", place: "水果摊", placePy: "shuǐguǒ tān", en: "Fruit stall", who: "阿姨", whoPy: "āyí", whoEn: "the fruit seller",
+    goal: "Buy some mandarins without getting a bag of five kilos.",
+    intro: "A fruit stall on the corner, everything priced by the 斤 jīn (half a kilo). The seller is already holding out a plastic bag.",
+    turns: [
+      { npc: ["要点什么？今天橘子很甜。", "Yào diǎn shénme? Jīntiān júzi hěn tián.", "What'll it be? The mandarins are really sweet today."], prompt: "Ask how much the mandarins are per jin.",
+        opts: [
+          { h: "橘子多少钱一斤？", b: "橘子|多少钱|一斤", p: "Júzi duōshao qián yì jīn?", e: "How much are mandarins per jin?", k: "good", note: "Fruit and veg are priced per 斤 jīn, which is 500 g. The pattern is 多少钱一斤." },
+          { h: "橘子多少钱？", p: "Júzi duōshao qián?", e: "How much are the mandarins?", k: "okay", r: ["六块一斤。", "Liù kuài yì jīn.", "Six kuai a jin."], note: "Understood, and she answered per jin anyway. Asking 一斤 yourself shows you know how it works.", fix: ["橘子多少钱一斤？", "Júzi duōshao qián yì jīn?"] },
+          { h: "橘子多少钱一公斤？", p: "Júzi duōshao qián yì gōngjīn?", e: "How much per kilo?", k: "okay", r: ["公斤？我们按斤卖。六块一斤。", "Gōngjīn? Wǒmen àn jīn mài. Liù kuài yì jīn.", "Kilo? We sell by the jin. Six a jin."], note: "公斤 gōngjīn is correct for a kilo, but markets think in 斤 jīn, half a kilo.", fix: ["橘子多少钱一斤？", "Júzi duōshao qián yì jīn?"] }
+        ] },
+      { npc: ["六块一斤。要几斤？", "Liù kuài yì jīn. Yào jǐ jīn?", "Six a jin. How many jin?"], prompt: "You only want about a kilo. Ask for two jin.",
+        opts: [
+          { h: "要两斤。", b: "要|两斤", p: "Yào liǎng jīn.", e: "Two jin, please.", k: "good", note: "Before a measure word, 2 is 两 liǎng, not 二 èr: 两斤, 两个, 两杯." },
+          { h: "要二斤。", p: "Yào èr jīn.", e: "Two jin.", k: "okay", r: ["两斤，好。", "Liǎng jīn, hǎo.", "Two jin, OK."], note: "She got it, and quietly corrected you. Counting things uses 两 liǎng.", fix: ["要两斤。", "Yào liǎng jīn."] },
+          { h: "要十斤。", p: "Yào shí jīn.", e: "Ten jin.", k: "wrong", carry: "Carried five kilos of mandarins home", flag: "tenjin", r: ["十斤？好嘞！这么多，送你一个袋子。", "Shí jīn? Hǎo lei! Zhème duō, sòng nǐ yí ge dàizi.", "Ten jin? You got it! That many, I'll throw in a bag."], note: "十 shí is ten. Two is 两 liǎng. Ten jin is five kilos of fruit.", fix: ["要两斤。", "Yào liǎng jīn."] }
+        ] },
+      { npc: ["两斤多一点，十三块二。", "Liǎng jīn duō yìdiǎn, shísān kuài èr.", "A bit over two jin, 13.20."],
+        npcAlt: { tenjin: ["十斤多一点，六十三块二。", "Shí jīn duō yìdiǎn, liùshísān kuài èr.", "A bit over ten jin, 63.20."] }, prompt: "Ask her to knock a little off.",
+        opts: [
+          { h: "便宜一点行吗？", b: "便宜|一点|行吗", p: "Piányi yìdiǎn xíng ma?", e: "Could it be a bit cheaper?", k: "good", note: "Rounding down is normal at a fruit stall. 行吗 xíng ma keeps it soft." },
+          { h: "零头抹了吧？", b: "零头|抹了吧", p: "Língtóu mǒ le ba?", e: "Drop the small change?", k: "good", note: "零头 língtóu is the odd bit at the end; 抹 mǒ is to wipe it off. Sellers do this all the time." },
+          { h: "太贵了，不要了！", p: "Tài guì le, bú yào le!", e: "Too expensive, forget it!", k: "wrong", r: ["都称好了……行行行，便宜你，别走啊。", "Dōu chēng hǎo le… xíng xíng xíng, piányi nǐ, bié zǒu a.", "I've already weighed it… fine, fine, cheaper for you, don't go."], note: "It worked, but walking off over a few jiao after she's weighed it is a bit rude. Just ask: 便宜一点行吗？", fix: ["便宜一点行吗？", "Piányi yìdiǎn xíng ma?"] }
+        ] }
+    ],
+    end: ["行，零头不要了。再送你一个，尝尝！", "Xíng, língtóu bú yào le. Zài sòng nǐ yí ge, chángchang!", "Fine, forget the change. And here's one extra, try it!"],
+    endNote: "斤 jīn is 500 g. Ask 多少钱一斤, and use 两 liǎng for two of anything you're counting." },
+  { id: "delivery", place: "外卖", placePy: "wàimài", en: "Food delivery call", who: "外卖员", whoPy: "wàimàiyuán", whoEn: "the delivery rider",
+    goal: "Get your takeaway without it going to the wrong building.",
+    intro: "You ordered dinner on an app. Your phone rings: an unknown number, a lot of traffic noise.",
+    turns: [
+      { npc: ["喂，你好，外卖到了。你在哪个门？", "Wéi, nǐ hǎo, wàimài dào le. Nǐ zài nǎge mén?", "Hello, your delivery's here. Which gate are you at?"], prompt: "Answer the phone and say you're coming down to the south gate.",
+        opts: [
+          { h: "好的，我马上下来，南门。", b: "好的|我|马上|下来|南门", p: "Hǎo de, wǒ mǎshàng xiàlái, nán mén.", e: "OK, I'm coming right down, south gate.", k: "good", note: "马上 mǎshàng is \"right away\"; 下来 xiàlái is coming down. Compounds have gates by compass point: 南门, 北门, 东门, 西门." },
+          { h: "南门。", p: "Nán mén.", e: "South gate.", k: "okay", r: ["南门，好，你快点儿啊。", "Nán mén, hǎo, nǐ kuài diǎnr a.", "South gate, OK, be quick."], note: "Understood. Adding 马上下来 tells him to wait for you.", fix: ["我马上下来，南门。", "Wǒ mǎshàng xiàlái, nán mén."] },
+          { h: "好的，我马上下来，北门。", p: "Hǎo de, wǒ mǎshàng xiàlái, běi mén.", e: "OK, coming down, north gate.", k: "wrong", carry: "Walked to the north gate while dinner waited at the south", r: ["北门？我在南门啊……那我过去吧。", "Běi mén? Wǒ zài nán mén a… Nà wǒ guòqù ba.", "North gate? I'm at the south gate… fine, I'll come round."], note: "北 běi is north, 南 nán is south. Mixing them up means a walk around the whole compound.", fix: ["我马上下来，南门。", "Wǒ mǎshàng xiàlái, nán mén."] }
+        ] },
+      { npc: ["你几号楼？我送上去也行。", "Nǐ jǐ hào lóu? Wǒ sòng shàngqù yě xíng.", "Which building number? I can bring it up too."], prompt: "Say building 8, and that you'll come down anyway.",
+        opts: [
+          { h: "八号楼。不用了，我下去拿。", b: "八号楼|不用了|我|下去|拿", p: "Bā hào lóu. Búyòng le, wǒ xiàqù ná.", e: "Building 8. No need, I'll come down for it.", k: "good", note: "号楼 hào lóu is a building number. 不用了 búyòng le politely turns down an offer." },
+          { h: "八楼。", p: "Bā lóu.", e: "Eighth floor.", k: "wrong", carry: "The rider went to the eighth floor of the wrong building", r: ["八楼？好，我送上来。", "Bā lóu? Hǎo, wǒ sòng shànglái.", "Eighth floor? OK, I'll bring it up."], note: "八楼 bā lóu is the 8th floor. Building 8 is 八号楼 bā hào lóu.", fix: ["八号楼。我下去拿。", "Bā hào lóu. Wǒ xiàqù ná."] },
+          { h: "不要。", p: "Bú yào.", e: "Don't want.", k: "wrong", r: ["不要了？你要取消吗？", "Bú yào le? Nǐ yào qǔxiāo ma?", "You don't want it? Do you want to cancel?"], note: "不要 sounds like you're refusing the food. To decline help, say 不用了 búyòng le.", fix: ["不用了，我下去拿。", "Búyòng le, wǒ xiàqù ná."] }
+        ] },
+      { npc: ["好，我在门口等你。黄色衣服。", "Hǎo, wǒ zài ménkǒu děng nǐ. Huángsè yīfu.", "OK, I'll wait at the gate. Yellow jacket."], prompt: "You see him. Thank him.",
+        opts: [
+          { h: "谢谢，辛苦了！", b: "谢谢|辛苦了", p: "Xièxie, xīnkǔ le!", e: "Thanks, appreciate the hard work!", k: "good", note: "辛苦了 xīnkǔ le acknowledges someone's effort. Riders, cleaners and couriers hear it and smile." },
+          { h: "谢谢。", p: "Xièxie.", e: "Thanks.", k: "good", note: "Perfectly fine. Next time try adding 辛苦了 xīnkǔ le." },
+          { h: "好吃！", p: "Hǎochī!", e: "Delicious!", k: "okay", r: ["哈哈，你还没吃呢！", "Hāhā, nǐ hái méi chī ne!", "Haha, you haven't even eaten it yet!"], note: "Cute, but you haven't tasted it yet. Thank the rider: 谢谢，辛苦了！", fix: ["谢谢，辛苦了！", "Xièxie, xīnkǔ le!"] }
+        ] }
+    ],
+    end: ["不客气，记得给个好评啊！", "Bú kèqi, jìde gěi ge hǎopíng a!", "You're welcome, remember to leave a good review!"],
+    endNote: "Riders often call. 几号楼 is which building, 几楼 is which floor. Say 不用了 to decline an offer, not 不要." },
+  { id: "train", place: "火车站", placePy: "huǒchēzhàn", en: "Train station", who: "售票员", whoPy: "shòupiàoyuán", whoEn: "the ticket clerk",
+    goal: "Get a high-speed train ticket to Hangzhou, today.",
+    intro: "The ticket hall at Shanghai Hongqiao. Foreign passports often can't use the machines, so you queue at the window.",
+    turns: [
+      { npc: ["去哪儿？", "Qù nǎr?", "Where to?"], prompt: "Say one ticket to Hangzhou, today.",
+        opts: [
+          { h: "一张去杭州的票，今天的。", b: "一张|去杭州的|票|今天的", p: "Yì zhāng qù Hángzhōu de piào, jīntiān de.", e: "One ticket to Hangzhou, for today.", k: "good", note: "Tickets take 张 zhāng. 今天的 jīntiān de, \"today's\", tacked on the end is very natural." },
+          { h: "杭州。", p: "Hángzhōu.", e: "Hangzhou.", k: "okay", r: ["几张？哪天？", "Jǐ zhāng? Nǎ tiān?", "How many? Which day?"], note: "Fine at a busy window, but she'll ask the rest. Saying it all at once keeps the queue moving.", fix: ["一张去杭州的票，今天的。", "Yì zhāng qù Hángzhōu de piào, jīntiān de."] },
+          { h: "一张去杭州的票，明天的。", p: "Yì zhāng qù Hángzhōu de piào, míngtiān de.", e: "One ticket to Hangzhou, tomorrow's.", k: "wrong", carry: "Got a ticket for tomorrow instead of today", r: ["明天的，好。", "Míngtiān de, hǎo.", "Tomorrow's, OK."], note: "明天 míngtiān is tomorrow. Today is 今天 jīntiān.", fix: ["一张去杭州的票，今天的。", "Yì zhāng qù Hángzhōu de piào, jīntiān de."] }
+        ] },
+      { npc: ["高铁还是动车？最近的一班是三点十分。", "Gāotiě háishi dòngchē? Zuìjìn de yì bān shì sān diǎn shí fēn.", "High-speed or regular bullet? The next one is at 3:10."], prompt: "Say 3:10 is fine, high-speed.",
+        opts: [
+          { h: "三点十分可以，高铁。", b: "三点十分|可以|高铁", p: "Sān diǎn shí fēn kěyǐ, gāotiě.", e: "3:10 is fine, high-speed.", k: "good", note: "高铁 gāotiě (G trains) is fastest; 动车 dòngchē (D trains) is a bit slower and cheaper. 可以 kěyǐ, \"that works\"." },
+          { h: "十点三分可以。", p: "Shí diǎn sān fēn kěyǐ.", e: "10:03 is fine.", k: "wrong", r: ["十点三分？没有这班。三点十分的，要不要？", "Shí diǎn sān fēn? Méiyǒu zhè bān. Sān diǎn shí fēn de, yào bu yào?", "10:03? There's no such train. The 3:10, do you want it?"], note: "Hours first, then minutes: 三点十分 is 3:10.", fix: ["三点十分可以。", "Sān diǎn shí fēn kěyǐ."] },
+          { h: "随便。", p: "Suíbiàn.", e: "Whatever.", k: "okay", r: ["那就高铁吧。", "Nà jiù gāotiě ba.", "High-speed then."], note: "Works, but 随便 can sound a bit careless. 都可以 dōu kěyǐ, \"either is fine\", is friendlier.", fix: ["都可以。", "Dōu kěyǐ."] }
+        ] },
+      { npc: ["护照给我。要靠窗的吗？", "Hùzhào gěi wǒ. Yào kào chuāng de ma?", "Passport please. Want a window seat?"], prompt: "Hand over your passport and say yes to the window.",
+        opts: [
+          { h: "给你。要靠窗的，谢谢。", b: "给你|要|靠窗的|谢谢", p: "Gěi nǐ. Yào kào chuāng de, xièxie.", e: "Here you go. Window, thanks.", k: "good", note: "给你 gěi nǐ, \"here you go\", whenever you hand something over. 靠窗 kào chuāng is by the window; 靠过道 kào guòdào is aisle." },
+          { h: "要。", p: "Yào.", e: "Yes.", k: "good", note: "Answering with the verb is how you say yes in Chinese." },
+          { h: "不要护照。", p: "Bú yào hùzhào.", e: "Don't want passport.", k: "wrong", r: ["不行，买票必须用护照。", "Bù xíng, mǎi piào bìxū yòng hùzhào.", "No, you need your passport to buy a ticket."], note: "Train tickets are tied to your ID, and you'll show the passport again at the gate.", fix: ["给你。", "Gěi nǐ."] }
+        ] }
+    ],
+    end: ["好了，七车十二F，靠窗。在十五检票口。", "Hǎo le, qī chē shí'èr F, kào chuāng. Zài shíwǔ jiǎnpiào kǒu.", "Done: car 7, seat 12F, window. Gate 15."],
+    endNote: "检票口 jiǎnpiào kǒu is the ticket gate. 车 chē is the carriage number. Keep your passport out; you'll need it again." },
+  { id: "return", place: "退货", placePy: "tuìhuò", en: "Returning a shirt", who: "店员", whoPy: "diànyuán", whoEn: "the shop assistant",
+    goal: "Swap a shirt that's too small, or get your money back.",
+    intro: "You bought a shirt yesterday. It's too small. You're back at the shop with the receipt.",
+    turns: [
+      { npc: ["欢迎光临！", "Huānyíng guānglín!", "Welcome!"], prompt: "Say you bought this yesterday and it's too small.",
+        opts: [
+          { h: "这件衣服我昨天买的，太小了。", b: "这件衣服|我|昨天|买的|太小了", p: "Zhè jiàn yīfu wǒ zuótiān mǎi de, tài xiǎo le.", e: "I bought this yesterday, it's too small.", k: "good", note: "Clothes take 件 jiàn. 太…了 tài…le is \"too…\"." },
+          { h: "太小了。", p: "Tài xiǎo le.", e: "Too small.", k: "okay", r: ["你是在我们这儿买的吗？", "Nǐ shì zài wǒmen zhèr mǎi de ma?", "Did you buy it here?"], note: "Clear, but she needs context first: when you bought it.", fix: ["这件衣服我昨天买的，太小了。", "Zhè jiàn yīfu wǒ zuótiān mǎi de, tài xiǎo le."] },
+          { h: "这件衣服太少了。", p: "Zhè jiàn yīfu tài shǎo le.", e: "This shirt is too few.", k: "wrong", r: ["太少？你想要几件？", "Tài shǎo? Nǐ xiǎng yào jǐ jiàn?", "Too few? How many do you want?"], note: "少 shǎo is few (amount); 小 xiǎo is small (size). Third tone vs third tone, different words.", fix: ["太小了。", "Tài xiǎo le."] }
+        ] },
+      { npc: ["可以换，不能退。要换大一号吗？", "Kěyǐ huàn, bù néng tuì. Yào huàn dà yí hào ma?", "You can exchange it, not refund. Want one size up?"], prompt: "Say yes, one size up.",
+        opts: [
+          { h: "好，换大一号的。", b: "好|换|大一号的", p: "Hǎo, huàn dà yí hào de.", e: "OK, one size bigger.", k: "good", note: "换 huàn is swap; 退 tuì is return for a refund. 大一号 is one size up, 小一号 one size down." },
+          { h: "我要退钱。", p: "Wǒ yào tuì qián.", e: "I want my money back.", k: "okay", r: ["不好意思，打折的衣服只能换。", "Bù hǎoyìsi, dǎzhé de yīfu zhǐ néng huàn.", "Sorry, sale items can only be exchanged."], note: "Fair to ask, and it got you the reason. The swap is the realistic option here.", fix: ["好，换大一号的。", "Hǎo, huàn dà yí hào de."] },
+          { h: "好，换小一号的。", p: "Hǎo, huàn xiǎo yí hào de.", e: "OK, one size smaller.", k: "wrong", carry: "Walked out with an even smaller shirt", r: ["小一号？好的，给你。", "Xiǎo yí hào? Hǎo de, gěi nǐ.", "One smaller? Sure, here."], note: "It was too small, so you want 大一号 dà yí hào, one size up.", fix: ["换大一号的。", "Huàn dà yí hào de."] }
+        ] },
+      { npc: ["你试一下吧，试衣间在那边。", "Nǐ shì yíxià ba, shìyījiān zài nàbiān.", "Try it on, the fitting room is over there."], prompt: "It fits. Tell her.",
+        opts: [
+          { h: "这件正好，谢谢！", b: "这件|正好|谢谢", p: "Zhè jiàn zhènghǎo, xièxie!", e: "This one fits just right, thanks!", k: "good", note: "正好 zhènghǎo is \"just right\". Also handy for exact change." },
+          { h: "很合适。", p: "Hěn héshì.", e: "It fits well.", k: "good", note: "合适 héshì, suitable or a good fit. Natural and polite." },
+          { h: "这件太大了。", p: "Zhè jiàn tài dà le.", e: "This one's too big.", k: "wrong", r: ["又不合适？那……再换一次？", "Yòu bù héshì? Nà… zài huàn yí cì?", "Doesn't fit again? Then… swap once more?"], note: "太大了 means too big. If it fits: 正好 zhènghǎo.", fix: ["这件正好。", "Zhè jiàn zhènghǎo."] }
+        ] }
+    ],
+    end: ["好的，给你装起来。下次再来！", "Hǎo de, gěi nǐ zhuāng qǐlái. Xià cì zài lái!", "Great, I'll bag it for you. Come again!"],
+    endNote: "换 huàn is exchange, 退 tuì is refund. Sale items (打折 dǎzhé) are often exchange-only." }
 ];
