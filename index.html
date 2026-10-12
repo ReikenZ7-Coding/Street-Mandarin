@@ -128,6 +128,7 @@ body.no-py .py { display: none; }
 .fb p { margin: 2px 0 0; }
 .why-btn { margin-top: 8px; border: 0; background: none; padding: 0; color: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; opacity: 0.8; }
 .why-btn:hover { opacity: 1; }
+.linkish { border: 0; background: none; padding: 0; font-size: 13px; font-weight: 600; color: var(--jade); text-decoration: underline; text-underline-offset: 3px; }
 .why-out { margin-top: 8px; padding-top: 8px; border-top: 1px dashed currentColor; font-size: 14px; }
 .why-tip { font-style: italic; }
 .fb .better { margin-top: 6px; font-size: 14px; }
@@ -379,7 +380,8 @@ function addMe(h, p, e, kind) {
 }
 function addFeedback(kind, note, fix, extra) {
   const box = el("div", "fb " + kind);
-  const seal = el("div", "seal", kind === "wrong" ? "错" : kind === "okay" ? "差不多" : "对");
+  const seal = el("div", "seal", extra && extra.seal || (kind === "wrong" ? "错" : kind === "okay" ? "差不多" : "对"));
+  if (extra && extra.seal) seal.style.fontSize = "20px";
   const body = el("div");
   body.append(el("div", "label", extra && extra.label ? extra.label : kind === "wrong" ? "Didn't land" : kind === "okay" ? "Understood, but…" : "Nice"));
   body.append(el("p", null, note));
@@ -442,7 +444,7 @@ function renderRail() {
   rv.append(el("span", "han", "复习"), el("span", "name", "Mistakes that came back"));
   rv.append(el("span", "meta", due ? `${due} due now` : active ? "Nothing due yet" : "No mistakes yet"));
   rv.onclick = () => startReview();
-  const dr = el("button", "scn review"); dr.setAttribute("aria-current", mode === "drill" ? "true" : "false");
+  const dr = el("button", "scn review"); dr.setAttribute("aria-current", mode === "drill" || mode === "reader" ? "true" : "false");
   dr.append(el("span", "han", "数字"), el("span", "name", "Prices by ear"), el("span", "meta", "A quick round of 8 totals"));
   dr.onclick = () => startDrill();
   const pb = el("button", "scn review"); pb.setAttribute("aria-current", mode === "phrases" ? "true" : "false");
@@ -524,6 +526,7 @@ function renderMove() {
   if (mode === "wander") return renderWanderMove();
   if (mode === "ears") return renderEarsMove();
   if (mode === "pattern") return renderPatternMove();
+  if (mode === "reader") return renderReaderMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
@@ -947,10 +950,12 @@ function renderDrillMove() {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${dRight} of ${dq.length} right.`));
     const row = el("div", "endcard");
     const again = el("button", "btn", "Another eight"); again.onclick = () => startDrill();
+    const rd = el("button", "btn ghost", "Read any number"); rd.onclick = () => startReader();
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
-    row.append(again, back); m.append(head, row); return;
+    row.append(again, rd, back); m.append(head, row); return;
   }
-  head.append(el("h3", null, `Total ${di + 1} of ${dq.length}`), el("span", "prompt", "How much do you pay?"));
+  const rdb = el("button", "linkish", "Number reader"); rdb.onclick = () => startReader();
+  head.append(el("h3", null, `Total ${di + 1} of ${dq.length}`), el("span", "prompt", "How much do you pay?"), rdb);
   m.append(head);
   if (dAnswered) {
     const nx = el("button", "btn", di + 1 < dq.length ? "Next total" : "See how you did");
@@ -1143,6 +1148,141 @@ function renderPatternMove() {
     const row = el("div", "endcard"); row.append(nx); m.append(row); return;
   }
   m.append(optionButtons(order, patternChoose));
+}
+/* ---------- number reader: any number, said the way people actually say it ---------- */
+const NT = [["零", "líng", 2], ["一", "yī", 1], ["二", "èr", 4], ["三", "sān", 1], ["四", "sì", 4], ["五", "wǔ", 3], ["六", "liù", 4], ["七", "qī", 1], ["八", "bā", 1], ["九", "jiǔ", 3]];
+const tk = (h, p, tone) => ({ h, p, tone });
+const dig = d => tk(NT[d][0], NT[d][1], NT[d][2]);
+const two = () => tk("两", "liǎng", 3);
+function under10k(n, lead) {
+  // 1–9999 as tokens. lead: this is the start of the whole number (so 10–19 drop the 一, and 2 before 百/千 is 两)
+  const out = [], th = Math.floor(n / 1000), h = Math.floor(n / 100) % 10, t = Math.floor(n / 10) % 10, o = n % 10;
+  if (th) out.push(th === 2 ? two() : dig(th), tk("千", "qiān", 1));
+  if (h) out.push(h === 2 && (lead || th) ? two() : dig(h), tk("百", "bǎi", 3));
+  else if (th && (t || o)) out.push(dig(0));
+  if (t) { if (!(lead && !th && !h && t === 1)) out.push(dig(t)); out.push(tk("十", "shí", 2)); }
+  else if (h && o) out.push(dig(0));
+  if (o) out.push(dig(o));
+  return out;
+}
+function intTokens(n) {
+  if (n === 0) return [dig(0)];
+  const w = Math.floor(n / 10000), r = n % 10000, out = [];
+  if (w) { out.push(...under10k(w, true)); if (w === 2) out.splice(0, 1, two()); out.push(tk("万", "wàn", 4)); if (r && r < 1000) out.push(dig(0)); }
+  if (r) out.push(...under10k(r, !w));
+  return out;
+}
+function sandhi(tokens) {
+  // 一 is yī at the end or alone, yí before a 4th tone (or 个), yì before the others; 不 isn't needed here
+  return tokens.map((x, i) => {
+    if (x.h !== "一") return x.p;
+    const nx = tokens[i + 1];
+    const pv = tokens[i - 1];
+    if (!nx || nx.h === "零" || /^[零一二三四五六七八九十]$/.test(nx.h) && nx.h !== "十") return "yī";
+    if (pv && NUMTOK.test(pv.h) && !NUMTOK.test(nx.h)) return "yī"; // 二十一个: èrshíyī ge
+    if (nx.h === "十") return "yī";
+    return nx.tone === 4 || nx.h === "个" ? "yí" : "yì";
+  });
+}
+const NUMTOK = /^[零一二三四五六七八九十百千万两幺]$/;
+function joinPy(tokens) {
+  // Number syllables run together as one word (shí'èr), everything else is spaced
+  const ps = sandhi(tokens), words = [];
+  tokens.forEach((x, i) => {
+    const p = ps[i];
+    if (i && NUMTOK.test(x.h) && NUMTOK.test(tokens[i - 1].h)) words[words.length - 1] += (/^[aeoāáǎàēéěèōóǒò]/.test(p) ? "'" : "") + p;
+    else words.push(p);
+  });
+  return words.join(" ");
+}
+function readNumber(raw, kind) {
+  const s = raw.trim().replace(/[,，\s]/g, "");
+  const notes = [];
+  if (kind === "digits") {
+    if (!/^\d{1,20}$/.test(s)) return { err: "Digits only, like a phone number or a code." };
+    const t = [...s].map(d => d === "1" ? tk("幺", "yāo", 1) : dig(+d));
+    if (s.includes("1")) notes.push("1 is read 幺 yāo in phone numbers, room numbers and codes, so it can't be mistaken for 七 qī.");
+    if (s.includes("2")) notes.push("2 stays 二 èr here, not 两. Digit strings never use 两.");
+    if (/^1\d{10}$/.test(s)) notes.push("Mobile numbers are usually read in chunks: 3, then 4, then 4.");
+    const chunks = /^1\d{10}$/.test(s) ? [t.slice(0, 3), t.slice(3, 7), t.slice(7)] : [t];
+    return { zh: chunks.map(c => c.map(x => x.h).join("")).join(" "), py: chunks.map(c => c.map(x => x.p).join(" ")).join(", "), notes };
+  }
+  if (kind === "time") {
+    const m = s.match(/^(\d{1,2})[:.：]?(\d{2})?$/); if (!m) return { err: "A time like 9:30 or 14:05." };
+    let hh = +m[1], mm = +(m[2] || 0); if (hh > 23 || mm > 59) return { err: "That isn't a time on any clock." };
+    const part = hh < 5 ? ["凌晨", "língchén", "in the small hours"] : hh < 9 ? ["早上", "zǎoshang", "morning"] : hh < 12 ? ["上午", "shàngwǔ", "morning"] : hh < 13 ? ["中午", "zhōngwǔ", "midday"] : hh < 18 ? ["下午", "xiàwǔ", "afternoon"] : ["晚上", "wǎnshang", "evening"];
+    const h12 = hh % 12 === 0 ? 12 : hh % 12;
+    const t = [tk(part[0], part[1], 0), ...(h12 === 2 ? [two()] : intTokens(h12)), tk("点", "diǎn", 3)];
+    if (mm === 30) { t.push(tk("半", "bàn", 4)); notes.push("Half past is 半 bàn: 两点半."); }
+    else if (mm === 15 || mm === 45) { t.push(dig(mm / 15), tk("刻", "kè", 4)); notes.push(`A quarter is 一刻 yí kè${mm === 45 ? ", so 三刻 is three quarters" : ""}. Saying ${mm}分 works too.`); }
+    else if (mm) { if (mm < 10) t.push(dig(0)); t.push(...intTokens(mm), tk("分", "fēn", 1)); if (mm < 10) notes.push("Minutes under ten take a 零: 九点零五分."); }
+    if (h12 === 2) notes.push("Two o'clock is 两点 liǎng diǎn, never 二点.");
+    notes.push(`Chinese adds the part of the day in front: ${part[0]} ${part[1]}, ${part[2]}.`);
+    return { zh: t.map(x => x.h).join(""), py: joinPy(t), notes };
+  }
+  // price or count
+  const m = s.match(/^(\d{1,8})(?:\.(\d{1,2}))?$/); if (!m) return { err: "A number like 18, 105 or 12.5." };
+  const whole = +m[1], dec = (m[2] || "").padEnd(2, "0"), jiao = +dec[0], fen = +dec[1];
+  if (kind === "count") {
+    if (m[2]) return { err: "Whole numbers only for counting things." };
+    const t = whole === 2 ? [two()] : intTokens(whole); t.push(tk("个", "ge", 4));
+    if (whole === 2) notes.push("Before a measure word, 2 is 两 liǎng: 两个, 两杯, 两张.");
+    if (whole > 2 && whole % 10 === 2 && whole < 100) notes.push("Inside bigger numbers 2 is back to 二: 十二个, 二十二个.");
+    if (whole === 1) notes.push("一 before 个 is yí, because 个 is originally 4th tone.");
+    notes.push("个 is the catch-all. Use the real one when you know it: 杯 cups, 张 tickets, 碗 bowls, 位 people (polite).");
+    return { zh: t.map(x => x.h).join(""), py: joinPy(t), notes };
+  }
+  const t = intTokens(whole);
+  const h = Math.floor(whole / 100) % 10, tens = Math.floor(whole / 10) % 10, ones = whole % 10;
+  const dropKuai = whole >= 100 && whole < 1000 && tens && !ones && !jiao && !fen;
+  if (dropKuai) t.pop(); // 一百五, not 一百五十块
+  else if (whole || !jiao) t.push(tk("块", "kuài", 4));
+  if (jiao) t.push(dig(jiao));
+  if (fen) { if (!jiao) t.push(dig(0)); t.push(dig(fen)); }
+  if (!whole && jiao) { t.splice(0, t.length, dig(jiao), tk("毛", "máo", 2)); if (fen) t.push(dig(fen)); notes.push("Under one kuai you hear 毛 máo: 五毛 is 50 fen."); }
+  if (dropKuai) notes.push(`With round tens over a hundred, cashiers drop 块 and the last 十: ${t.map(x => x.h).join("")} is ${whole}, and ${t.map(x => x.h).join("")}块 would sound odd.`);
+  const zh = t.map(x => x.h).join("");
+  if (whole < 1000 && h && !tens && ones) notes.push(`The 零 matters: ${zh} is ${whole}. Leave it out and it sounds like ${h * 100 + ones * 10}.`);
+  if ((whole >= 200 && h === 2) || Math.floor(whole / 1000) % 10 === 2) notes.push("2 before 百 or 千 is usually 两: 两百, 两千.");
+  if (whole >= 11 && whole < 20) notes.push(`Teens start straight with 十. Flip it to ${ZH[ones]}十 and it's ${ones * 10}.`);
+  if (whole >= 20 && whole < 100 && ones && tens !== ones) notes.push(`Swap the two and it's a different price: ${ZH[ones]}十${tens === 0 ? "" : ZH[tens]} is ${ones * 10 + tens}.`);
+  if (jiao && whole) notes.push(`${ZH[jiao]} at the end means ${jiao} 毛, so 0.${jiao} of a kuai. In full it's ${ZH[jiao]}毛.`);
+  return { zh, py: joinPy(t), notes };
+}
+let rdKind = "price", rdVal = "";
+function startReader() {
+  mode = "reader"; busy = false; cur = { who: "读数", whoEn: "the number reader" };
+  setHead("读数", "dú shù", "Number reader", "What it's for: ", "Type any price, phone number, time or amount and see and hear it the way people actually say it, with the traps pointed out.");
+  $("#log").textContent = "";
+  addNarr("Try 18, 105, 250 or 12.5 as a price. A phone number. 14:30 as a time. 2 as a count.");
+  renderRail(); renderMove();
+}
+function renderReaderMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head"); head.append(el("h3", null, "Read a number"));
+  const chips = el("div", "modes"); chips.setAttribute("role", "group"); chips.setAttribute("aria-label", "Kind of number");
+  [["Price", "price"], ["Phone or code", "digits"], ["Time", "time"], ["How many", "count"]].forEach(([l, v]) => {
+    const c = el("button", "chip", l); c.setAttribute("aria-pressed", rdKind === v ? "true" : "false");
+    c.onclick = () => { rdKind = v; renderMove(); }; chips.append(c);
+  });
+  const form = el("form", "free");
+  const inp = el("input"); inp.type = "text"; inp.autocomplete = "off"; inp.inputMode = rdKind === "time" ? "text" : "decimal"; inp.value = rdVal;
+  inp.placeholder = { price: "e.g. 105 or 12.5", digits: "e.g. 13912345678", time: "e.g. 14:30", count: "e.g. 2" }[rdKind];
+  inp.setAttribute("aria-label", "Number to read");
+  const go = el("button", "btn", "Say it"); go.type = "submit";
+  form.append(inp, go);
+  form.onsubmit = ev => {
+    ev.preventDefault(); rdVal = inp.value; if (!rdVal.trim()) return;
+    const r = readNumber(rdVal, rdKind);
+    if (r.err) { addNarr(r.err); return; }
+    addNpc([r.zh, r.py, ""], false);
+    if (r.notes.length) addFeedback("okay", r.notes.join(" "), null, { label: "Watch for", seal: "注" });
+    if (canSpeak) speak(r.zh.replace(/ /g, "，"));
+  };
+  const back = el("button", "btn ghost", "Back to the price drill"); back.onclick = () => startDrill();
+  const row = el("div", "endcard"); row.append(back);
+  m.append(head, chips, form, row);
+  setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
 }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
