@@ -523,7 +523,7 @@ window.SCENES = [
       { after: 1, what: "a rider who can't get in", turn: { npc: ["保安不让我进去，你能出来吗？", "Bǎo'ān bú ràng wǒ jìnqù, nǐ néng chūlái ma?", "The guard won't let me in, can you come out?"], prompt: "Say yes, you're coming out.",
         opts: [
           { h: "可以，我现在出来。", b: "可以|我|现在|出来", p: "Kěyǐ, wǒ xiànzài chūlái.", e: "Sure, I'm coming out now.", k: "good", note: "Many compounds don't let riders in. 出来 chūlái is come out; 现在 xiànzài is now." },
-          { h: "你进来吧。", p: "Nǐ jìnlái ba.", e: "Just come in.", k: "wrong", r: ["我进不去啊！保安不让！", "Wǒ jìn bú qù a! Bǎo'ān bú ràng!", "I CAN'T get in! The guard won't let me!"], note: "He just told you he can't. 不让 bú ràng means won't allow.", fix: ["我现在出来。", "Wǒ xiànzài chūlái."] },
+          { h: "你进来吧。", p: "Nǐ jìnlái ba.", e: "Just come in.", k: "wrong", r: ["我进不去啊！保安不让！", "Wǒ jìn bu qù a! Bǎo'ān bú ràng!", "I CAN'T get in! The guard won't let me!"], note: "He just told you he can't. 不让 bú ràng means won't allow.", fix: ["我现在出来。", "Wǒ xiànzài chūlái."] },
           { h: "好的。", p: "Hǎo de.", e: "OK.", k: "good", note: "Enough. Then go." }
         ] } }
     ],
@@ -537,7 +537,7 @@ window.SCENES = [
       { npc: ["你几号楼？我送上去也行。", "Nǐ jǐ hào lóu? Wǒ sòng shàngqù yě xíng.", "Which building number? I can bring it up too."], prompt: "Say building 8, and that you'll come down anyway.",
         opts: [
           { h: "八号楼。不用了，我下去拿。", b: "八号楼|不用了|我|下去|拿", p: "Bā hào lóu. Búyòng le, wǒ xiàqù ná.", e: "Building 8. No need, I'll come down for it.", k: "good", note: "号楼 hào lóu is a building number. 不用了 búyòng le politely turns down an offer." },
-          { h: "八楼。", p: "Bā lóu.", e: "Eighth floor.", k: "wrong", carry: "The rider went to the eighth floor of the wrong building", r: ["八楼？好，我送上来。", "Bā lóu? Hǎo, wǒ sòng shànglái.", "Eighth floor? OK, I'll bring it up."], note: "八楼 bā lóu is the 8th floor. Building 8 is 八号楼 bā hào lóu.", fix: ["八号楼。我下去拿。", "Bā hào lóu. Wǒ xiàqù ná."] },
+          { h: "八楼。", p: "Bā lóu.", e: "Eighth floor.", k: "wrong", carry: "The rider went to the eighth floor of the wrong building", r: ["八楼？好，我送上去。", "Bā lóu? Hǎo, wǒ sòng shàngqù.", "Eighth floor? OK, I'll bring it up."], note: "八楼 bā lóu is the 8th floor. Building 8 is 八号楼 bā hào lóu.", fix: ["八号楼。我下去拿。", "Bā hào lóu. Wǒ xiàqù ná."] },
           { h: "不要。", p: "Bú yào.", e: "Don't want.", k: "wrong", r: ["不要了？你要取消吗？", "Bú yào le? Nǐ yào qǔxiāo ma?", "You don't want it? Do you want to cancel?"], note: "不要 sounds like you're refusing the food. To decline help, say 不用了 búyòng le.", fix: ["不用了，我下去拿。", "Búyòng le, wǒ xiàqù ná."] }
         ] },
       { npc: ["好，我在门口等你。黄色衣服。", "Hǎo, wǒ zài ménkǒu děng nǐ. Huángsè yīfu.", "OK, I'll wait at the gate. Yellow jacket."], prompt: "You see him. Thank him.",
@@ -551,7 +551,7 @@ window.SCENES = [
     endNote: "Riders often call. 几号楼 is which building, 几楼 is which floor. Say 不用了 to decline an offer, not 不要." },
   { id: "train", place: "火车站", placePy: "huǒchēzhàn", en: "Train station", who: "售票员", whoPy: "shòupiàoyuán", whoEn: "the ticket clerk",
     goal: "Get a high-speed train ticket to Hangzhou, today.",
-    intro: "The ticket hall at Shanghai Hongqiao. Foreign passports often can't use the machines, so you queue at the window.",
+    intro: "The ticket hall at Shanghai Hongqiao. Some machines won't take a foreign passport, so you queue at the window.",
     curveballs: [
       { after: 0, what: "a sold-out train", turn: { npc: ["今天的二等座卖完了，只有一等座。", "Jīntiān de èrděngzuò mài wán le, zhǐ yǒu yīděngzuò.", "Second class is sold out today, only first class left."], prompt: "Ask how much first class is.",
         opts: [
@@ -590,7 +590,7 @@ window.SCENES = [
         opts: [
           { h: "这件衣服我昨天买的，太小了。", b: "这件衣服|我|昨天|买的|太小了", p: "Zhè jiàn yīfu wǒ zuótiān mǎi de, tài xiǎo le.", e: "I bought this yesterday, it's too small.", k: "good", note: "Clothes take 件 jiàn. 太…了 tài…le is \"too…\"." },
           { h: "太小了。", p: "Tài xiǎo le.", e: "Too small.", k: "okay", r: ["你是在我们这儿买的吗？", "Nǐ shì zài wǒmen zhèr mǎi de ma?", "Did you buy it here?"], note: "Clear, but she needs context first: when you bought it.", fix: ["这件衣服我昨天买的，太小了。", "Zhè jiàn yīfu wǒ zuótiān mǎi de, tài xiǎo le."] },
-          { h: "这件衣服太少了。", p: "Zhè jiàn yīfu tài shǎo le.", e: "This shirt is too few.", k: "wrong", r: ["太少？你想要几件？", "Tài shǎo? Nǐ xiǎng yào jǐ jiàn?", "Too few? How many do you want?"], note: "少 shǎo is few (amount); 小 xiǎo is small (size). Third tone vs third tone, different words.", fix: ["太小了。", "Tài xiǎo le."] }
+          { h: "这件衣服太少了。", p: "Zhè jiàn yīfu tài shǎo le.", e: "This shirt is too few.", k: "wrong", r: ["太少？你想要几件？", "Tài shǎo? Nǐ xiǎng yào jǐ jiàn?", "Too few? How many do you want?"], note: "少 shǎo is few (amount); 小 xiǎo is small (size). Same tone; the difference is the start: x vs sh.", fix: ["太小了。", "Tài xiǎo le."] }
         ] },
       { npc: ["可以换，不能退。要换大一号吗？", "Kěyǐ huàn, bù néng tuì. Yào huàn dà yí hào ma?", "You can exchange it, not refund. Want one size up?"], prompt: "Say yes, one size up.",
         opts: [
@@ -625,7 +625,7 @@ window.SCENES = [
         ] },
       { npc: ["好的，二十八。", "Hǎo de, èrshíbā.", "OK, 28."], prompt: "Ask for the wifi password.",
         opts: [
-          { h: "Wi-Fi密码是多少？", b: "Wi-Fi|密码|是|多少", p: "Wi-Fi mìmǎ shì duōshao?", e: "What's the wifi password?", k: "good", note: "密码 mìmǎ is password (and PIN). Codes and numbers take 多少 duōshao, not 什么." },
+          { h: "Wi-Fi密码是多少？", b: "Wi-Fi|密码|是|多少", p: "Wi-Fi mìmǎ shì duōshao?", e: "What's the wifi password?", k: "good", note: "密码 mìmǎ is password (and PIN). Codes and numbers usually take 多少 duōshao (什么 works too)." },
           { h: "有Wi-Fi吗？", p: "Yǒu Wi-Fi ma?", e: "Is there wifi?", k: "okay", r: ["有，密码在桌子上。", "Yǒu, mìmǎ zài zhuōzi shang.", "Yes, the password's on the table."], note: "Works. Asking for the 密码 directly saves a step.", fix: ["Wi-Fi密码是多少？", "Wi-Fi mìmǎ shì duōshao?"] },
           { h: "Wi-Fi的名字是什么？", p: "Wi-Fi de míngzi shì shénme?", e: "What's the wifi called?", k: "okay", r: ["就是店名。密码要吗？", "Jiù shì diàn míng. Mìmǎ yào ma?", "Same as the café. Need the password?"], note: "Fair question, but the password is the bit you need: 密码 mìmǎ.", fix: ["Wi-Fi密码是多少？", "Wi-Fi mìmǎ shì duōshao?"] }
         ] }
@@ -650,7 +650,7 @@ window.SCENES = [
         ] },
       { npc: ["这辆坏了，你看，车座歪了。换一辆吧。", "Zhè liàng huài le, nǐ kàn, chēzuò wāi le. Huàn yí liàng ba.", "This one's broken, look, the seat's crooked. Try another one."], prompt: "Thank him warmly.",
         opts: [
-          { h: "哦，原来是这样。谢谢大爷！", b: "哦|原来是这样|谢谢大爷", p: "Ó, yuánlái shì zhèyàng. Xièxie dàye!", e: "Oh, so that's it. Thanks, uncle!", k: "good", note: "原来是这样 yuánlái shì zhèyàng, \"oh, so that's why\", is a lovely thing to say when someone explains." },
+          { h: "哦，原来是这样。谢谢大爷！", b: "哦|原来是这样|谢谢大爷", p: "Ò, yuánlái shì zhèyàng. Xièxie dàye!", e: "Oh, so that's it. Thanks, uncle!", k: "good", note: "原来是这样 yuánlái shì zhèyàng, \"oh, so that's why\", is a lovely thing to say when someone explains." },
           { h: "谢谢！", p: "Xièxie!", e: "Thanks!", k: "good", note: "Always enough." },
           { h: "你的车坏了。", p: "Nǐ de chē huài le.", e: "Your bike is broken.", k: "wrong", r: ["不是我的，是你那辆！", "Bú shì wǒ de, shì nǐ nà liàng!", "Not mine, YOURS!"], note: "这辆坏了 meant the one you picked. 换一辆 huàn yí liàng: switch to another.", fix: ["谢谢大爷！", "Xièxie dàye!"] }
         ] }

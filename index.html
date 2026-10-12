@@ -126,6 +126,10 @@ body.no-py .py { display: none; }
 .fb .label { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
 .fb.wrong .label { color: var(--cinnabar); } .fb.okay .label { color: var(--ochre); } .fb.good .label { color: var(--jade); }
 .fb p { margin: 2px 0 0; }
+.why-btn { margin-top: 8px; border: 0; background: none; padding: 0; color: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; opacity: 0.8; }
+.why-btn:hover { opacity: 1; }
+.why-out { margin-top: 8px; padding-top: 8px; border-top: 1px dashed currentColor; font-size: 14px; }
+.why-tip { font-style: italic; }
 .fb .better { margin-top: 6px; font-size: 14px; }
 .fb .better .h { font-family: var(--f-han); font-weight: 600; font-size: 17px; }
 .fb .better .p { font-family: var(--f-py); color: var(--muted); }
@@ -356,7 +360,33 @@ function addFeedback(kind, note, fix, extra) {
     body.append(bt);
   }
   if (extra && extra.cost) body.append(el("div", "cost", extra.cost));
+  if (sample && kind !== "good" && note) {
+    // A curious learner can ask for the deeper why, from Claude, in plain English
+    const ctx = { place: cur && cur.en, heard: [...transcript].reverse().find(x => x.who === "npc"), said: [...transcript].reverse().find(x => x.who === "me"), note, fix };
+    const ask = el("button", "why-btn", "Why, exactly?");
+    ask.onclick = () => explainWhy(ask, ctx);
+    body.append(ask);
+  }
   box.append(seal, body); $("#log").append(box); scrollLog();
+}
+async function explainWhy(btn, c) {
+  btn.disabled = true; btn.textContent = "Asking…";
+  const prompt = `A beginner learning Mandarin through role-play made a mistake. Explain it to them like a patient, warm friend who speaks Chinese.
+Situation: ${c.place || "everyday China"}.
+${c.heard ? `The local had just said: ${c.heard.text}` : ""}
+The learner said: ${c.said ? c.said.text : "(unknown)"}
+The short feedback they got: ${c.note}
+${c.fix ? `A better line: ${c.fix[0]} ${c.fix[1] || ""}` : ""}
+Return ONLY a JSON object: "why" (2 to 4 plain-English sentences going one level deeper than the short feedback: the grammar or sound behind it, or how a local actually hears it; include pinyin with tone marks for any Chinese), "tip" (one short memory trick).`;
+  try {
+    const r = await sample.json(prompt, { cache: true, modelTier: "quick" });
+    const out = el("div", "why-out");
+    out.append(el("p", null, r.why || ""));
+    if (r.tip) out.append(el("p", "why-tip", "Trick: " + r.tip));
+    btn.replaceWith(out); scrollLog();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = e && e.code === "rate_limited" ? "Busy, try again in a moment" : "Couldn't ask. Try again?";
+  }
 }
 function addNarr(t) { $("#log").append(el("div", "narr", t)); scrollLog(); }
 function scrollLog() { const l = $("#log"); l.scrollTop = l.scrollHeight; }
@@ -895,7 +925,7 @@ const PAIRS = [
   { a: ["十四块。", "Shísì kuài.", "14 kuai."], b: ["四十块。", "Sìshí kuài.", "40 kuai."], why: "十四 is ten-four, 14. 四十 is four-ten, 40. Listen for which comes first." },
   { a: ["要不要汤？", "Yào bu yào tāng?", "Do you want soup?"], b: ["要不要糖？", "Yào bu yào táng?", "Do you want sugar?"], why: "汤 tāng is high and flat; 糖 táng rises like a question." },
   { a: ["我可以问你吗？", "Wǒ kěyǐ wèn nǐ ma?", "Can I ask you something?"], b: ["我可以吻你吗？", "Wǒ kěyǐ wěn nǐ ma?", "Can I kiss you?"], why: "问 wèn falls (ask); 吻 wěn dips (kiss). The most famous tone mistake for a reason." },
-  { a: ["我想吃水饺。", "Wǒ xiǎng chī shuǐjiǎo.", "I want to eat dumplings."], b: ["我想睡觉。", "Wǒ xiǎng shuìjiào.", "I want to sleep."], why: "水饺 shuǐjiǎo is two dipping tones; 睡觉 shuìjiào is two falling tones." },
+  { a: ["我想吃水饺。", "Wǒ xiǎng chī shuǐjiǎo.", "I want to eat dumplings."], b: ["我想睡觉。", "Wǒ xiǎng shuìjiào.", "I want to sleep."], why: "水饺 shuǐjiǎo is two 3rd tones, so the first rises (shuí-jiǎo); 睡觉 shuìjiào is two falling tones." },
   { a: ["有盐吗？", "Yǒu yán ma?", "Is there salt?"], b: ["有烟吗？", "Yǒu yān ma?", "Do you have cigarettes?"], why: "盐 yán rises (salt); 烟 yān stays high (cigarettes, or smoke)." },
   { a: ["一碗。", "Yì wǎn.", "One bowl."], b: ["一万。", "Yí wàn.", "Ten thousand."], why: "碗 wǎn dips (a bowl); 万 wàn falls (10,000). Notice 一 changes tone too: yì before 3rd, yí before 4th." },
   { a: ["坐七号线。", "Zuò qī hào xiàn.", "Take Line 7."], b: ["坐一号线。", "Zuò yī hào xiàn.", "Take Line 1."], why: "七 qī starts with a hissy q; 一 yī is a clean ee. In a noisy station, ask again: 几号线？" },
