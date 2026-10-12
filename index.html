@@ -140,6 +140,7 @@ body.no-py .py { display: none; }
 .opt .han { font-size: 19px; }
 .opt .en-line { color: var(--muted); font-size: 13px; }
 body.hint-off .opt .en-line { display: none; }
+.opt .en { font-size: 16px; }
 .free { display: flex; gap: 8px; flex-wrap: wrap; }
 .free input { flex: 1 1 220px; min-width: 0; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 10px; padding: 10px 12px; font: 16px var(--f-py); }
 .btn { border: 1px solid var(--fg); background: var(--fg); color: var(--bg); border-radius: 10px; padding: 9px 16px; font-weight: 600; }
@@ -351,7 +352,10 @@ function renderRail() {
   const nDone = S.filter(s => done[s.id]).length;
   pb.append(el("span", "han", "短语"), el("span", "name", "Your phrasebook"), el("span", "meta", nDone ? `Lines from ${plural(nDone, "place")}` : "Fills up as you survive places"));
   pb.onclick = () => startPhrasebook();
-  rail.append(rv, dr, pb);
+  const ea = el("button", "scn review"); ea.setAttribute("aria-current", mode === "ears" ? "true" : "false");
+  ea.append(el("span", "han", "听错"), el("span", "name", "Sound-alikes"), el("span", "meta", "One tone off, a different word"));
+  ea.onclick = () => startEars();
+  rail.append(rv, dr, ea, pb);
   if (sample) {
     const wd = el("button", "scn review"); wd.setAttribute("aria-current", mode === "wander" ? "true" : "false");
     wd.append(el("span", "han", "随便逛"), el("span", "name", "Wander"), el("span", "meta", "Claude makes up a new situation"));
@@ -405,6 +409,7 @@ function renderMove() {
   if (mode === "drill") return renderDrillMove();
   if (mode === "phrases") return renderPhrasesMove();
   if (mode === "wander") return renderWanderMove();
+  if (mode === "ears") return renderEarsMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
@@ -636,7 +641,7 @@ function renderNotebook() {
     const s = S.find(x => x.id === n.sid);
     const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
     const top = el("div", "where");
-    top.append((s ? s.en : n.sid === "wander" ? "Wander" : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
+    top.append((s ? s.en : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
     const st = el("span", "when", whenText(n));
     const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
     GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
@@ -683,7 +688,7 @@ function reviewItem() {
     if (t.npc) addNpc(t.npc);
     order = shuffle(t.opts);
   } else {
-    addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : "Off-script"}. You said: ${n.said}`);
+    addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : n.sid === "ears" ? "A sound-alike" : "Off-script"}. You said: ${n.said}`);
     order = [];
   }
   renderReviewMove();
@@ -818,6 +823,74 @@ function renderDrillMove() {
   };
   m.append(form);
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+}
+/* ---------- sound-alikes: pairs where one tone or sound changes everything ---------- */
+const PAIRS = [
+  { a: ["我想买这个。", "Wǒ xiǎng mǎi zhège.", "I want to buy this."], b: ["我想卖这个。", "Wǒ xiǎng mài zhège.", "I want to sell this."], why: "买 mǎi (dipping 3rd tone) is buy; 卖 mài (falling 4th) is sell. Same sound, opposite deal." },
+  { a: ["四块。", "Sì kuài.", "4 kuai."], b: ["十块。", "Shí kuài.", "10 kuai."], why: "四 sì falls and has no h; 十 shí rises with a curled sh. Southern speakers often blur them, so check with fingers." },
+  { a: ["十四块。", "Shísì kuài.", "14 kuai."], b: ["四十块。", "Sìshí kuài.", "40 kuai."], why: "十四 is ten-four, 14. 四十 is four-ten, 40. Listen for which comes first." },
+  { a: ["要不要汤？", "Yào bu yào tāng?", "Do you want soup?"], b: ["要不要糖？", "Yào bu yào táng?", "Do you want sugar?"], why: "汤 tāng is high and flat; 糖 táng rises like a question." },
+  { a: ["我可以问你吗？", "Wǒ kěyǐ wèn nǐ ma?", "Can I ask you something?"], b: ["我可以吻你吗？", "Wǒ kěyǐ wěn nǐ ma?", "Can I kiss you?"], why: "问 wèn falls (ask); 吻 wěn dips (kiss). The most famous tone mistake for a reason." },
+  { a: ["我想吃水饺。", "Wǒ xiǎng chī shuǐjiǎo.", "I want to eat dumplings."], b: ["我想睡觉。", "Wǒ xiǎng shuìjiào.", "I want to sleep."], why: "水饺 shuǐjiǎo is two dipping tones; 睡觉 shuìjiào is two falling tones." },
+  { a: ["有盐吗？", "Yǒu yán ma?", "Is there salt?"], b: ["有烟吗？", "Yǒu yān ma?", "Do you have cigarettes?"], why: "盐 yán rises (salt); 烟 yān stays high (cigarettes, or smoke)." },
+  { a: ["一碗。", "Yì wǎn.", "One bowl."], b: ["一万。", "Yí wàn.", "Ten thousand."], why: "碗 wǎn dips (a bowl); 万 wàn falls (10,000). Notice 一 changes tone too: yì before 3rd, yí before 4th." },
+  { a: ["坐七号线。", "Zuò qī hào xiàn.", "Take Line 7."], b: ["坐一号线。", "Zuò yī hào xiàn.", "Take Line 1."], why: "七 qī starts with a hissy q; 一 yī is a clean ee. In a noisy station, ask again: 几号线？" },
+  { a: ["太小了。", "Tài xiǎo le.", "It's too small."], b: ["太少了。", "Tài shǎo le.", "It's too little."], why: "Both dip. 小 xiǎo starts thin (x); 少 shǎo starts with a curled sh. Size vs amount." }
+];
+let eq = [], ei = 0, eRight = 0, eAnswered = false, ePick = null;
+const LISTENER = { who: "听", whoEn: "the speaker" };
+function startEars() {
+  mode = "ears"; busy = false; cur = LISTENER;
+  eq = shuffle(PAIRS).slice(0, 8).map(p => { const flip = Math.random() < 0.5; return { said: flip ? p.b : p.a, other: flip ? p.a : p.b, why: p.why }; });
+  ei = 0; eRight = 0;
+  setHead("听错", "tīng cuò", "Sound-alikes", "How it works: ", canSpeak ? "Hear a line and pick what was said. Each pair differs by one tone or sound, and getting it wrong changes everything." : "Read the pinyin and pick what it means. Each pair differs by one tone or sound.");
+  $("#log").textContent = "";
+  addNarr("Eight lines. Each one has a twin that sounds almost the same.");
+  renderRail(); earsItem();
+}
+function earsItem() {
+  eAnswered = false; ePick = null;
+  const it = eq[ei];
+  addNpc(canSpeak ? [it.said[0], it.said[1], ""] : ["…", it.said[1], ""], true);
+  renderMove();
+}
+function renderEarsMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  if (ei >= eq.length) {
+    head.append(el("h3", null, "Round done"), el("span", "prompt", `${eRight} of ${eq.length} heard right.`));
+    const row = el("div", "endcard");
+    const again = el("button", "btn", "Another round"); again.onclick = () => startEars();
+    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    row.append(again, back); m.append(head, row); return;
+  }
+  head.append(el("h3", null, `Line ${ei + 1} of ${eq.length}`), el("span", "prompt", "What did they say?"));
+  m.append(head);
+  if (eAnswered) {
+    const nx = el("button", "btn", ei + 1 < eq.length ? "Next line" : "See how you did");
+    nx.onclick = () => { ei++; if (ei < eq.length) earsItem(); else { addNarr(`Done: ${eRight} of ${eq.length} heard right.`); renderMove(); } };
+    const row = el("div", "endcard"); row.append(nx); m.append(row); return;
+  }
+  const it = eq[ei], opts = shuffle([it.said, it.other]);
+  const list = el("div", "opts");
+  opts.forEach(o => {
+    const btn = el("button", "opt");
+    btn.append(el("span", "en", o[2]));
+    btn.onclick = () => {
+      eAnswered = true;
+      const right = o === it.said;
+      addMe(o[2], "", "", right ? "good" : "wrong");
+      const both = `They said ${it.said[0]} ${it.said[1]} The twin is ${it.other[0]} ${it.other[1]} `;
+      if (right) { eRight++; addFeedback("good", both + it.why, null); }
+      else {
+        addFeedback("wrong", both + it.why, [it.said[0], it.said[1]], { label: "Heard the twin" });
+        logMistake({ sid: "ears", turn: null, kind: "wrong", said: o[0], fix: it.said[0], fixPy: it.said[1], why: it.why });
+      }
+      renderMove();
+    };
+    list.append(btn);
+  });
+  m.append(list);
 }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
