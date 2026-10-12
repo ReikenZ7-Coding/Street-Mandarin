@@ -733,7 +733,18 @@ function reviewItem() {
   rAnswered = false; rReveal = false;
   const n = rq[ri], s = S.find(x => x.id === n.sid), t = s && n.cb != null && s.curveballs ? s.curveballs[n.cb].turn : s && n.turn != null ? s.turns[n.turn] : null;
   if (s) cur = s;
-  if (t) {
+  const pair = n.sid === "ears" && PAIRS.find(p => p.a[0] === n.fix || p.b[0] === n.fix);
+  if (pair) {
+    // A sound-alike: hear it again and pick the meaning, like the first time
+    cur = LISTENER;
+    const said = pair.a[0] === n.fix ? pair.a : pair.b, other = said === pair.a ? pair.b : pair.a;
+    addNarr("A sound-alike that caught you out. Listen again.");
+    addNpc(canSpeak ? [said[0], said[1], ""] : ["…", said[1], ""], true);
+    order = shuffle([
+      { h: said[2], p: "", e: "", k: "good" },
+      { h: other[2], p: "", e: "", k: "wrong", note: pair.why, fix: [said[0], said[1]] }
+    ]);
+  } else if (t) {
     addNarr(`${s.en}, again. ${t.prompt}`);
     if (t.npc) addNpc(t.npc);
     order = shuffle(t.opts);
@@ -783,7 +794,7 @@ function renderReviewMove() {
     nx.onclick = () => { ri++; if (ri < rq.length) reviewItem(); else { addNarr(`Round done: ${rRight} of ${rq.length} right.`); renderReviewMove(); } };
     row.append(nx); m.append(row); return;
   }
-  if (order.length) { head.append(el("span", "prompt", "What do you say this time?")); m.append(optionButtons(order, reviewChoose)); return; }
+  if (order.length) { head.append(el("span", "prompt", n.sid === "ears" ? "What did they say?" : "What do you say this time?")); m.append(optionButtons(order, reviewChoose)); return; }
   // Off-script mistake: recall it, then grade yourself honestly
   head.append(el("span", "prompt", "What should you have said?"));
   if (!rReveal) {
@@ -1154,6 +1165,18 @@ $("#tg-py").onclick = () => { prefs.py = !prefs.py; store.set("sm-prefs", prefs)
 $("#tg-hint").onclick = () => { prefs.hint = !prefs.hint; store.set("sm-prefs", prefs); applyPrefs(); };
 $("#tg-listen").onclick = () => { prefs.listen = !prefs.listen; store.set("sm-prefs", prefs); applyPrefs(); };
 
+// Keys 1–9 pick an answer; Enter moves on when there's a single next step
+document.addEventListener("keydown", ev => {
+  if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing) return;
+  const t = ev.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  if (/^[1-9]$/.test(ev.key)) {
+    const o = document.querySelectorAll("#move .opt:not([disabled])")[+ev.key - 1];
+    if (o) { ev.preventDefault(); o.click(); }
+  } else if (ev.key === "Enter" && t === document.body) {
+    const b = document.querySelector("#move .endcard .btn:not(.ghost)");
+    if (b && !document.querySelector("#move .opt")) { ev.preventDefault(); b.click(); }
+  }
+});
 applyPrefs(); renderNotebook(); renderStreak();
 let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
 start(S.some(s => s.id === last) ? last : S[0].id);
