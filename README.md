@@ -14,8 +14,10 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 
 ## What's in it
 
-- Ten places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill
-- Two ways to answer each moment: pick from three answers, or build the sentence yourself from word tiles
+- Fifteen places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet
+- Three ways to answer each moment: pick from three answers, build the sentence from word tiles, or type it (characters or pinyin, tones optional). In browsers with Chinese speech recognition, such as Chrome, you can also say it out loud.
+- Prices by ear: a quick drill on the numbers that trip people up (十八 vs 八十, 一百五 vs 一百零五, 块五)
+- A phrasebook of every line that worked, from the places you've survived
 - Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note
 - Pinyin toggle, tap-to-translate, and spoken audio through the browser's Chinese voice when it has one
 - A mistake notebook saved in the browser. Mistakes come back in review rounds after 1, 3 and 7 days, and leave once you get them right three times.

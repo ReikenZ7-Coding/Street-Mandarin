@@ -295,5 +295,135 @@ window.SCENES = [
         ] }
     ],
     end: ["好，一人六十。谢谢，欢迎下次光临！", "Hǎo, yì rén liùshí. Xièxie, huānyíng xià cì guānglín!", "Okay, 60 each. Thanks, come again!"],
-    endNote: "Friends often fight to pay for the whole table as a show of generosity. Splitting with AA is common among young people and colleagues." }
+    endNote: "Friends often fight to pay for the whole table as a show of generosity. Splitting with AA is common among young people and colleagues." },
+
+  { id: "tea", place: "奶茶", placePy: "nǎichá", en: "Bubble tea", who: "店员", whoPy: "diànyuán", whoEn: "the barista",
+    goal: "Order a large pearl milk tea with less sugar and less ice.",
+    intro: "A queue out the door, a wall menu you can't read, and the person behind you is in a hurry.",
+    turns: [
+      { npc: ["你好，喝点什么？", "Nǐ hǎo, hē diǎn shénme?", "Hi, what would you like?"], prompt: "A large pearl milk tea.",
+        opts: [
+          { h: "要一个大杯的珍珠奶茶。", b: "要|一个|大杯|的|珍珠奶茶", p: "Yào yí ge dà bēi de zhēnzhū nǎichá.", e: "A large pearl milk tea, please.", k: "good", note: "Sizes are 大杯 dà bēi (large) and 中杯 zhōng bēi (medium). The chewy balls are 珍珠 zhēnzhū, \"pearls\"." },
+          { h: "我要大的奶茶，有球的。", p: "Wǒ yào dà de nǎichá, yǒu qiú de.", e: "I want big milk tea, the one with balls.", k: "okay", r: ["珍珠奶茶，大杯，对吧？", "Zhēnzhū nǎichá, dà bēi, duì ba?", "Pearl milk tea, large, right?"], note: "She got it. The balls are 珍珠 zhēnzhū, pearls, and large is 大杯 dà bēi.", fix: ["大杯珍珠奶茶。", "Dà bēi zhēnzhū nǎichá."] },
+          { h: "我喝奶茶了。", p: "Wǒ hē nǎichá le.", e: "I drank milk tea.", k: "wrong", r: ["你喝过了？那你还要什么？", "Nǐ hē guo le? Nà nǐ hái yào shénme?", "You already had one? So what else do you want?"], note: "了 le after the verb says it already happened. To order, use 要 yào.", fix: ["要一个大杯的珍珠奶茶。", "Yào yí ge dà bēi de zhēnzhū nǎichá."] }
+        ] },
+      { npc: ["甜度呢？正常糖还是少糖？", "Tiándù ne? Zhèngcháng táng háishi shǎo táng?", "Sweetness? Regular or less sugar?"], prompt: "Less sugar.",
+        opts: [
+          { h: "少糖，谢谢。", b: "少糖|谢谢", p: "Shǎo táng, xièxie.", e: "Less sugar, thanks.", k: "good", note: "少 shǎo means less. Most shops also do 半糖 bàn táng (half) and 无糖 wú táng (none)." },
+          { h: "小糖。", p: "Xiǎo táng.", e: "Small sugar.", k: "okay", r: ["小糖？……少糖是吧？", "Xiǎo táng?… Shǎo táng shì ba?", "Small sugar?… You mean less sugar?"], note: "小 xiǎo (small) and 少 shǎo (less) sound close, but less sugar is 少糖 shǎo táng.", fix: ["少糖。", "Shǎo táng."] },
+          { h: "正常。", p: "Zhèngcháng.", e: "Normal.", k: "wrong", carry: "Got a full-sugar milk tea", r: ["好，正常糖。", "Hǎo, zhèngcháng táng.", "Okay, regular sugar."], note: "正常 zhèngcháng means regular: full sugar, which is very sweet. You wanted 少糖.", fix: ["少糖。", "Shǎo táng."] }
+        ] },
+      { npc: ["冰的还是热的？", "Bīng de háishi rè de?", "Iced or hot?"], prompt: "Iced, but not much ice.",
+        opts: [
+          { h: "冰的，少冰。", b: "冰的|少冰", p: "Bīng de, shǎo bīng.", e: "Iced, less ice.", k: "good", note: "少冰 shǎo bīng is less ice. 去冰 qù bīng means no ice at all." },
+          { h: "是。", p: "Shì.", e: "Yes.", k: "wrong", r: ["是？冰的还是热的？", "Shì? Bīng de háishi rè de?", "Yes? Iced OR hot?"], note: "还是 háishi again: it's a choice, so there's no yes. Pick one.", fix: ["冰的，少冰。", "Bīng de, shǎo bīng."] },
+          { h: "冰，小冰。", p: "Bīng, xiǎo bīng.", e: "Ice, small ice.", k: "okay", r: ["少冰是吧？好的。", "Shǎo bīng shì ba? Hǎo de.", "Less ice? Got it."], note: "Same trap as sugar: less ice is 少冰 shǎo bīng, not 小冰.", fix: ["少冰。", "Shǎo bīng."] }
+        ] }
+    ],
+    end: ["好的，十六块，扫这里。好了叫号。", "Hǎo de, shíliù kuài, sǎo zhèlǐ. Hǎo le jiào hào.", "Okay, 16 kuai, scan here. We'll call your number."],
+    endNote: "Sweetness and ice levels are standard: 正常 regular, 少 less, 半 half, 去冰 no ice, 无糖 no sugar. Learn them once and every tea shop is yours." },
+
+  { id: "haircut", place: "理发", placePy: "lǐfà", en: "Getting a haircut", who: "理发师", whoPy: "lǐfàshī", whoEn: "the barber",
+    goal: "Get a light trim and avoid the membership card upsell.",
+    intro: "A small barbershop with a spinning pole. The barber waves you into the chair.",
+    turns: [
+      { npc: ["你好，剪头发还是洗头？", "Nǐ hǎo, jiǎn tóufa háishi xǐ tóu?", "Hi, a cut or a wash?"], prompt: "Just a haircut.",
+        opts: [
+          { h: "剪头发。", b: "剪|头发", p: "Jiǎn tóufa.", e: "A haircut.", k: "good", note: "剪 jiǎn is to cut with scissors: hair, paper, nails." },
+          { h: "洗。", p: "Xǐ.", e: "Wash.", k: "wrong", r: ["只洗头？不剪了？", "Zhǐ xǐ tóu? Bù jiǎn le?", "Just a wash? No cut?"], note: "洗 xǐ is wash. A cut is 剪 jiǎn.", fix: ["剪头发。", "Jiǎn tóufa."] },
+          { h: "我要切头发。", p: "Wǒ yào qiē tóufa.", e: "I want to slice my hair.", k: "okay", r: ["哈哈，切？剪头发吧。", "Hāha, qiē? Jiǎn tóufa ba.", "Haha, slice? You mean cut."], note: "切 qiē is cutting with a knife, like vegetables. Hair is 剪 jiǎn, with scissors.", fix: ["剪头发。", "Jiǎn tóufa."] }
+        ] },
+      { npc: ["想怎么剪？", "Xiǎng zěnme jiǎn?", "How would you like it?"], prompt: "Just a little shorter.",
+        opts: [
+          { h: "剪短一点就行。", b: "剪短|一点|就行", p: "Jiǎn duǎn yìdiǎn jiù xíng.", e: "Just a bit shorter.", k: "good", note: "短 duǎn is short, 一点 a little, and 就行 \"that's all I need\"." },
+          { h: "剪光。", p: "Jiǎn guāng.", e: "Cut it all off.", k: "wrong", carry: "Walked out with a shaved head", end: true, r: ["全剃光？好嘞，没问题！", "Quán tì guāng? Hǎo lei, méi wèntí!", "Shave it all off? You got it!"], note: "光 guāng means nothing left. You wanted 短一点, a little shorter.", fix: ["剪短一点就行。", "Jiǎn duǎn yìdiǎn jiù xíng."] },
+          { h: "小一点。", p: "Xiǎo yìdiǎn.", e: "A bit smaller.", k: "okay", r: ["短一点是吧？", "Duǎn yìdiǎn shì ba?", "A bit shorter, you mean?"], note: "For length, use 短 duǎn (short), not 小 xiǎo (small).", fix: ["短一点。", "Duǎn yìdiǎn."] }
+        ] },
+      { npc: ["要不要办张会员卡？充五百送一百。", "Yào bu yào bàn zhāng huìyuán kǎ? Chōng wǔbǎi sòng yìbǎi.", "Want a membership card? Top up 500, get 100 free."], prompt: "Politely say no.",
+        opts: [
+          { h: "不用了，谢谢，我只是路过。", b: "不用了|谢谢|我|只是|路过", p: "Bú yòng le, xièxie, wǒ zhǐ shì lùguò.", e: "No thanks, I'm just passing through.", k: "good", note: "路过 lùguò, \"just passing through\", is a polite reason nobody argues with." },
+          { h: "好的好的。", p: "Hǎo de hǎo de.", e: "Sure, sure.", k: "wrong", carry: "Signed up for a 500 kuai membership card", r: ["好，扫码充五百！", "Hǎo, sǎo mǎ chōng wǔbǎi!", "Great, scan to top up 500!"], note: "好的好的 agrees to the deal. The membership upsell is famous; turn it down with 不用了.", fix: ["不用了，谢谢。", "Bú yòng le, xièxie."] },
+          { h: "不要卡。", p: "Bú yào kǎ.", e: "Don't want card.", k: "okay", r: ["好吧……", "Hǎo ba…", "Okay then…"], note: "It works, but it's blunt. 不用了，谢谢 is softer.", fix: ["不用了，谢谢。", "Bú yòng le, xièxie."] }
+        ] }
+    ],
+    end: ["好了，你看看怎么样？", "Hǎo le, nǐ kànkan zěnmeyàng?", "All done. Take a look, how is it?"],
+    endNote: "Prices range from a few dozen kuai at a street barber to several hundred at a salon. Ask 多少钱 before you sit down." },
+
+  { id: "sim", place: "营业厅", placePy: "yíngyètīng", en: "Getting a SIM card", who: "营业员", whoPy: "yíngyèyuán", whoEn: "the clerk",
+    goal: "Get a SIM card on the cheaper data plan.",
+    intro: "A phone company shop with a ticket machine and a long row of counters. Your number is called.",
+    turns: [
+      { npc: ["您好，办什么业务？", "Nín hǎo, bàn shénme yèwù?", "Hello, what can I help you with?"], prompt: "You want a phone card.",
+        opts: [
+          { h: "我想办一张电话卡。", b: "我|想|办|一张|电话卡", p: "Wǒ xiǎng bàn yì zhāng diànhuà kǎ.", e: "I'd like to get a phone card.", k: "good", note: "办 bàn means getting something done officially: a card, an account, a visa." },
+          { h: "我要买手机。", p: "Wǒ yào mǎi shǒujī.", e: "I want to buy a phone.", k: "wrong", r: ["买手机在那边。还是您要办电话卡？", "Mǎi shǒujī zài nàbiān. Háishi nín yào bàn diànhuà kǎ?", "Phones are over there. Or do you want a phone card?"], note: "手机 shǒujī is the phone itself. The SIM is 电话卡 diànhuà kǎ.", fix: ["我想办一张电话卡。", "Wǒ xiǎng bàn yì zhāng diànhuà kǎ."] },
+          { h: "我要一个电话卡。", p: "Wǒ yào yí ge diànhuà kǎ.", e: "I want one phone card.", k: "okay", r: ["办卡是吧？", "Bàn kǎ shì ba?", "Getting a card, right?"], note: "Cards are counted with 张 zhāng, and getting one is 办 bàn.", fix: ["我想办一张电话卡。", "Wǒ xiǎng bàn yì zhāng diànhuà kǎ."] }
+        ] },
+      { npc: ["带护照了吗？办卡要实名登记。", "Dài hùzhào le ma? Bàn kǎ yào shímíng dēngjì.", "Did you bring your passport? Cards need real-name registration."], prompt: "Yes, here it is.",
+        opts: [
+          { h: "带了，给您。", b: "带了|给|您", p: "Dài le, gěi nín.", e: "I did, here you go.", k: "good", note: "Answer with her verb + 了: 带了, \"brought it\". Every SIM in China is registered to an ID." },
+          { h: "我不带。", p: "Wǒ bú dài.", e: "I won't bring it.", k: "wrong", r: ["不带不行，必须有护照。", "Bú dài bù xíng, bìxū yǒu hùzhào.", "Then no card. A passport is required."], note: "不带 sounds like you refuse. If you forgot it, say 没带 méi dài, didn't bring it.", fix: ["带了，给您。", "Dài le, gěi nín."] },
+          { h: "有。", p: "Yǒu.", e: "Have.", k: "okay", r: ["好，给我看一下。", "Hǎo, gěi wǒ kàn yíxià.", "Okay, let me see it."], note: "Fine. Echoing her verb, 带了 dài le, sounds more natural.", fix: ["带了。", "Dài le."] }
+        ] },
+      { npc: ["套餐有两种：五十九的二十G，一百二十九的一百G。", "Tàocān yǒu liǎng zhǒng: wǔshíjiǔ de èrshí G, yìbǎi èrshíjiǔ de yìbǎi G.", "Two plans: 59 a month for 20GB, or 129 for 100GB."], prompt: "Take the cheaper plan.",
+        opts: [
+          { h: "五十九的就行。", b: "五十九|的|就行", p: "Wǔshíjiǔ de jiù xíng.", e: "The 59 one is fine.", k: "good", note: "Price + 的 names a choice: 五十九的, \"the 59 one\". Handy anywhere there's a menu." },
+          { h: "一百二十九的。", p: "Yìbǎi èrshíjiǔ de.", e: "The 129 one.", k: "wrong", carry: "Signed up for the 129 kuai plan", r: ["好，一百二十九的，一百G。", "Hǎo, yìbǎi èrshíjiǔ de, yìbǎi G.", "Okay, the 129 plan, 100GB."], note: "That's the expensive one: 一百二十九 is 129.", fix: ["五十九的就行。", "Wǔshíjiǔ de jiù xíng."] },
+          { h: "便宜的。", p: "Piányi de.", e: "The cheap one.", k: "okay", r: ["五十九的，好。", "Wǔshíjiǔ de, hǎo.", "The 59 one, okay."], note: "Clear! Naming the price, 五十九的, avoids any mix-up.", fix: ["五十九的。", "Wǔshíjiǔ de."] }
+        ] }
+    ],
+    end: ["好了，卡插上就能用。", "Hǎo le, kǎ chā shàng jiù néng yòng.", "All set. Put the card in and it works."],
+    endNote: "Data is 流量 liúliàng, literally \"flow amount\", and GB is just said G, like the English letter." },
+
+  { id: "lost", place: "失物招领", placePy: "shīwù zhāolǐng", en: "Lost phone", who: "工作人员", whoPy: "gōngzuò rényuán", whoEn: "the station staff",
+    goal: "Report your lost phone: what it is, where you lost it, what it looks like.",
+    intro: "You reach for your phone at the exit gate. It's gone. You head to the service desk.",
+    turns: [
+      { npc: ["你好，有什么事？", "Nǐ hǎo, yǒu shénme shì?", "Hi, what's the matter?"], prompt: "You lost your phone.",
+        opts: [
+          { h: "我的手机丢了。", b: "我的|手机|丢了", p: "Wǒ de shǒujī diū le.", e: "I've lost my phone.", k: "good", note: "丢了 diū le means lost. Put the lost thing first: 手机丢了." },
+          { h: "我丢了。", p: "Wǒ diū le.", e: "I lost.", k: "wrong", r: ["你迷路了？还是丢了什么东西？", "Nǐ mílù le? Háishi diū le shénme dōngxi?", "You're lost? Or you lost something?"], note: "我丢了 doesn't say what's lost. Say 手机丢了. Being lost yourself is 迷路 mílù.", fix: ["我的手机丢了。", "Wǒ de shǒujī diū le."] },
+          { h: "我没有手机。", p: "Wǒ méiyǒu shǒujī.", e: "I don't have a phone.", k: "okay", r: ["没有手机？是丢了吗？", "Méiyǒu shǒujī? Shì diū le ma?", "No phone? You mean you lost it?"], note: "没有 méiyǒu means you don't own one. Lost is 丢了 diū le.", fix: ["我的手机丢了。", "Wǒ de shǒujī diū le."] }
+        ] },
+      { npc: ["在哪儿丢的？", "Zài nǎr diū de?", "Where did you lose it?"], prompt: "On a Line 2 train.",
+        opts: [
+          { h: "在二号线的地铁上。", b: "在|二号线|的|地铁上", p: "Zài èr hào xiàn de dìtiě shang.", e: "On a Line 2 train.", k: "good", note: "在 + place + 上 shang means \"on\". The bigger thing comes first: Line 2's train." },
+          { h: "地铁在二号线。", p: "Dìtiě zài èr hào xiàn.", e: "The metro is on Line 2.", k: "wrong", r: ["对，地铁有二号线……你手机丢在哪儿了？", "Duì, dìtiě yǒu èr hào xiàn… Nǐ shǒujī diū zài nǎr le?", "Yes, the metro has a Line 2… but where did you lose your phone?"], note: "You described the metro, not where you were. 在二号线的地铁上 is \"on the Line 2 train\".", fix: ["在二号线的地铁上。", "Zài èr hào xiàn de dìtiě shang."] },
+          { h: "二号线。", p: "Èr hào xiàn.", e: "Line 2.", k: "okay", r: ["二号线的车上是吧？", "Èr hào xiàn de chē shang shì ba?", "On a Line 2 train, right?"], note: "Short and understood. 在…上 makes it a full answer.", fix: ["在二号线的地铁上。", "Zài èr hào xiàn de dìtiě shang."] }
+        ] },
+      { npc: ["什么样的手机？", "Shénme yàng de shǒujī?", "What does it look like?"], prompt: "A black iPhone in a red case.",
+        opts: [
+          { h: "黑色的苹果手机，红色的手机壳。", b: "黑色的|苹果手机|红色的|手机壳", p: "Hēisè de Píngguǒ shǒujī, hóngsè de shǒujī ké.", e: "A black iPhone with a red case.", k: "good", note: "An iPhone is a 苹果手机 Píngguǒ shǒujī, an \"apple phone\". Colours take 色的: 黑色的, 红色的." },
+          { h: "红色的苹果。", p: "Hóngsè de píngguǒ.", e: "A red apple.", k: "wrong", r: ["苹果？你丢了一个苹果？", "Píngguǒ? Nǐ diū le yí ge píngguǒ?", "An apple? You lost an apple?"], note: "苹果 on its own is the fruit. Say 苹果手机 for an iPhone.", fix: ["黑色的苹果手机。", "Hēisè de Píngguǒ shǒujī."] },
+          { h: "黑手机，红壳。", p: "Hēi shǒujī, hóng ké.", e: "Black phone, red case.", k: "okay", r: ["黑色的，红色手机壳，好。", "Hēisè de, hóngsè shǒujī ké, hǎo.", "Black, red case, okay."], note: "Understood. 黑色的 hēisè de sounds more natural than 黑 for colours.", fix: ["黑色的手机，红色的手机壳。", "Hēisè de shǒujī, hóngsè de shǒujī ké."] }
+        ] }
+    ],
+    end: ["好，留个电话，找到了我们联系你。", "Hǎo, liú ge diànhuà, zhǎo dào le wǒmen liánxì nǐ.", "Okay, leave a number and we'll contact you if we find it."],
+    endNote: "Lost phones turn up more often than you'd expect. Ask at the service desk at the end of the line too." },
+
+  { id: "toilet", place: "洗手间", placePy: "xǐshǒujiān", en: "Finding a toilet", who: "保安", whoPy: "bǎo'ān", whoEn: "the security guard",
+    goal: "Find the toilet, and be ready for what's inside.",
+    intro: "A huge shopping mall. You need a toilet, and soon. A security guard stands by the escalator.",
+    turns: [
+      { npc: null, prompt: "Ask where the toilet is.",
+        opts: [
+          { h: "请问，洗手间在哪儿？", b: "请问|洗手间|在|哪儿", p: "Qǐngwèn, xǐshǒujiān zài nǎr?", e: "Excuse me, where's the toilet?", k: "good", note: "洗手间 xǐshǒujiān (\"hand-washing room\") is the polite word. 厕所 cèsuǒ works too, just blunter." },
+          { h: "厕所在哪儿？", p: "Cèsuǒ zài nǎr?", e: "Where's the toilet?", k: "okay", r: ["厕所？我告诉你。", "Cèsuǒ? Wǒ gàosu nǐ.", "The toilet? Let me tell you."], note: "Totally understood. In a mall or restaurant, 洗手间 sounds politer.", fix: ["请问，洗手间在哪儿？", "Qǐngwèn, xǐshǒujiān zài nǎr?"] },
+          { h: "哪儿是洗澡间？", p: "Nǎr shì xǐzǎojiān?", e: "Where's the shower room?", k: "wrong", r: ["洗澡？这是商场，没有洗澡的地方……你找洗手间吧？", "Xǐzǎo? Zhè shì shāngchǎng, méiyǒu xǐzǎo de dìfang… Nǐ zhǎo xǐshǒujiān ba?", "Shower? This is a mall, there's nowhere to shower… you mean the toilet?"], note: "洗澡 xǐzǎo is to shower. You want 洗手间, where you wash your hands.", fix: ["洗手间在哪儿？", "Xǐshǒujiān zài nǎr?"] }
+        ] },
+      { npc: ["往前走，在电梯旁边，二楼。", "Wǎng qián zǒu, zài diàntī pángbiān, èr lóu.", "Go straight, next to the lift, second floor."], prompt: "Check: second floor, next to the lift?",
+        opts: [
+          { h: "二楼，电梯旁边，对吧？", b: "二楼|电梯|旁边|对吧", p: "Èr lóu, diàntī pángbiān, duì ba?", e: "Second floor, next to the lift, right?", k: "good", note: "旁边 pángbiān is next to; 楼 lóu is a floor. Floors count from 1 at street level, so 二楼 is one flight up." },
+          { h: "电梯里面？", p: "Diàntī lǐmiàn?", e: "Inside the lift?", k: "wrong", r: ["不是里面，是旁边！", "Bú shì lǐmiàn, shì pángbiān!", "Not inside, NEXT to it!"], note: "里面 lǐmiàn is inside; 旁边 pángbiān is next to.", fix: ["电梯旁边，对吧？", "Diàntī pángbiān, duì ba?"] },
+          { h: "两楼？", p: "Liǎng lóu?", e: "Two floors?", k: "okay", r: ["二楼。", "Èr lóu.", "The second floor."], note: "Floors are names, like Line 2, so they take 二 èr: 二楼.", fix: ["二楼？", "Èr lóu?"] }
+        ] },
+      { npc: ["不过……你带纸了吗？里面可能没有。", "Búguò… nǐ dài zhǐ le ma? Lǐmiàn kěnéng méiyǒu.", "But… did you bring paper? There might not be any in there."], prompt: "You haven't. Ask where to buy tissues.",
+        opts: [
+          { h: "没带。哪儿能买纸巾？", b: "没带|哪儿|能|买|纸巾", p: "Méi dài. Nǎr néng mǎi zhǐjīn?", e: "I didn't. Where can I buy tissues?", k: "good", note: "没带 méi dài, \"didn't bring\". Tissues are 纸巾 zhǐjīn." },
+          { h: "什么纸？", p: "Shénme zhǐ?", e: "What paper?", k: "good", note: "Asking is always better than guessing. 纸 zhǐ here means toilet paper." },
+          { h: "带了！", p: "Dài le!", e: "I did!", k: "wrong", carry: "Found out the hard way there was no paper", r: ["那就好，去吧。", "Nà jiù hǎo, qù ba.", "Good, off you go then."], note: "带了 means you brought it. When you don't catch a word, ask: 什么纸？", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] }
+        ] }
+    ],
+    end: ["二楼有卖纸巾的机器，扫码就行。", "Èr lóu yǒu mài zhǐjīn de jīqì, sǎo mǎ jiù xíng.", "There's a tissue machine on the second floor. Just scan the code."],
+    endNote: "Carry a small pack of tissues in China. Many public toilets don't stock paper." }
 ];

@@ -167,6 +167,11 @@ body.hint-off .opt .en-line { display: none; }
 .nb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .small { font-size: 13px; padding: 6px 10px; }
 .scn.review { border-style: dashed; }
+.rail .rail-sub { margin-top: 10px; }
+.pb { display: flex; flex-direction: column; gap: 6px; }
+.pb-title { margin: 6px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.pb-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px dashed var(--line); padding-top: 6px; }
+.pb-row .han { font-size: 18px; }
 .modes { display: flex; gap: 6px; flex-wrap: wrap; }
 .build { display: flex; flex-direction: column; gap: 10px; }
 .slots { min-height: 52px; border: 1px dashed var(--line); border-radius: 10px; padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--bg); }
@@ -210,7 +215,7 @@ body.hint-off .opt .en-line { display: none; }
   </header>
 
   <div class="layout">
-    <nav class="rail" id="rail" aria-label="Situations"><h2>Situations</h2></nav>
+    <nav class="rail" id="rail" aria-label="Situations"><h2>Practice</h2></nav>
 
     <main class="scene" id="scene">
       <div class="scene-head">
@@ -243,10 +248,11 @@ const store = {
 };
 let notebook = store.get("sm-notebook", []);
 let done = store.get("sm-done", {});
-let prefs = Object.assign({ py: true, hint: false, listen: false, build: false }, store.get("sm-prefs", {}));
+let prefs = Object.assign({ py: true, hint: false, listen: false, how: "pick" }, store.get("sm-prefs", {}));
+if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 
 /* ---------- state ---------- */
-let mode = "scene"; // "scene" | "review"
+let mode = "scene"; // "scene" | "review" | "drill" | "phrases"
 let cur = null, turn = 0, order = [], busy = false, finished = false;
 let flags = {}, outcomes = [];  // consequences that carry through a scene
 let transcript = []; // [{who:'npc'|'me', text}] for Claude context
@@ -278,11 +284,11 @@ function bubbleContent(h, p, e, revealEn) {
   } else frag.append(tools);
   return frag;
 }
-function addNpc(line) {
+function addNpc(line, forceListen) {
   const row = el("div", "row npc");
   const who = el("div", "who", cur.who.slice(0, 2)); who.title = cur.whoEn;
   const b = el("div", "bubble");
-  if (prefs.listen && canSpeak) {
+  if ((prefs.listen || forceListen) && canSpeak) {
     // Listening mode: audio first, text only once you've answered (or asked for it)
     const txt = el("div", "lt"); txt.hidden = true; txt.append(bubbleContent(line[0], line[1], line[2], false));
     const ear = el("div", "ear");
@@ -331,13 +337,20 @@ function setHead(place, py, en, goalLabel, goal) {
 }
 
 function renderRail() {
-  const rail = $("#rail"); rail.querySelectorAll(".scn").forEach(n => n.remove());
+  const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub").forEach(n => n.remove());
   const due = dueItems().length, active = activeItems().length;
   const rv = el("button", "scn review"); rv.setAttribute("aria-current", mode === "review" ? "true" : "false");
   rv.append(el("span", "han", "复习"), el("span", "name", "Mistakes that came back"));
   rv.append(el("span", "meta", due ? `${due} due now` : active ? "Nothing due yet" : "No mistakes yet"));
   rv.onclick = () => startReview();
-  rail.append(rv);
+  const dr = el("button", "scn review"); dr.setAttribute("aria-current", mode === "drill" ? "true" : "false");
+  dr.append(el("span", "han", "数字"), el("span", "name", "Prices by ear"), el("span", "meta", "A quick round of 8 totals"));
+  dr.onclick = () => startDrill();
+  const pb = el("button", "scn review"); pb.setAttribute("aria-current", mode === "phrases" ? "true" : "false");
+  const nDone = S.filter(s => done[s.id]).length;
+  pb.append(el("span", "han", "短语"), el("span", "name", "Your phrasebook"), el("span", "meta", nDone ? `Lines from ${plural(nDone, "place")}` : "Fills up as you survive places"));
+  pb.onclick = () => startPhrasebook();
+  rail.append(rv, dr, pb, el("h2", "rail-sub", "Places"));
   S.forEach(s => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
@@ -371,6 +384,8 @@ function beginTurn() {
 
 function renderMove() {
   if (mode === "review") return renderReviewMove();
+  if (mode === "drill") return renderDrillMove();
+  if (mode === "phrases") return renderPhrasesMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
@@ -378,15 +393,86 @@ function renderMove() {
   head.append(el("h3", null, `Your move · ${turn + 1} of ${cur.turns.length}`), el("span", "prompt", t.prompt));
   const good = t.opts.find(o => o.k === "good" && o.b);
   const modes = el("div", "modes"); modes.setAttribute("role", "group"); modes.setAttribute("aria-label", "How to answer");
-  [["Pick an answer", false], ["Build it yourself", true]].forEach(([label, v]) => {
-    const c = el("button", "chip", label); c.setAttribute("aria-pressed", prefs.build === v);
-    c.onclick = () => { prefs.build = v; store.set("sm-prefs", prefs); renderMove(); };
+  [["Pick an answer", "pick"], ["Build it yourself", "build"], [SR ? "Type or say it" : "Type it", "type"]].forEach(([label, v]) => {
+    const c = el("button", "chip", label); c.setAttribute("aria-pressed", prefs.how === v);
+    c.onclick = () => { prefs.how = v; store.set("sm-prefs", prefs); renderMove(); };
     modes.append(c);
   });
-  m.append(head);
-  if (good) m.append(modes);
-  if (prefs.build && good) m.append(builder(t, good)); else m.append(optionButtons(order, choose));
+  m.append(head, modes);
+  if (prefs.how === "build" && good) m.append(builder(t, good));
+  else if (prefs.how === "type") return m.append(typer(t));
+  else m.append(optionButtons(order, choose));
   renderFree(m);
+}
+
+/* ---------- type (or say) it: production with no options on screen ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let micBroken = false;
+const normHan = x => x.replace(/[\s，。！？、,.!?…“”"'：:；;（）()]/g, "");
+const normPy = x => x.normalize("NFD").replace(/u\u0308/g, "v").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+function lev(a, b) {
+  a = [...a]; b = [...b];
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) row.push(Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)));
+    prev = row;
+  }
+  return prev[b.length];
+}
+function typer(t) {
+  const box = el("div", "build");
+  const form = el("form", "free");
+  const inp = el("input"); inp.id = "type-input"; inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN";
+  inp.placeholder = "Type it in characters or pinyin (tones optional)";
+  inp.setAttribute("aria-label", "Your answer");
+  inp.disabled = busy;
+  const send = el("button", "btn", busy ? "…" : "Say it"); send.type = "submit"; send.disabled = busy;
+  form.append(inp, send);
+  if (SR && !micBroken) {
+    const mic = el("button", "btn ghost", "Speak"); mic.type = "button"; mic.disabled = busy;
+    mic.onclick = () => listenOnce(inp, mic, () => submitTyped(inp.value.trim(), t));
+    form.append(mic);
+  }
+  form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) submitTyped(v, t); };
+  box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to Claude playing " + cur.whoEn + "." : "Answers are checked against what a local would understand. Pinyin without tone marks is fine."));
+  setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+  return box;
+}
+function listenOnce(inp, mic, done) {
+  let rec;
+  try { rec = new SR(); } catch { micBroken = true; renderMove(); return; }
+  rec.lang = "zh-CN"; rec.interimResults = false; rec.maxAlternatives = 1;
+  mic.textContent = "Listening…"; mic.disabled = true;
+  rec.onresult = e => { inp.value = e.results[0][0].transcript; done(); };
+  rec.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") { micBroken = true; addNarr("The microphone isn't available here, so type your answer instead."); }
+    renderMove();
+  };
+  rec.onend = () => { if (mic.isConnected) { mic.textContent = "Speak"; mic.disabled = false; } };
+  try { rec.start(); } catch { micBroken = true; renderMove(); }
+}
+function submitTyped(text, t) {
+  if (busy || !text) return;
+  const h = normHan(text), py = normPy(text);
+  const hit = t.opts.find(o => normHan(o.h) === h) || (py && t.opts.find(o => normPy(o.p) === py));
+  if (hit) return choose(hit);
+  const good = t.opts.find(o => o.k === "good");
+  const near = t.opts.filter(o => o.k === "good").find(o => {
+    const d = /[\u4e00-\u9fff]/.test(text) ? lev(h, normHan(o.h)) : lev(py, normPy(o.p));
+    return d > 0 && d <= Math.max(1, Math.floor((/[\u4e00-\u9fff]/.test(text) ? normHan(o.h).length : normPy(o.p).length) / 8));
+  });
+  if (near) {
+    addMe(text, "", "", "okay");
+    addFeedback("okay", "Almost. One small slip, but they'd get what you mean.", [near.h, near.p]);
+    logMistake({ sid: cur.id, turn, kind: "okay", said: text, fix: near.h, fixPy: near.p, why: "Typed answer was one small slip away." });
+    return choose(Object.assign({}, near, { quiet: true }));
+  }
+  if (sample) return offScript(text);
+  addMe(text, "", "", "wrong");
+  addFeedback("wrong", "That isn't something a local would follow here. Here's one way to say it. Try typing it yourself.", [good.h, good.p]);
+  logMistake({ sid: cur.id, turn, kind: "wrong", said: text, fix: good.h, fixPy: good.p, why: "Typed answer didn't fit this moment." });
+  renderMove();
 }
 
 /* ---------- build mode: put the words in order yourself ---------- */
@@ -449,6 +535,7 @@ function optionButtons(list, onPick) {
 
 function choose(o) {
   if (busy) return;
+  if (o.quiet) return advance();
   addMe(o.h, o.p, o.e, o.k);
   if (o.r) addNpc(o.r);
   addFeedback(o.k, o.note, o.fix, o.carry ? { label: "Didn't land, and it stuck", cost: "This one carries on. You'll see what it cost at the end." } : null);
@@ -625,12 +712,125 @@ function renderReviewMove() {
   head.append(el("span", "prompt", "What should you have said?"));
   if (!rReveal) {
     const b = el("button", "btn ghost", "Show the answer"); b.onclick = () => { rReveal = true; addFeedback("okay", n.why, n.fix ? [n.fix, n.fixPy] : null, { label: "The better way" }); renderReviewMove(); };
-    m.append(b); return;
+    const wrap = el("div", "endcard"); wrap.append(b); m.append(wrap); return;
   }
   const row = el("div", "endcard");
   const y = el("button", "btn", "I knew it"); y.onclick = () => selfGrade(true);
   const no = el("button", "btn ghost", "I didn't"); no.onclick = () => selfGrade(false);
   row.append(y, no); m.append(row);
+}
+
+/* ---------- prices by ear: a quick drill on the numbers that trip people up ---------- */
+const ZH = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"], PY = ["líng", "yī", "èr", "sān", "sì", "wǔ", "liù", "qī", "bā", "jiǔ"];
+function priceWords(n) {
+  // Spoken the way a cashier says it: 一百五 for 150, 一百零五 for 105, 两百 for 200, 十二块五 for 12.5
+  const whole = Math.floor(n), half = n % 1 !== 0;
+  const h = Math.floor(whole / 100), t = Math.floor(whole / 10) % 10, o = whole % 10;
+  let zh = "", py = [];
+  if (h) { zh += (h === 2 ? "两" : ZH[h]) + "百"; py.push((h === 1 ? "yì" : h === 2 ? "liǎng" : PY[h]) + "bǎi"); }
+  if (h && !t && o) { zh += "零" + ZH[o]; py.push("líng " + PY[o]); }
+  else if (h && t && !o) { zh += ZH[t]; py.push(PY[t]); }
+  else if (t) {
+    zh += (t === 1 && !h ? "" : ZH[t]) + "十" + (o ? ZH[o] : "");
+    py.push((t === 1 && !h ? "" : PY[t]) + "shí" + (o ? PY[o] : ""));
+  } else if (!h) { zh += ZH[o]; py.push(PY[o]); }
+  if (!(h && t && !o && !half)) { zh += "块" + (half ? "五" : ""); py.push("kuài" + (half ? " wǔ" : "")); } // 一百五, not 一百五块
+  return { zh, py: py.join(" ").replace(/\s+/g, " ").trim().replace(/([a-zü\u00c0-\u024f])èr/g, "$1'èr") };
+}
+const PRICES = [8, 12, 13, 14, 15, 16, 18, 19, 24, 25, 30, 32, 40, 42, 45, 50, 60, 68, 80, 88, 99, 105, 108, 120, 150, 240, 8.5, 12.5, 36.5];
+function priceTip(n, got) {
+  const teen = (x, y) => x > 10 && x < 20 && y === (x - 10) * 10;
+  if (teen(n, got) || teen(got, n)) return "Order matters: 十 shí after a number multiplies (八十 = 80), before it adds (十八 = 18).";
+  if (n > 20 && n < 100 && got === (n % 10) * 10 + Math.floor(n / 10)) return "Read it in order: 四十二 is four-ten-two, so 42.";
+  if (n % 1 && Math.floor(n) === got) return "The 五 after 块 is half a yuan: 块五 = .50.";
+  if (n >= 100 && n % 10 === 0 && got === Math.floor(n / 100) * 100 + (n % 100) / 10) return "一百五 is short for 一百五十 (150). 105 would be 一百零五, with a 零.";
+  if (n > 100 && n % 100 < 10 && got === Math.floor(n / 100) * 100 + (n % 100) * 10) return "零 líng marks the empty tens: 一百零五 = 105. Without it, 一百五 = 150.";
+  return "Listen for where 十 shí and 百 bǎi sit, then build the number piece by piece.";
+}
+let dq = [], di = 0, dRight = 0, dAnswered = false;
+const CASHIER = { who: "收银", whoEn: "the cashier" };
+function startDrill() {
+  mode = "drill"; busy = false; cur = CASHIER;
+  dq = shuffle(PRICES).slice(0, 8); di = 0; dRight = 0;
+  setHead("数字", "shùzì", "Prices by ear", "How it works: ", canSpeak ? "Hear the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五." : "Read the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五.");
+  $("#log").textContent = "";
+  addNarr("Eight totals from eight different checkouts. Type what you'd pay, in digits.");
+  renderRail(); drillItem();
+}
+function drillItem() {
+  dAnswered = false;
+  addNpc(["一共" + priceWords(dq[di]).zh + "。", "Yígòng " + priceWords(dq[di]).py + ".", ""], true);
+  renderMove();
+}
+function renderDrillMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  if (di >= dq.length) {
+    head.append(el("h3", null, "Drill done"), el("span", "prompt", `${dRight} of ${dq.length} right.`));
+    const row = el("div", "endcard");
+    const again = el("button", "btn", "Another eight"); again.onclick = () => startDrill();
+    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    row.append(again, back); m.append(head, row); return;
+  }
+  head.append(el("h3", null, `Total ${di + 1} of ${dq.length}`), el("span", "prompt", "How much do you pay?"));
+  m.append(head);
+  if (dAnswered) {
+    const nx = el("button", "btn", di + 1 < dq.length ? "Next total" : "See how you did");
+    nx.onclick = () => { di++; if (di < dq.length) drillItem(); else { addNarr(`Done: ${dRight} of ${dq.length} right.`); renderMove(); } };
+    const row = el("div", "endcard"); row.append(nx); m.append(row); return;
+  }
+  const form = el("form", "free");
+  const inp = el("input"); inp.id = "price-input"; inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
+  inp.placeholder = "e.g. 18 or 12.5"; inp.setAttribute("aria-label", "Amount in kuai");
+  const pay = el("button", "btn", "Pay"); pay.type = "submit";
+  form.append(inp, pay);
+  form.onsubmit = ev => {
+    ev.preventDefault();
+    const got = parseFloat(inp.value.replace(/[^\d.]/g, ""));
+    if (isNaN(got)) return;
+    const n = dq[di], w = priceWords(n);
+    dAnswered = true;
+    addMe(String(got), "", "", got === n ? "good" : "wrong");
+    if (got === n) { dRight++; addFeedback("good", `Right: ${w.zh} is ${n}.`, null); }
+    else addFeedback("wrong", `${w.zh} ${w.py} is ${n}. ${priceTip(n, got)}`, null, { label: "Wrong change" });
+    renderMove();
+  };
+  m.append(form);
+  setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+}
+function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
+
+/* ---------- phrasebook: every line that worked, from places you've survived ---------- */
+function startPhrasebook() {
+  mode = "phrases"; busy = false;
+  setHead("短语", "duǎnyǔ", "Your phrasebook", "What's here: ", "The lines that worked, from every place you've survived. Tap the speaker to hear one.");
+  const log = $("#log"); log.textContent = "";
+  const places = S.filter(s => done[s.id]);
+  if (!places.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
+  places.forEach(s => {
+    const sec = el("section", "pb");
+    sec.append(el("h4", "pb-title", `${s.place} · ${s.en}`));
+    s.turns.forEach(t => t.opts.filter(o => o.k === "good").forEach(o => {
+      const row = el("div", "pb-row");
+      const txt = el("div");
+      txt.append(el("div", "han", o.h), el("div", "py", o.p), el("div", "en-line", o.e));
+      row.append(txt);
+      if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(o.h); row.append(b); }
+      sec.append(row);
+    }));
+    log.append(sec);
+  });
+  log.scrollTop = 0;
+  renderRail(); renderMove();
+}
+function renderPhrasesMove() {
+  const m = $("#move"); m.textContent = "";
+  const n = S.filter(s => done[s.id]).reduce((a, s) => a + s.turns.reduce((b, t) => b + t.opts.filter(o => o.k === "good").length, 0), 0);
+  const head = el("div", "move-head");
+  head.append(el("h3", null, plural(n, "phrase")), el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
+  const back = el("button", "btn", "Back to the situations"); back.onclick = () => start(lastScene());
+  const row = el("div", "endcard"); row.append(back);
+  m.append(head, row);
 }
 
 /* ---------- off-script with Claude ---------- */
