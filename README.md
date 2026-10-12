@@ -17,7 +17,13 @@ After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing 
 ## What's in it
 
 - Twenty-eight places, grouped by theme: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt, café and wifi, bike share, hospital registration, dumpling house, no hot water (calling the landlord), swapping WeChat, hotpot, asking for a photo, parcel pickup
-- Sound-alikes: hear a line and tell it from its tonal twin (买 vs 卖, 问 vs 吻, 十四 vs 四十)
+- Sound-alikes: hear a line and tell it from its tonal twin (买 vs 卖, 问 vs 吻, 十四 vs 四十). Your own sound-alike slips from the places join the round
+- Mistake patterns: every scripted slip is tagged by kind (tones and sound-alikes, numbers, saying yes by accident, missing what they asked, sentence building, places, wrong word, too blunt). The notebook shows what keeps tripping you up, and one tap drills that kind of moment across every place
+- Rematch: after a run, replay only the moments you missed. Next time you reach a moment you got wrong, it reminds you what you said last time
+- Three marks per place: survived, a clean run, and a clean run through a curveball
+- Heading out: pick the places you're going today for a cheat sheet (what to say, what you'll hear, the traps) and a warm-up on every moment
+- Number reader: type any price, phone number, time or count and see and hear it the way people say it (一百五, 幺 in phone numbers, 两点半), with the traps pointed out
+- Phrasebook search, a full-screen Show mode to hand your phone to someone (with the reply you'll probably get), and the lines you learned the hard way
 - A practice streak and a count of lines answered
 - "Why, exactly?" on any mistake: Claude explains the grammar or sound behind it, with a memory trick
 - Number keys 1–9 pick answers; Enter moves on
