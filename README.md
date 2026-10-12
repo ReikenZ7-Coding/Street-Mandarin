@@ -29,7 +29,7 @@ After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing 
 - Number keys 1–9 pick answers; Enter moves on
 - Wander: Claude invents a situation you haven't practised (or one you name, like "buying shoes") and plays the other person, with no options to pick from
 - Three ways to answer each moment: pick from three answers, build the sentence from word tiles, or type it (characters or pinyin, tones optional). In browsers with Chinese speech recognition, such as Chrome, you can also say it out loud.
-- Prices by ear: a quick drill on the numbers that trip people up (十八 vs 八十, 一百五 vs 一百零五, 块五)
+- Numbers by ear: prices (十八 vs 八十, 一百五 vs 一百零五, 块五), phone numbers read with 幺, and meeting times (两点半, 一刻, 下午), with the exact digit you misheard pointed out
 - Curveballs: replay a place you've survived and something may not go to plan (sold out, a chatty driver, a deposit, a stranger who isn't local)
 - A phrasebook of every line that worked, from the places you've survived
 - Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note

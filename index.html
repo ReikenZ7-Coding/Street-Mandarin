@@ -479,7 +479,7 @@ function renderRail() {
   rv.append(el("span", "meta", due ? `${due} due now` : active ? "Nothing due yet" : "No mistakes yet"));
   rv.onclick = () => startReview();
   const dr = el("button", "scn review"); dr.setAttribute("aria-current", mode === "drill" || mode === "reader" ? "true" : "false");
-  dr.append(el("span", "han", "数字"), el("span", "name", "Prices by ear"), el("span", "meta", "A quick round of 8 totals"));
+  dr.append(el("span", "han", "数字"), el("span", "name", "Numbers by ear"), el("span", "meta", "Prices, phone numbers, times"));
   dr.onclick = () => startDrill();
   const pb = el("button", "scn review"); pb.setAttribute("aria-current", mode === "phrases" ? "true" : "false");
   const nDone = S.filter(s => done[s.id]).length;
@@ -1015,18 +1015,59 @@ function priceTip(n, got) {
 }
 let dq = [], di = 0, dRight = 0, dAnswered = false;
 const CASHIER = { who: "收银", whoEn: "the cashier" };
-function startDrill() {
-  mode = "drill"; busy = false; cur = CASHIER;
-  dq = shuffle(PRICES).slice(0, 8); di = 0; dRight = 0;
-  setHead("数字", "shùzì", "Prices by ear", "How it works: ", canSpeak ? "Hear the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五." : "Read the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五.");
+let dKind = "price";
+const rnd = n => Math.floor(Math.random() * n);
+function startDrill(kind) {
+  if (kind) dKind = kind;
+  mode = "drill"; busy = false;
+  di = 0; dRight = 0;
   $("#log").textContent = "";
-  addNarr("Eight totals from eight different checkouts. Type what you'd pay, in digits.");
+  if (dKind === "phone") {
+    cur = { who: "朋友", whoEn: "a new friend" };
+    dq = Array.from({ length: 6 }, () => "1" + "3456789"[rnd(7)] + Array.from({ length: 9 }, () => rnd(10)).join(""));
+    setHead("号码", "hàomǎ", "Phone numbers by ear", "How it works: ", "Someone reads out their number. Type the digits. Listen for 幺 yāo, which is 1.");
+    addNarr("Six people give you their number. Type it as you hear it.");
+  } else if (dKind === "time") {
+    cur = { who: "朋友", whoEn: "a friend" };
+    dq = Array.from({ length: 8 }, () => `${6 + rnd(17)}:${String([0, 5, 10, 15, 20, 30, 40, 45, 50][rnd(9)]).padStart(2, "0")}`);
+    setHead("时间", "shíjiān", "Times by ear", "How it works: ", "A friend sets a time to meet. Type it as h:mm; 12- or 24-hour both count. Listen for 半, 一刻 and 下午.");
+    addNarr("Eight plans, eight times. Don't be late.");
+  } else {
+    cur = CASHIER;
+    dq = shuffle(PRICES).slice(0, 8);
+    setHead("数字", "shùzì", "Prices by ear", "How it works: ", canSpeak ? "Hear the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五." : "Read the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五.");
+    addNarr("Eight totals from eight different checkouts. Type what you'd pay, in digits.");
+  }
   renderRail(); drillItem();
 }
 function drillItem() {
   dAnswered = false;
-  addNpc(["一共" + priceWords(dq[di]).zh + "。", "Yígòng " + priceWords(dq[di]).py + ".", ""], true);
+  const v = dq[di];
+  if (dKind === "phone") { const r = readNumber(v, "digits"); addNpc(["我的电话是 " + r.zh + "。", "Wǒ de diànhuà shì " + r.py + ".", ""], true); }
+  else if (dKind === "time") { const r = readNumber(v, "time"); addNpc(["我们" + r.zh + "见吧。", "Wǒmen " + r.py + " jiàn ba.", ""], true); }
+  else addNpc(["一共" + priceWords(v).zh + "。", "Yígòng " + priceWords(v).py + ".", ""], true);
   renderMove();
+}
+function drillCheck(raw) {
+  // Returns null if unreadable, else { ok, shown, note }
+  const v = dq[di];
+  if (dKind === "phone") {
+    const got = raw.replace(/\D/g, ""); if (!got) return null;
+    const r = readNumber(v, "digits"), ok = got === v;
+    let note = `${r.zh} is ${v.slice(0, 3)} ${v.slice(3, 7)} ${v.slice(7)}.`;
+    if (!ok) { const i = [...v].findIndex((d, k) => got[k] !== d); if (i >= 0) note += ` First slip at digit ${i + 1}: you heard ${got[i] || "nothing"}, it was ${v[i]}${v[i] === "1" ? " (幺 yāo)" : v[i] === "7" ? " (七 qī)" : ""}.`; }
+    return { ok, shown: got, note };
+  }
+  if (dKind === "time") {
+    const m = raw.trim().match(/^(\d{1,2})[:.：]?(\d{2})$/); if (!m) return null;
+    const [h, mm] = v.split(":").map(Number), gh = +m[1], gm = +m[2];
+    const ok = gm === mm && (gh === h || gh + 12 === h || (gh === 12 && h === 12));
+    const r = readNumber(v, "time");
+    return { ok, shown: `${gh}:${String(gm).padStart(2, "0")}`, note: `${r.zh} is ${v}. ${r.notes.filter(n => !n.startsWith("Chinese adds")).join(" ")}`.trim() };
+  }
+  const got = parseFloat(raw.replace(/[^\d.]/g, "")); if (isNaN(got)) return null;
+  const w = priceWords(v);
+  return { ok: got === v, shown: String(got), note: got === v ? `Right: ${w.zh} is ${v}.` : `${w.zh} ${w.py} is ${v}. ${priceTip(v, got)}` };
 }
 function renderDrillMove() {
   const m = $("#move"); m.textContent = "";
@@ -1034,13 +1075,18 @@ function renderDrillMove() {
   if (di >= dq.length) {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${dRight} of ${dq.length} right.`));
     const row = el("div", "endcard");
-    const again = el("button", "btn", "Another eight"); again.onclick = () => startDrill();
+    const again = el("button", "btn", "Another round"); again.onclick = () => startDrill();
     const rd = el("button", "btn ghost", "Read any number"); rd.onclick = () => startReader();
     const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
     row.append(again, rd, back); m.append(head, row); return;
   }
   const rdb = el("button", "linkish", "Number reader"); rdb.onclick = () => startReader();
-  head.append(el("h3", null, `Total ${di + 1} of ${dq.length}`), el("span", "prompt", "How much do you pay?"), rdb);
+  if (di === 0 && !dAnswered) {
+    const kinds = el("div", "modes"); kinds.setAttribute("role", "group"); kinds.setAttribute("aria-label", "What to listen for");
+    [["Prices", "price"], ["Phone numbers", "phone"], ["Times", "time"]].forEach(([l, v]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", dKind === v ? "true" : "false"); c.onclick = () => startDrill(v); kinds.append(c); });
+    m.append(kinds);
+  }
+  head.append(el("h3", null, `${dKind === "phone" ? "Number" : dKind === "time" ? "Time" : "Total"} ${di + 1} of ${dq.length}`), el("span", "prompt", dKind === "phone" ? "What's their number?" : dKind === "time" ? "When are you meeting?" : "How much do you pay?"), rdb);
   m.append(head);
   if (dAnswered) {
     const nx = el("button", "btn", di + 1 < dq.length ? "Next total" : "See how you did");
@@ -1049,18 +1095,17 @@ function renderDrillMove() {
   }
   const form = el("form", "free");
   const inp = el("input"); inp.id = "price-input"; inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
-  inp.placeholder = "e.g. 18 or 12.5"; inp.setAttribute("aria-label", "Amount in kuai");
-  const pay = el("button", "btn", "Pay"); pay.type = "submit";
+  inp.placeholder = { phone: "e.g. 13912345678", time: "e.g. 2:30 or 14:30", price: "e.g. 18 or 12.5" }[dKind]; inp.setAttribute("aria-label", "Your answer");
+  if (dKind === "time") inp.inputMode = "text";
+  const pay = el("button", "btn", dKind === "price" ? "Pay" : "Check"); pay.type = "submit";
   form.append(inp, pay);
   form.onsubmit = ev => {
     ev.preventDefault();
-    const got = parseFloat(inp.value.replace(/[^\d.]/g, ""));
-    if (isNaN(got)) return;
-    const n = dq[di], w = priceWords(n);
+    const r = drillCheck(inp.value); if (!r) return;
     dAnswered = true;
-    addMe(String(got), "", "", got === n ? "good" : "wrong");
-    if (got === n) { dRight++; addFeedback("good", `Right: ${w.zh} is ${n}.`, null); }
-    else addFeedback("wrong", `${w.zh} ${w.py} is ${n}. ${priceTip(n, got)}`, null, { label: "Wrong change" });
+    addMe(r.shown, "", "", r.ok ? "good" : "wrong");
+    if (r.ok) { dRight++; addFeedback("good", r.note, null); }
+    else addFeedback("wrong", r.note, null, { label: dKind === "price" ? "Wrong change" : dKind === "phone" ? "Wrong number" : "Wrong time" });
     renderMove();
   };
   m.append(form);
