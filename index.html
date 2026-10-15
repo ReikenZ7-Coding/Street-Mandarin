@@ -29,7 +29,7 @@
   --btn: #1f5a43; --btn-fg: #f6f8f2;
   --sky: #f4f6ee; --mt-far: #d6e2d6; --mt-mid: #b9cfbd; --mt-near: #94b49f; --mist: #eef2e9;
   --stalk: #6f9f7c; --stalk-hi: #a8c9ae; --node: #4f7f5d; --leaf: #5e9670; --sun: rgba(222, 182, 110, 0.2);
-  --head-mt: #c6d8c8;
+  --head-mt: #c6d8c8; --done-bg: #4f7f5d; --done-fg: #ffffff;
   --f-ui: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
   --f-han: "Noto Serif SC", "Songti SC", "SimSun", serif;
   --f-py: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -42,7 +42,7 @@
     --btn: #43c099; --btn-fg: #08130f;
     --sky: #0a1310; --mt-far: #12201b; --mt-mid: #172a23; --mt-near: #1d342b; --mist: #0d1714;
     --stalk: #24463a; --stalk-hi: #2f5a4a; --node: #183329; --leaf: #2a5444; --sun: rgba(236, 232, 205, 0.16);
-    --head-mt: #1d3029;
+    --head-mt: #1d3029; --done-bg: #2f5a4a; --done-fg: #e3ebe5;
     color-scheme: dark;
   }
 }
@@ -53,7 +53,7 @@
     --btn: #43c099; --btn-fg: #08130f;
     --sky: #0a1310; --mt-far: #12201b; --mt-mid: #172a23; --mt-near: #1d342b; --mist: #0d1714;
     --stalk: #24463a; --stalk-hi: #2f5a4a; --node: #183329; --leaf: #2a5444; --sun: rgba(236, 232, 205, 0.16);
-    --head-mt: #1d3029;
+    --head-mt: #1d3029; --done-bg: #2f5a4a; --done-fg: #e3ebe5;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -447,7 +447,14 @@ body.hint-off .opt .en-line { display: none; }
 .chat-warn { flex-basis: 100%; font-size: 13px; color: var(--cinnabar); }
 .row.chat .who { border-radius: 8px; background: var(--jade); color: var(--surface); font-size: 17px; font-weight: 900; }
 .row.chat .bubble { cursor: pointer; }
-.row.chat.me .bubble { background: var(--jade); color: #fff; border-bottom-right-radius: 4px; }
+.row.chat.me .bubble { background: var(--btn); color: var(--btn-fg); border-bottom-right-radius: 4px; }
+.row.chat .bubble { overflow-wrap: anywhere; }
+.row.chat .zh-meant { font-size: 16px; opacity: .9; }
+.chat-wait { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
+.scene.chatting .move { position: sticky; bottom: 0; z-index: 2; background: var(--surface); }
+.move:empty { display: none; }
+body.no-py .chat-fb .py { display: inline; }
+@media (min-width: 1100px) { body.notes-open .wrap { max-width: calc(100vw - 440px); margin-left: max(16px, calc((100vw - 440px - 1180px) / 2)); } }
 .row.chat .han { font-size: 19px; }
 body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py { display: block; }
 .row.chat .vtag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
@@ -503,7 +510,8 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
 @media (max-width: 760px) {
   .notes { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 78vh; border-radius: 16px 16px 0 0; }
   .chat-row { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 10px 12px; } .av { width: 42px; height: 42px; font-size: 20px; } .cr-dot { left: 44px; }
-  .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: 62vh; }
+  .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: calc(100dvh - 250px); min-height: 280px; }
+  .scene.chatting .scene-head { padding: 10px 14px; } .scene.chatting .scene-head .place { font-size: 30px; } .scene.chatting .goal { display: none; }
 }
 
 /* ---------- The look: a bamboo forest in the mountains ----------
@@ -512,6 +520,7 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
 html { background: var(--bg); }
 body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixed; }
 .wrap { position: relative; z-index: 1; }
+.foot { background: var(--surface); border-radius: 6px; padding: 10px 14px; }
 .scenery { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .sc-sun { position: absolute; top: 14px; left: 56%; width: 120px; height: 120px; border-radius: 50%; background: var(--sun); filter: blur(1px); }
 .sc-mts { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 42vh; }
@@ -541,7 +550,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .scene, .notebook { border-radius: 6px; box-shadow: 0 0 0 4px var(--surface-2), 0 0 0 5px var(--line), 0 24px 40px -30px rgba(20, 50, 35, .45); }
 .scene-head { position: relative; overflow: hidden; background: var(--surface-2); }
 .scene-head > * { position: relative; z-index: 1; }
-.scene-head::after { content: ""; position: absolute; right: 0; bottom: 0; width: min(70%, 560px); height: 92%; background: var(--head-mt); opacity: .75; pointer-events: none;
+.scene-head::after { content: ""; position: absolute; right: 0; bottom: 0; width: min(55%, 480px); height: 80%; background: var(--head-mt); opacity: .6; pointer-events: none;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 120' preserveAspectRatio='none'%3E%3Cpath opacity='.55' d='M0 120 L0 95 C40 80 70 40 110 46 C140 50 150 20 180 18 C215 16 225 62 260 60 C300 58 310 10 350 8 C390 6 400 55 440 52 C480 49 500 30 530 34 C545 36 552 44 560 46 L560 120Z'/%3E%3Cpath d='M0 120 L0 110 C60 104 90 82 140 86 C190 90 210 70 260 72 C320 74 340 96 400 92 C450 89 480 74 520 78 C540 80 552 86 560 88 L560 120Z'/%3E%3C/svg%3E") no-repeat right bottom / 100% 100%;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 120' preserveAspectRatio='none'%3E%3Cpath opacity='.55' d='M0 120 L0 95 C40 80 70 40 110 46 C140 50 150 20 180 18 C215 16 225 62 260 60 C300 58 310 10 350 8 C390 6 400 55 440 52 C480 49 500 30 530 34 C545 36 552 44 560 46 L560 120Z'/%3E%3Cpath d='M0 120 L0 110 C60 104 90 82 140 86 C190 90 210 70 260 72 C320 74 340 96 400 92 C450 89 480 74 520 78 C540 80 552 86 560 88 L560 120Z'/%3E%3C/svg%3E") no-repeat right bottom / 100% 100%; }
 
@@ -575,7 +584,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .day-dot { width: 46px; height: 30px; border-radius: 3px; border: 0; margin-right: 4px; background: var(--surface-2); color: var(--muted); position: relative; box-shadow: inset 0 -3px 0 rgba(0,0,0,.06); }
 .day-dot::after { content: ""; position: absolute; right: -4px; top: -2px; bottom: -2px; width: 4px; border-radius: 2px; background: var(--line); }
 .day-dot:last-child::after { display: none; }
-.day-dot.done { background: var(--stalk); color: var(--btn-fg); }
+.day-dot.done { background: var(--done-bg); color: var(--done-fg); }
 .day-dot.done::after { background: var(--node); }
 .day-dot.on { background: var(--surface); outline: 2px solid var(--jade); outline-offset: -2px; color: var(--fg); }
 @media (max-width: 760px) { .days { flex-wrap: nowrap; } .day-dot { flex: 1 1 0; min-width: 0; width: auto; height: 28px; margin-right: 3px; padding: 0; } .day-dot::after { right: -3px; width: 3px; } }
@@ -607,6 +616,10 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
       <p class="streak" id="streak" aria-live="polite"></p>
     </div>
     <button class="notes-btn" id="notes-btn" aria-expanded="false" aria-controls="notes" title="Your notes, beside whatever you're doing"><span class="han">笔记</span> Notes</button>
+  <aside class="notes" id="notes" aria-label="Your notes" hidden>
+    <div class="nt-head"><span class="nt-han">笔记</span><span class="nt-en">Your notes</span><button class="linkish nt-close" id="notes-close">Close</button></div>
+    <div class="nt-body"></div>
+  </aside>
     <div class="help" role="group" aria-labelledby="help-label">
       <span class="help-label" id="help-label">How much help</span>
       <div class="seg" id="help-seg"></div>
@@ -645,10 +658,6 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
     </aside>
   </div>
   <footer class="foot" id="foot"></footer>
-  <aside class="notes" id="notes" aria-label="Your notes" hidden>
-    <div class="nt-head"><span class="nt-han">笔记</span><span class="nt-en">Your notes</span><button class="linkish nt-close" id="notes-close">Close</button></div>
-    <div class="nt-body"></div>
-  </aside>
 </div>
 
 <script src="scenes.js"></script>
@@ -2993,6 +3002,7 @@ function lsRead(v, c) {
   const th = el("div", "ls-chap-row"); th.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
   const zhOn = !!(LS.zh && ch.zh);
   if (sample || ch.zh) th.append(lsLangSwitch(v, c));
+  { const nb = el("button", "linkish", "笔记 Notes"); nb.onclick = () => notesShown() ? closeNotes() : openNotes(); th.append(nb); }
   if (canSpeak) { const lb = el("button", "linkish", zhOn ? "Listen to the chapter" : "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
   // A chapter that reads badly can be written again, until you've answered it
   if (sample && !ch.said) { const re = el("button", "linkish ls-rewrite", "Rewrite it");
@@ -3182,10 +3192,12 @@ let lsNew = false;
 // that wouldn't land gets a quiet note under your message and comes back in Mistakes.
 const PEOPLE = window.PEOPLE || [];
 let CHATS = store.get("sm-chats", {}), chatPrefs = Object.assign({ py: true, en: false }, store.get("sm-chat-prefs", {}));
-let chatInked = {}, chatWho = null, chatBusy = false, chatErr = "", chatReset = false, chatHow = null, chatDraft = "";
+let chatInked = {}, chatWho = null, chatPending = new Set(), chatErrs = {}, chatReset = false, chatHow = null, chatDraft = "";
 const personOf = id => PEOPLE.find(p => p.id === id);
 const chatOf = id => CHATS[id] || (CHATS[id] = { msgs: [], about: "" });
-const saveChats = () => { try { localStorage.setItem("sm-chats", JSON.stringify(CHATS)); } catch { chatErr = "Your browser's storage is full, so new messages won't be kept."; } };
+const saveChats = () => { try { localStorage.setItem("sm-chats", JSON.stringify(CHATS)); } catch { if (chatWho) chatErrs[chatWho] = "Your browser's storage is full, so new messages won't be kept."; } };
+// A message that was on its way when the page closed can be sent again
+Object.values(CHATS).forEach(c => (c.msgs || []).forEach(m => { if (m.pending) { delete m.pending; m.fail = true; } }));
 const chatUnread = () => PEOPLE.filter(p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length && !m[m.length - 1].me && !m[m.length - 1].seen; }).length;
 // Someone you met at a place you've been: they've added you, and their first message is waiting
 function chatSeed(p) {
@@ -3233,13 +3245,14 @@ function chatRow(p) {
 }
 function startChat(id) {
   const p = personOf(id); if (!p) return startChats();
-  mode = "chat"; chatWho = id; busy = false; finished = false; clearRush(); chatReset = false; chatHow = null; chatErr = "";
+  mode = "chat"; chatWho = id; busy = false; finished = false; clearRush(); chatReset = false; chatHow = null;
   cur = { id: "chat", who: p.av, whoEn: p.en, en: "Unscripted", turns: [] };
   const c = chatSeed(p);
   c.msgs.forEach(m => { if (!m.me) m.seen = true; }); saveChats();
   setHead(p.han, p.py, p.en, "", p.met ? `${p.role.replace(/^./, x => x.toUpperCase())}.` : `${p.role.replace(/^./, x => x.toUpperCase())}.`);
   setTabs(chatBar());
-  chatDraw(); renderRail(); renderMove();
+  renderRail(); chatDraw(); renderMove();
+  if (innerWidth < 760) $("#scene").scrollIntoView({ block: "start" }); // on a phone, the chat fills the screen
 }
 // The two switches, plus a way back and a fresh start
 function chatBar() {
@@ -3256,7 +3269,8 @@ function chatBar() {
     if (!chatReset) { chatReset = true; setTabs(chatBar()); return; }
     chatReset = false; CHATS[chatWho] = { msgs: [], about: "" }; saveChats(); startChat(chatWho);
   };
-  bar.append(back, sw, reset);
+  const nb = el("button", "linkish", "笔记 Notes"); nb.onclick = () => notesShown() ? closeNotes() : openNotes();
+  bar.append(back, sw, nb, reset);
   if (chatReset) bar.append(el("span", "chat-warn", "This clears the messages and everything they remember about you. Slips stay in Mistakes."));
   return bar;
 }
@@ -3270,7 +3284,7 @@ function chatDraw(keep) {
     const n = chatMsg(m, p, i); if (i < prev) n.classList.add("noink"); log.append(n);
   });
   chatInked[chatWho] = c.msgs.length;
-  if (chatBusy) log.append(el("div", "chat-typing", `${p.han}正在输入… typing`));
+  if (chatPending.has(chatWho)) log.append(el("div", "chat-typing", `${p.han}正在输入… typing`));
   if (keep) log.scrollTop = y; else log.scrollTop = log.scrollHeight;
 }
 function chatMsg(m, p, i) {
@@ -3288,6 +3302,7 @@ function chatMsg(m, p, i) {
   } else {
     if (m.voice) bub.append(el("div", "vtag", "语音 · voice message"));
     bub.append(el("div", "han", m.h));
+    if (m.zh && (showPy || showEn)) bub.append(el("div", "han zh-meant", m.zh));
     if (showPy && m.p) bub.append(el("div", "py", m.p));
     if (showEn && m.e) bub.append(el("div", "en-line", m.e));
     bub.onclick = ev => { if (ev.target.closest("button")) return; m.open = !m.open; chatDraw(true); };
@@ -3313,10 +3328,11 @@ function chatMsg(m, p, i) {
 }
 // Everything you need to text back: a box that takes characters, pinyin or English, your voice, and a way to ask how
 function renderChatMove() {
-  const m = $("#move"); m.textContent = "";
+  const m = $("#move"), ae = document.activeElement, had = ae && ae.id === "chat-input", caret = had ? [ae.selectionStart, ae.selectionEnd] : null;
+  m.textContent = "";
   if (!chatWho) return;
-  const p = personOf(chatWho), c = chatOf(chatWho);
-  if (chatErr) m.append(el("p", "ls-err", chatErr));
+  const p = personOf(chatWho), c = chatOf(chatWho), waiting = chatPending.has(chatWho);
+  if (chatErrs[chatWho]) m.append(el("p", "ls-err", chatErrs[chatWho]));
   if (!sample) { m.append(el("p", "ls-note", "Chatting needs Claude, since every reply is written as you go. Open the app in Claude to chat.")); return; }
   // A beginner can start from a line that works, and edit it before sending
   if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
@@ -3329,11 +3345,13 @@ function renderChatMove() {
   const inp = el("input"); inp.id = "chat-input"; inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN"; inp.maxLength = 200; inp.value = chatDraft;
   inp.placeholder = `Message ${p.han}: characters, pinyin or English`; inp.setAttribute("aria-label", `Message ${p.en}`);
   inp.oninput = () => { chatDraft = inp.value; };
-  const send = el("button", "btn", "Send"); send.type = "submit";
+  const send = el("button", "btn", "Send"); send.type = "submit"; send.disabled = waiting; if (waiting) send.title = `Wait for ${p.han}'s reply`;
   form.append(inp, send);
   if (SR && !micBroken) { const mic = el("button", "btn ghost", "Speak"); mic.type = "button"; mic.onclick = () => listenOnce(inp, mic, () => { chatDraft = inp.value; }); form.append(mic); }
-  form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v && !chatBusy) { chatDraft = ""; chatSend(v); } };
+  form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v && !chatPending.has(chatWho)) { chatDraft = ""; inp.value = ""; chatSend(v); } };
   m.append(form);
+  if (waiting) m.append(el("p", "chat-wait", `${p.han} is typing. You can write your next message meanwhile.`));
+  if (had) { inp.focus({ preventScroll: true }); try { inp.setSelectionRange(caret[0], caret[1]); } catch {} }
   if (!chatHow) { const how = el("button", "linkish", "How do I say…?"); how.onclick = () => { chatHow = { q: "", opts: null }; renderMove(); const i = $("#how-input"); if (i) i.focus(); }; m.append(how); }
 }
 function chatHowEl(p) {
@@ -3406,7 +3424,7 @@ async function chatSend(text, retry) {
   const id = chatWho, p = personOf(id), c = chatOf(id);
   let me = retry;
   if (!me) { me = { me: true, h: text, t: Date.now() }; c.msgs.push(me); }
-  delete me.fail; chatBusy = true; chatErr = ""; saveChats(); practised(); chatDraw(); renderMove();
+  delete me.fail; me.pending = true; chatPending.add(id); delete chatErrs[id]; saveChats(); practised(); chatDraw(); renderMove();
   try {
     const r = await sample.json(chatPrompt(p, c, text), { cache: false, modelTier: "quick" });
     const msgs = (r && Array.isArray(r.messages) ? r.messages : []).filter(x => x && x.h && isHanText(String(x.h))).slice(0, 3);
@@ -3424,20 +3442,20 @@ async function chatSend(text, retry) {
       if (i) await new Promise(res => setTimeout(res, 700));
       const x = msgs[i];
       c.msgs.push({ h: String(x.h), p: String(x.p || ""), e: String(x.e || ""), voice: !!(x.voice && p.voice), t: Date.now(), seen: mode === "chat" && chatWho === id });
-      if (i === msgs.length - 1) chatBusy = false;
+      if (i === msgs.length - 1) chatPending.delete(id);
       saveChats(); if (mode === "chat" && chatWho === id) chatDraw();
     }
     c.msgs = c.msgs.slice(-300);
   } catch (e) {
     me.fail = true;
-    chatErr = e && e.code === "not_granted" ? "Chatting needs permission to use Claude." : e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then tap the ! to send again." : "That message didn't go through. Tap the ! to send it again.";
+    chatErrs[id] = e && e.code === "not_granted" ? "Chatting needs permission to use Claude." : e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then tap the ! to send again." : "That message didn't go through. Tap the ! to send it again.";
     if (e && e.code === "not_granted") sample = null;
   }
-  chatBusy = false; saveChats();
+  chatPending.delete(id); delete me.pending; saveChats();
   if (mode === "chat" && chatWho === id) { chatDraw(); renderMove(); }
   renderRail();
 }
-function chatRetry(i) { const c = chatOf(chatWho), m = c.msgs[i]; if (!m || chatBusy) return; c.msgs.splice(i, 1); c.msgs.push(m); m.t = Date.now(); chatSend(m.h, m); }
+function chatRetry(i) { const c = chatOf(chatWho), m = c.msgs[i]; if (!m || chatPending.has(chatWho)) return; c.msgs.splice(i, 1); c.msgs.push(m); m.t = Date.now(); chatSend(m.h, m); }
 
 /* ---------- Notes: your own notebook, open beside whatever you're doing ---------- */
 // Free text, the way you'd keep a paper notebook: words, explanations, anything. It opens over any page,
@@ -3448,9 +3466,10 @@ const noteTitle = n => (n.body.split("\n").find(l => l.trim()) || "Empty note").
 function noteNew(body) { const n = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), body: body || "", t: Date.now() }; NOTES.unshift(n); saveNotes(); return n; }
 // "Save to notes" from anywhere: into the note you have open, or a running "Saved lines" note
 function noteAdd(text, from) {
-  let n = noteOpen && NOTES.find(x => x.id === noteOpen);
+  let n = notesShown() && noteOpen && NOTES.find(x => x.id === noteOpen);
   if (!n) n = NOTES.find(x => x.saved) || Object.assign(noteNew("Saved lines\n"), { saved: true });
-  n.body = n.body.replace(/\s*$/, "") + `\n${text}${from ? `   (${from})` : ""}\n`; n.t = Date.now(); saveNotes();
+  const [mine, gloss] = n.body.split(NOTE_GLOSS), line = `${text}${from ? `   (${from})` : ""}`;
+  n.body = mine.replace(/\s*$/, "") + `\n${line}\n` + (gloss != null ? NOTE_GLOSS + gloss : ""); n.t = Date.now(); saveNotes();
   toast(`Saved to “${noteTitle(n)}”`);
   if (notesShown()) drawNotes();
   renderRail();
@@ -3462,12 +3481,14 @@ function toast(t) {
 }
 const notesShown = () => !$("#notes").hidden;
 function openNotes(id) {
-  const d = $("#notes"); d.hidden = false; $("#notes-btn").setAttribute("aria-expanded", "true");
+  const d = $("#notes"); d.hidden = false; document.body.classList.add("notes-open"); $("#notes-btn").setAttribute("aria-expanded", "true");
   if (id !== undefined) noteOpen = id;
   noteDel = false; noteMsg = ""; drawNotes();
   setTimeout(() => { const f = d.querySelector(noteOpen ? "textarea" : "input"); if (f) f.focus({ preventScroll: true }); }, 0);
 }
-function closeNotes() { $("#notes").hidden = true; $("#notes-btn").setAttribute("aria-expanded", "false"); $("#notes-btn").focus(); }
+function closeNotes() {
+  const n = noteOpen && NOTES.find(x => x.id === noteOpen); if (n && !n.body.trim()) { NOTES = NOTES.filter(x => x !== n); saveNotes(); noteOpen = null; } // an empty new note isn't kept
+  document.body.classList.remove("notes-open"); $("#notes").hidden = true; $("#notes-btn").setAttribute("aria-expanded", "false"); $("#notes-btn").focus(); }
 function drawNotes() {
   const d = $("#notes .nt-body"); d.textContent = "";
   const n = noteOpen && NOTES.find(x => x.id === noteOpen);
@@ -3516,7 +3537,7 @@ const NOTE_GLOSS = "\n—— 拼音 pinyin and meanings ——\n";
 async function noteGloss(n) {
   const mine = n.body.split(NOTE_GLOSS)[0];
   if (!isHanText(mine)) return;
-  noteBusy = true; noteMsg = ""; drawNotes();
+  noteBusy = true; noteMsg = ""; const g0 = $("#notes .nt-gloss"); if (g0) { g0.disabled = true; g0.textContent = "Adding…"; }
   const prompt = `A learner of Mandarin wrote this note for themselves:
 """
 ${mine.slice(0, 3000)}
@@ -3527,10 +3548,12 @@ Return JSON only: {"items": [{"h": "汉字", "p": "pīnyīn", "e": "meaning"}]}`
     const r = await sample.json(prompt, { cache: true, modelTier: "quick" });
     const items = (r && Array.isArray(r.items) ? r.items : []).filter(x => x && x.h && isHanText(String(x.h))).slice(0, 40);
     if (!items.length) throw new Error("shape");
-    n.body = mine.replace(/\s*$/, "") + "\n" + NOTE_GLOSS + items.map(x => `${x.h}  ${x.p || ""}  ${x.e || ""}`.trim()).join("\n") + "\n";
+    const now = n.body.split(NOTE_GLOSS)[0]; // whatever you've typed since, kept
+    n.body = now.replace(/\s*$/, "") + "\n" + NOTE_GLOSS + items.map(x => `${x.h}  ${x.p || ""}  ${x.e || ""}`.trim()).join("\n") + "\n";
     n.t = Date.now(); saveNotes();
   } catch (e) { noteMsg = e && e.code === "rate_limited" ? "Busy right now. Try again in a moment." : "Couldn't add them just now. Try again?"; }
-  noteBusy = false; if (notesShown() && noteOpen === n.id) drawNotes();
+  noteBusy = false;
+  if (notesShown() && noteOpen === n.id) { const ta = $("#notes textarea"), had = document.activeElement === ta, c = ta ? [ta.selectionStart, ta.selectionEnd] : null; drawNotes(); const t2 = $("#notes textarea"); if (had && t2) { t2.focus(); try { t2.setSelectionRange(c[0], c[1]); } catch {} } }
 }
 
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
@@ -4047,7 +4070,7 @@ applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
 $("#notes-btn").onclick = () => notesShown() ? closeNotes() : openNotes();
 $("#notes-close").onclick = () => closeNotes();
-document.addEventListener("keydown", ev => { if (ev.key === "Escape" && notesShown()) closeNotes(); });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !ev.isComposing && notesShown()) closeNotes(); });
 // Coming back: start from a short "today" page. The very first visit goes straight into the noodle shop.
 if (said) startHome(); else start(lastScene());
 
