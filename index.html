@@ -59,6 +59,14 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .streak { margin: 6px 0 0; font-size: 13px; color: var(--jade); font-weight: 600; min-height: 1em; }
 .streak .zh { font-family: var(--f-han); margin-right: 6px; }
 .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+/* One help dial instead of three switches: less help as you get better */
+.help { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.help-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); gap: 2px; }
+.seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--fg); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.help-desc { font-size: 12px; color: var(--muted); max-width: 300px; text-align: right; }
+@media (max-width: 760px) { .help { align-items: flex-start; } .help-desc { text-align: left; } .seg button { padding: 6px 10px; } }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
@@ -213,6 +221,7 @@ body.hint-off .opt .en-line { display: none; }
 .field { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .field input, .field-place { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); }
 .field .btn { align-self: flex-start; }
+.first-run { border-left: 3px solid var(--jade); padding: 6px 12px; font-size: 14px; color: var(--fg); background: var(--surface-2); border-radius: 0 8px 8px 0; }
 .trip-group { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; }
 /* Practice tools: compact, so places stay the main thing */
 .scn.tool { padding: 7px 10px; gap: 0 10px; }
@@ -291,10 +300,10 @@ body.hint-off .opt .en-line { display: none; }
       <p class="tagline">No lessons. Walk into a real situation, say something, get it wrong, and learn from how people react.</p>
       <p class="streak" id="streak" aria-live="polite"></p>
     </div>
-    <div class="toggles" role="group" aria-label="Display options">
-      <button class="chip" id="tg-py" aria-pressed="true">Pinyin</button>
-      <button class="chip" id="tg-hint" aria-pressed="false">English on answers</button>
-      <button class="chip" id="tg-listen" aria-pressed="false" title="Hear lines first; the text appears after you answer">Listening mode</button>
+    <div class="help" role="group" aria-labelledby="help-label">
+      <span class="help-label" id="help-label">How much help</span>
+      <div class="seg" id="help-seg"></div>
+      <span class="help-desc" id="help-desc"></span>
     </div>
   </header>
 
@@ -638,7 +647,10 @@ function start(id) {
   cur = Object.assign({}, base, { turns });
   try { localStorage.setItem("sm-last", id); } catch {}
   setHead(cur.place, cur.placePy, cur.en, "Your goal: ", cur.goal);
-  $("#log").textContent = ""; addNarr(cur.intro);
+  $("#log").textContent = "";
+  // The very first time: one line on how this works, then straight in
+  if (!said) $("#log").append(el("div", "first-run", "You're here with a goal and no textbook. Pick what you'd say. If it's wrong, the other person reacts the way a real local would, and that's how you learn. Getting it wrong on purpose is allowed."));
+  addNarr(cur.intro);
   renderRail(); beginTurn();
 }
 
@@ -950,6 +962,10 @@ function renderEnd() {
       : mk.curve ? "All three. Mastered." : mk.clean ? "Next: get through a surprise without a slip." : "Next: a clean run, with no slips at all.";
     line("Marks", marksEl(cur.id), " " + msg);
   }
+  if (!runMisses.length && !cur._rematch && helpLevel() < 2) {
+    const up = el("button", "linkish", `Try ${HELP[helpLevel() + 1].label.toLowerCase()}`); up.onclick = () => { setHelp(helpLevel() + 1); start(cur.id); };
+    line("Help", "Clean with " + HELP[helpLevel()].label.toLowerCase() + " on. Ready for less? ", up);
+  }
   if (twistNote) { line("New here", twistNote.replace(/^Something new can now happen here: /, "")); twistNote = ""; }
   // One clear next step, the rest as quieter options
   const row = el("div", "endcard");
@@ -1069,7 +1085,7 @@ function startReview() {
   const due = dueItems();
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0)).slice(0, 10);
   ri = 0; rRight = 0; rLearned = 0;
-  setHead("复习", "fùxí", "Mistakes that came back", "How it works: ", "Get each one right three times, a few days apart, and it leaves your notebook.");
+  setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Get each one right three times, a few days apart, and it leaves your notebook.");
   $("#log").textContent = "";
   renderRail();
   if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
@@ -2128,18 +2144,27 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
 }
 
 /* ---------- toggles ---------- */
+// The help dial: each step takes one crutch away. The last one is how the street actually works: you hear it first
+const HELP = [
+  { id: "english", label: "English", desc: "Pinyin and English on every answer.", py: true, hint: true, listen: false },
+  { id: "pinyin", label: "Pinyin", desc: "Pinyin on answers; tap a line for its English.", py: true, hint: false, listen: false },
+  { id: "chars", label: "Characters", desc: "Characters only, like the street. Tap \"What does that mean?\" when stuck.", py: false, hint: false, listen: false },
+  { id: "ears", label: "Ears", desc: "Hear each line first. The text shows after you answer.", py: true, hint: false, listen: true }
+];
+const helpLevel = () => prefs.listen ? 3 : !prefs.py ? 2 : prefs.hint ? 0 : 1;
+function setHelp(i) { const h = HELP[i]; prefs.py = h.py; prefs.hint = h.hint; prefs.listen = h.listen; store.set("sm-prefs", prefs); applyPrefs(); if (mode === "scene" && !finished) renderMove(); }
 function applyPrefs() {
   document.body.classList.toggle("no-py", !prefs.py);
   document.body.classList.toggle("hint-off", !prefs.hint);
-  $("#tg-py").setAttribute("aria-pressed", prefs.py);
-  $("#tg-hint").setAttribute("aria-pressed", prefs.hint);
-  $("#tg-listen").setAttribute("aria-pressed", prefs.listen);
-  $("#tg-listen").hidden = !canSpeak;
+  const seg = $("#help-seg"); seg.textContent = "";
+  HELP.forEach((h, i) => {
+    if (h.listen && !canSpeak) return;
+    const b = el("button", null, h.label); b.setAttribute("aria-pressed", i === helpLevel() ? "true" : "false"); b.title = h.desc;
+    b.onclick = () => setHelp(i); seg.append(b);
+  });
+  $("#help-desc").textContent = HELP[helpLevel()].desc;
 }
-$("#tg-py").onclick = () => { prefs.py = !prefs.py; store.set("sm-prefs", prefs); applyPrefs(); };
 $("#menu-btn").onclick = () => setMenu(!$(".layout").classList.contains("menu-open"));
-$("#tg-hint").onclick = () => { prefs.hint = !prefs.hint; store.set("sm-prefs", prefs); applyPrefs(); };
-$("#tg-listen").onclick = () => { prefs.listen = !prefs.listen; store.set("sm-prefs", prefs); applyPrefs(); };
 
 // Keys 1–9 pick an answer; Enter moves on when there's a single next step
 document.addEventListener("keydown", ev => {
