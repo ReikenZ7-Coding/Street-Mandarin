@@ -222,6 +222,11 @@ body.hint-off .opt .en-line { display: none; }
 .field input, .field-place { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); }
 .field .btn { align-self: flex-start; }
 .first-run { border-left: 3px solid var(--jade); padding: 6px 12px; font-size: 14px; color: var(--fg); background: var(--surface-2); border-radius: 0 8px 8px 0; }
+.rush { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
+.rush i { display: block; height: 100%; width: 100%; background: var(--cinnabar); transform-origin: left; animation: rush linear forwards; }
+@keyframes rush { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .rush i { animation: none; } }
+.again { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .trip-group { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; }
 /* Practice tools: compact, so places stay the main thing */
 .scn.tool { padding: 7px 10px; gap: 0 10px; }
@@ -621,7 +626,27 @@ function renderRail() {
 }
 
 /* ---------- scenes ---------- */
-function start(id) {
+/* ---------- rush hour: the same place, but nobody waits for you ---------- */
+let rush = false, rushLate = 0, rushTimer = null, rushEnd = 0;
+const IMPATIENT = [["快点儿！", "Kuài diǎnr!", "Hurry up!"], ["想好了吗？", "Xiǎng hǎo le ma?", "Made up your mind?"], ["喂？听到了吗？", "Wèi? Tīngdào le ma?", "Hello? Did you hear me?"]];
+function clearRush() { clearTimeout(rushTimer); rushTimer = null; rushEnd = 0; }
+function armRush() {
+  clearRush();
+  const t = cur.turns[turn], chars = t.npc ? [...normHan(t.npc[0])].length : 0;
+  // Roughly what a real person gives you: a few seconds, a bit more after a long sentence or if you type
+  const ms = Math.min(9000, 4500 + chars * 150) * (prefs.how === "type" ? 1.8 : prefs.how === "build" ? 1.5 : 1) + (prefs.listen ? 1500 : 0);
+  rushEnd = Date.now() + ms;
+  const at = turn, id = cur.id;
+  rushTimer = setTimeout(() => {
+    if (mode !== "scene" || finished || busy || cur.id !== id || turn !== at) return;
+    rushLate++; rushEnd = 0;
+    addNpc(IMPATIENT[rushLate % IMPATIENT.length]);
+    addNarr("Too slow. In a real queue nobody waits for long. Answer now.");
+    renderMove();
+  }, ms);
+}
+function start(id, opt = {}) {
+  clearRush(); rush = !!opt.rush; rushLate = 0;
   mode = "scene"; if (groupOf(id) !== railOpen) setRailOpen(groupOf(id));
   const base = S.find(s => s.id === id);
   turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
@@ -641,13 +666,13 @@ function start(id) {
     });
     if (surprises.length) {
       curveball = surprises[0].cb;
-      seenCb[id] = [...new Set([...(seenCb[id] || []), ...surprises.map(x => String(x.key))])]; store.set("sm-seen-cb", seenCb);
     }
   }
   cur = Object.assign({}, base, { turns });
   try { localStorage.setItem("sm-last", id); } catch {}
-  setHead(cur.place, cur.placePy, cur.en, "Your goal: ", cur.goal);
+  setHead(cur.place, cur.placePy, cur.en, rush ? "Rush hour. Your goal: " : "Your goal: ", cur.goal);
   $("#log").textContent = "";
+  if (rush) addNarr("Rush hour: people are busy and won't wait while you think. Answer before the bar runs out.");
   // The very first time: one line on how this works, then straight in
   if (!said) $("#log").append(el("div", "first-run", "You're here with a goal and no textbook. Pick what you'd say. If it's wrong, the other person reacts the way a real local would, and that's how you learn. Getting it wrong on purpose is allowed."));
   addNarr(cur.intro);
@@ -659,9 +684,12 @@ function beginTurn() {
   const t = cur.turns[turn];
   const alt = t.npcAlt && Object.keys(t.npcAlt).find(f => flags[f]);
   if (t.npc) addNpc(alt ? t.npcAlt[alt] : t.npc);
+  // A surprise counts as met once you actually reach it, not when it's dealt
+  if (t._cb != null && !cur._rematch) { const k = String(t._cb), l = seenCb[cur.id] || []; if (!l.includes(k)) { seenCb[cur.id] = l.concat(k); store.set("sm-seen-cb", seenCb); } }
   const last = (ghost[cur.id] || {})[moveKey(t)];
   if (last) { const g = el("div", "ghost"); g.append("Last time here you said ", el("span", "han-inline", last.replace(/[。！？.!?]+$/, "")), ". This time?"); $("#log").append(g); scrollLog(); }
   order = shuffle(t.opts);
+  if (rush) armRush();
   renderMove();
 }
 
@@ -676,8 +704,12 @@ function renderMove() {
   if (mode === "trip") return renderTripMove();
   if (mode === "field") return renderFieldMove();
   const m = $("#move"); m.textContent = "";
-  if (finished) return renderEnd();
+  if (finished) { clearRush(); return renderEnd(); }
   const t = cur.turns[turn];
+  if (rush && rushEnd) {
+    const left = Math.max(0, rushEnd - Date.now()), bar = el("div", "rush"), fill = el("i");
+    fill.style.animationDuration = left + "ms"; bar.append(fill); bar.setAttribute("aria-hidden", "true"); m.append(bar);
+  }
   const head = el("div", "move-head");
   head.append(el("h3", null, `Your move · ${turn + 1} of ${cur.turns.length}`), el("span", "prompt", t.prompt));
   const good = t.opts.find(o => o.k === "good" && o.b);
@@ -871,6 +903,7 @@ function clearGhost() {
 }
 function choose(o) {
   if (busy) return;
+  clearRush();
   if (o.k === "good") clearGhost(); else if (o.tag) runMissTags.push(o.tag);
   if (o.quiet) return advance();
   addMe(o.h, o.p, o.e, o.k);
@@ -933,6 +966,7 @@ function rematch() {
   // Just the moments that went wrong, straight away, while the mistake is fresh
   const base = S.find(s => s.id === cur.id), turns = runMisses.map(t => Object.assign({}, t));
   mode = "scene"; turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
+  clearRush(); rush = false;
   cur = Object.assign({}, base, { turns, _rematch: true });
   setHead(cur.place, cur.placePy, cur.en, "Rematch: ", turns.length === 1 ? "the one moment that went wrong. Get it right this time." : `the ${turns.length} moments that went wrong. Get them right this time.`);
   $("#log").textContent = ""; addNarr("Same place, same people. Only the moments you missed.");
@@ -962,6 +996,7 @@ function renderEnd() {
       : mk.curve ? "All three. Mastered." : mk.clean ? "Next: get through a surprise without a slip." : "Next: a clean run, with no slips at all.";
     line("Marks", marksEl(cur.id), " " + msg);
   }
+  if (rush) line("Rush hour", rushLate ? `You kept people waiting ${rushLate === 1 ? "once" : rushLate === 2 ? "twice" : rushLate + " times"}. Next time, say the first thing that fits; a short answer beats a perfect late one.` : "You kept up. Nobody had to wait.");
   if (!runMisses.length && !cur._rematch && helpLevel() < 2) {
     const up = el("button", "linkish", `Try ${HELP[helpLevel() + 1].label.toLowerCase()}`); up.onclick = () => { setHelp(helpLevel() + 1); start(cur.id); };
     line("Help", "Clean with " + HELP[helpLevel()].label.toLowerCase() + " on. Ready for less? ", up);
@@ -973,13 +1008,18 @@ function renderEnd() {
   const after = ord.slice(at + 1).concat(ord.slice(0, at));
   const next = after.find(x => !done[x.id]) || after[0];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
-  const again = el("button", "btn ghost", "Play it again"); again.onclick = () => start(cur.id);
   if (runMisses.length) {
     const rm = el("button", "btn", runMisses.length === 1 ? "Rematch the moment you missed" : `Rematch the ${runMisses.length} moments you missed`);
     rm.onclick = () => rematch();
-    nx.className = "btn ghost"; row.append(rm, nx, again);
-  } else row.append(nx, again);
-  if (sample && !cur._rematch) { const live = el("button", "btn ghost", "Play it live, somewhere like this"); live.onclick = () => startLive(cur.id); row.append(live); }
+    nx.className = "btn ghost"; row.append(rm, nx);
+  } else row.append(nx);
+  // Every way to replay this place, together: as it was, with no time to think, or unscripted somewhere similar
+  const again = el("div", "again"); again.append(el("span", null, "Play it again:"));
+  const way = (label, go) => { const b = el("button", "chip", label); b.onclick = go; again.append(b); };
+  way("Normally", () => start(cur.id));
+  if (done[cur.id] && !cur._rematch) way("At rush hour", () => start(cur.id, { rush: true }));
+  if (sample && !cur._rematch) way("Live, somewhere like this", () => startLive(cur.id));
+  row.append(again);
   if (S.find(x => x.id === cur.id).custom) {
     const rm = el("button", "btn ghost", "Remove this place");
     rm.onclick = () => {

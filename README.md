@@ -25,7 +25,7 @@ In a place:
 - Answers are graded good, close enough or wrong. Each gets an in-character reaction and a short note, and "Why, exactly?" goes one level deeper.
 - Some wrong answers carry consequences, like paying 20 kuai more for the expressway, and the end card shows what they cost you.
 - No two visits are the same. Every place has three or four surprises, and each run mixes in none, one or two, favouring ones you haven't met.
-- The end card is a four-line scorecard: what it cost you, your slips (with a drill for the kind you made most), surprises, and marks. After a run you can rematch only the moments you missed. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
+- The end card is a four-line scorecard: what it cost you, your slips (with a drill for the kind you made most), surprises, and marks. After a run you can rematch only the moments you missed. Every way to replay sits on one line: normally, at rush hour (people won't wait while you think, and a bar shows how long you have), or live with Claude somewhere similar. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
 
 **How much help** is one dial instead of three switches: English (pinyin and English on answers), Pinyin, Characters, then Ears (hear it first, read it after). After a clean run the end card suggests stepping down a level.
 
