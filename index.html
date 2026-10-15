@@ -3400,12 +3400,14 @@ function chatPrompt(p, c, text) {
   const before = c.msgs[c.msgs.length - 1] && c.msgs[c.msgs.length - 1].me && c.msgs[c.msgs.length - 1].h === text ? c.msgs.slice(0, -1) : c.msgs;
   const hist = before.slice(-24).map(m => `${m.me ? "Them" : "You"}: ${m.voice ? "(voice message) " : ""}${m.h}`).join("\n");
   const now = new Date(), part = now.getHours() < 5 ? "late at night" : now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening";
+  // The phrases they're fixing in Mistakes turn up in real conversation now and then, so a fix is met in use
+  const fixing = notebook.filter(n => !n.learned && n.fix && n.fix.length <= 14).sort((a, b) => (a.due || 0) - (b.due || 0)).slice(0, 3).map(n => n.fix.replace(/[。！？]$/, ""));
   const role = p.role.replace(/\byour\b/g, "the learner's").replace(/\byou\b/g, "the learner"); // the roles are written to the learner
   return `You are ${p.han} (${p.en}), ${role}${/Shanghai/.test(role) ? "" : ", in Shanghai"}. You're texting on WeChat with a foreigner who recently arrived and is learning Mandarin (beginner to lower-intermediate).
 How you text: ${p.style}
 How hard your Chinese is: ${CHAT_LEVEL[p.level] || CHAT_LEVEL.simple}
 What you know about them so far: ${c.about || "nothing yet beyond how you met."}
-It's ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][now.getDay()]} ${part} for both of you.
+${fixing.length ? `Phrases they're practising: ${fixing.join(" / ")}. If one fits what you'd naturally say anyway, use it (or its key words) in your own reply; never force it or point it out.\n` : ""}It's ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][now.getDay()]} ${part} for both of you.
 The chat so far, oldest first ("You" is you, ${p.han}; "Them" is the learner):
 ${hist}
 They just sent: "${text}" (they may write characters, pinyin with or without tones, or English when stuck).
