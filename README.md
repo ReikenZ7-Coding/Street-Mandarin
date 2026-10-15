@@ -32,17 +32,13 @@ In a place:
 **How much help** is one dial instead of three switches: English (pinyin and English on answers), Pinyin, Characters, then Ears (hear it first, read it after). After a clean run the end card suggests stepping down a level.
 
 **Three practice spaces**, each with one job:
-- 错题本 **Mistakes**: everything you got wrong, which comes back after 1, 3 and 7 days and leaves once you get it right three times. Each return asks more of you: the first time you pick the answer, the second you build it from word tiles, the third you type it from memory. If you're stuck you can step down to the choices, and a near-miss keeps it on the same rung, back tomorrow. Anything you miss in a round comes back once more at the end of that round, so you produce the fix while it's fresh. Each moment has one entry, however often you slip there. It also shows the kinds of slip you keep making (numbers, saying yes by accident, measure words…), with a drill for each across every place.
+- 错题本 **Mistakes**: everything you got wrong, which comes back after 1, 3 and 7 days and leaves once you get it right three times. Each return asks more of you: the first time you pick the answer, the second you build it from word tiles, the third you type it from memory. If you're stuck you can step down to the choices. One small slip still counts; a partial answer keeps it on the same rung, back tomorrow. Anything you miss in a round comes back once more at the end of that round, so you produce the fix while it's fresh. Each moment has one entry, however often you slip there. It also shows the kinds of slip you keep making (numbers, saying yes by accident, measure words…), with a drill for each across every place.
 - 耳朵 **Train your ear**: prices (十八 vs 八十, 一百五 vs 一百零五), phone numbers read with 幺, meeting times, and sound-alikes (买 vs 卖, 问 vs 吻), with your own slips mixed in. The number reader shows and says any number the way people really do.
-- 口袋 **Your pocket**: tell it where you're going today and you get a cheat sheet for those places (what to say, what you'll hear, the traps), a warm-up, and a big-text Show mode to hand your phone over. Every line holds the full, searchable phrasebook.
+- 口袋 **Your pocket**: tell it where you're going today and you get a cheat sheet for those places (what to say, what you'll hear, and the traps, starting with your own slips there), a warm-up, and a big-text Show mode to hand your phone over. Every line is a searchable phrasebook of what worked everywhere you've been.
 
 **It happened for real**: back from a real place, type what you said, or what you heard and didn't get, roughly as you remember it. The app finds that moment in the place, explains it with what it already knows, and files it in Mistakes, where it comes back for review like any other slip. Open it from Mistakes or from Your pocket.
 
-On a phone, the side list folds away behind one button that always names where you are.
-
-Progress lives in the browser. The footer can copy it out as one code and bring it in on another device.
-
-In Your pocket, the traps for each place you're heading to start with your own slips there.
+On a phone, the side list folds away behind one button that always names where you are. Progress lives in the browser; the footer copies it out as one code to bring in on another device.
 
 ## With and without AI
 
