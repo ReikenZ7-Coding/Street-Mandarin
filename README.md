@@ -18,9 +18,16 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 
 ## How it's organised
 
-**Today**: when you come back, the app opens on one short page that says where to start: mistakes due back, the next place, one thing to go deeper on (your most common kind of slip, a place you only scraped through, surprises you haven't met, or rush hour), and your pocket if you're heading out. Tap the title to get back to it. Below that sit **Today's three**: one word, one bit of slang and one phrase from everyday life in China (`daily.js`), the same all day and new tomorrow, each with a note on when you'd use it, Hear it, Say it back, and a link to the place where it comes up. A first visit goes straight into the noodle shop.
+**Your ten days**: the whole app hangs off one story, your first ten days in China (`journey.js`). Each day is two or three places that follow on from each other: day one is noodles by the station, a SIM card, then the hotel. A short line carries you from one stop into the next, and the end card sends you to the next stop, then to your evening.
 
-**Places** (28 of them) live in five folders in the side list: Eat and drink, Get around, Shop, Sort things out, and Meet people. One folder is open at a time, places run from day-one essentials to harder ones, and a Next up tag shows where to go. Each place stands for a kind of place, so the noodle shop teaches you any counter where you order food. One find box above the folders searches places and phrases together ("toilet", "多少", "duoshao").
+Every day has the same three parts, and each feeds the next:
+- **Morning**: slips from before that are due back, your pocket filled in for today's stops, and words for today (a word, a bit of slang and a phrase, from today's stops where there is one).
+- **Out**: the day's stops, in story order.
+- **Evening**: today's slips, one drill for the kind you made most, and "Anything happen out there for real?" for when you're actually in China. What you got wrong comes back the next morning.
+
+Progress is one list: **what you can do on your own** ("Check into a hotel", "Pay and split a bill"…). A place goes on it when you get through it with no slips. After the ten days, the day page points you at what's most worth going deeper on, and Wander makes up new days.
+
+The side list shows the ten days, one open at a time, with a Next up tag. Tap the title to get back to your day. One find box above them searches places and phrases together ("toilet", "多少", "duoshao").
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional). Word tiles show their pinyin while the help dial is on English or Pinyin.

@@ -82,7 +82,7 @@ window.DAILY = {
     { h: "等一下", p: "děng yíxià", e: "wait a moment", use: "Also 稍等 (shāo děng) from staff: just a moment.", at: "cafe" },
     { h: "没关系", p: "méi guānxi", e: "it doesn't matter, no worries", use: "The answer to 对不起 and 不好意思." },
     { h: "可以刷卡吗？", p: "kěyǐ shuā kǎ ma?", e: "can I pay by card?", use: "Often the answer is 只能扫码 (QR code only), so set up mobile pay.", at: "store" },
-    { h: "有没有大一点的？", p: "yǒu méiyǒu dà yìdiǎn de?", e: "do you have a bigger one?", use: "Swap 大 for 小 (smaller) or 便宜 (cheaper).", at: "store" },
+    { h: "有没有大一点的？", p: "yǒu méiyǒu dà yìdiǎn de?", e: "do you have a bigger one?", use: "Swap 大 for 小 (smaller) or 便宜 (cheaper).", at: "market" },
     { h: "我是来旅游的", p: "wǒ shì lái lǚyóu de", e: "I'm here as a tourist", use: "Explains a lot, and often gets you patience.", at: "hotel" },
     { h: "帮我拍张照好吗？", p: "bāng wǒ pāi zhāng zhào hǎo ma?", e: "could you take a photo of me?", use: "Hand over your phone with a smile. People usually take several.", at: "photo" },
     { h: "我不舒服", p: "wǒ bù shūfu", e: "I don't feel well", use: "Then point: 这儿疼 (it hurts here).", at: "clinic" },

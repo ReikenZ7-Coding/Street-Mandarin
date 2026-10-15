@@ -62,6 +62,32 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .today-card .tc-title { font-weight: 700; font-size: 16px; }
 .today-card .tc-why { font-size: 14px; color: var(--muted); }
 .free-open { display: block; margin-top: 14px; font-size: 14px; }
+.bridge { border-left: 3px solid var(--jade); padding: 4px 0 4px 12px; font-size: 15px; max-width: 60ch; }
+.bridge .br-day { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--jade); font-weight: 700; margin-bottom: 2px; }
+.days { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.day-dot { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.day-dot.done { background: var(--jade-soft); color: var(--jade); border-color: var(--jade-soft); }
+.day-dot.on { border: 2px solid var(--jade); color: var(--fg); }
+.day-dot:hover, .day-dot:focus-visible { border-color: var(--jade); }
+.day-part { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 10px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.day-part .dp-zh { font-family: var(--f-han); font-weight: 900; font-size: 18px; color: var(--jade); }
+.day-part .dp-en { font-weight: 700; font-size: 16px; }
+.day-part .dp-sub { font-size: 14px; color: var(--muted); }
+.today-card.done { background: transparent; }
+.today-card.done .tc-han { color: var(--muted); }
+.daily-card .dc-where { color: var(--muted); }
+.cando { margin-top: 26px; }
+.cando-head { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+.cando-head:hover, .cando-head:focus-visible { border-color: var(--jade); }
+.cando .cd-title { font-weight: 700; }
+.cando .cd-n { color: var(--muted); font-size: 14px; }
+.cando .cd-bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.cando .cd-bar i { display: block; height: 100%; background: var(--jade); }
+.cd-list { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-list li { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px dashed var(--line); color: var(--muted); }
+.cd-list li.on { border: 1px solid var(--jade); background: var(--jade-soft); color: var(--fg); }
+.cd-list li.on::before { content: "✓ "; color: var(--jade); }
+.cd-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
 .daily { margin-top: 22px; }
 .daily-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
 .daily-title { font-weight: 700; font-size: 16px; }
@@ -74,7 +100,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .daily-card .dc-en { font-weight: 700; font-size: 15px; }
 .daily-card .dc-use { font-size: 14px; color: var(--muted); margin: 6px 0 0; flex: 1; }
 .daily-card .say-back { margin-top: 8px; flex-wrap: wrap; }
-@media (max-width: 760px) { .daily-grid { grid-template-columns: 1fr; } .daily-title { flex: 1; } .daily-sub { order: 3; flex-basis: 100%; } }
+@media (max-width: 760px) { .day-dot { width: 28px; height: 28px; font-size: 12px; } .days { gap: 5px; } .daily-grid { grid-template-columns: 1fr; } .daily-title { flex: 1; } .daily-sub { order: 3; flex-basis: 100%; } }
 .today-card .tc-kind { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; grid-column: 2; order: -1; }
 .brand h1 { margin: 0; font-family: var(--f-han); font-weight: 900; font-size: 30px; letter-spacing: 0.02em; }
 .brand .en { font-weight: 700; font-size: 18px; }
@@ -335,7 +361,7 @@ body.hint-off .opt .en-line { display: none; }
 <div class="wrap">
   <header class="top">
     <div>
-      <button class="brand" id="home-btn" title="Today: where to start"><h1>街头中文</h1><span class="en">Street Mandarin</span></button>
+      <button class="brand" id="home-btn" title="Your day: where you are in the ten days"><h1>街头中文</h1><span class="en">Street Mandarin</span></button>
       <p class="tagline">No lessons. Walk into a real situation, say something, get it wrong, and learn from how people react.</p>
       <p class="streak" id="streak" aria-live="polite"></p>
     </div>
@@ -383,6 +409,7 @@ body.hint-off .opt .en-line { display: none; }
 <script src="why.js"></script>
 <script src="voices.js"></script>
 <script src="daily.js"></script>
+<script src="journey.js"></script>
 <script>
 const S = window.SCENES;
 // Places you made from your own wanders live alongside the built-in ones
@@ -598,15 +625,21 @@ function setHead(place, py, en, goalLabel, goal) {
   const g = $("#goal"); g.textContent = ""; g.append(el("b", null, goalLabel), goal);
 }
 
-const GROUPS = [
-  // Each folder runs from what you need on day one to what comes up later
-  { key: "eat", name: "Eat and drink", ids: ["noodles", "dumplings", "cafe", "tea", "hotpot", "bill", "delivery"] },
-  { key: "move", name: "Get around", ids: ["directions", "toilet", "taxi", "metro", "bike", "train"] },
-  { key: "shop", name: "Shop", ids: ["store", "fruit", "market", "return", "haircut"] },
-  { key: "sort", name: "Sort things out", ids: ["sim", "hotel", "pharmacy", "parcel", "lost", "clinic", "landlord"] },
-  { key: "people", name: "Meet people", ids: ["friend", "wechat", "photo"] },
-  { key: "mine", name: "Your places, from wandering", get ids() { return S.filter(s => s.custom).map(s => s.id); } }
-];
+/* ---------- the trunk: your first ten days in China (journey.js) ---------- */
+// Every place is a stop on one of ten days, and each day is a short story: the side list, "next",
+// the start page and the end card all follow it
+const DAYS = ((window.JOURNEY || {}).days || []).map(d => Object.assign({}, d, { stops: d.stops.filter(x => S.some(s => s.id === x.id)) })).filter(d => d.stops.length);
+const CAN = (window.JOURNEY || {}).can || {};
+const NUM_PY = ["", "yī", "èr", "sān", "sì", "wǔ", "liù", "qī", "bā", "jiǔ", "shí"], NUM_HAN = "〇一二三四五六七八九十";
+const dayOf = id => DAYS.findIndex(d => d.stops.some(x => x.id === id));
+const stopOf = id => { const d = dayOf(id); return d < 0 ? null : DAYS[d].stops.find(x => x.id === id); };
+const dayDone = i => DAYS[i].stops.every(x => done[x.id]);
+// The day you're on: the first one with a stop you haven't been through yet (all done: the last day)
+const curDay = () => { const i = DAYS.findIndex((d, k) => !dayDone(k)); return i < 0 ? DAYS.length - 1 : i; };
+const canDo = id => !!(mastery[id] || {}).clean;
+const lcFirst = x => x.replace(/^./, c => c.toLowerCase()); // "Get a SIM card" → "get a SIM card"
+const GROUPS = DAYS.map((d, i) => ({ key: "d" + i, name: `Day ${i + 1} · ${d.title}`, ids: d.stops.map(x => x.id) }))
+  .concat([{ key: "mine", name: "Your places, from wandering", get ids() { return S.filter(s => s.custom).map(s => s.id); } }]);
 const groupOf = id => (GROUPS.find(g => g.ids.includes(id)) || { key: "more" }).key;
 let railOpen = (() => { try { return localStorage.getItem("sm-rail-open"); } catch { return null; } })();
 function setRailOpen(k) { railOpen = k; try { localStorage.setItem("sm-rail-open", k || ""); } catch {} }
@@ -653,7 +686,8 @@ function renderRail() {
   $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field"].includes(mode));
   const nDone = S.filter(s => done[s.id]).length;
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
-  rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived${nMast ? ` · ${nMast} mastered` : ""}` : "Places"));
+  const nCan = S.filter(s => canDo(s.id)).length;
+  rail.append(el("h2", "rail-sub", nDone ? `Ten days · ${nDone} of ${S.length} places${nCan ? ` · ${nCan} you can do alone` : ""}` : "Your ten days"));
   const placeBtn = (s, next) => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
@@ -702,7 +736,7 @@ function renderRail() {
   const mb = $("#menu-btn"), open = $(".layout").classList.contains("menu-open"), on = rail.querySelector('.scn[aria-current="true"]');
   mb.textContent = ""; mb.setAttribute("aria-expanded", open ? "true" : "false");
   if (open) mb.append(el("span", "mb-name", "Places and practice"), el("span", "mb-act", "Close"));
-  else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : mode === "home" ? "今天" : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : mode === "home" ? "Today" : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
+  else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : mode === "home" ? `第${NUM_HAN[homeDay + 1] || homeDay + 1}天` : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : mode === "home" ? `Day ${homeDay + 1}` : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
   rail.querySelectorAll(".scn.tool").forEach(b => b.addEventListener("click", () => setMenu(false)));
 }
 
@@ -756,6 +790,8 @@ function start(id, opt = {}) {
   if (rush) addNarr("Rush hour: people are busy, talk at full speed, and won't wait while you think. Answer before the bar runs out.");
   // The very first time: one line on how this works, then straight in
   if (!said) $("#log").append(el("div", "first-run", "Pick what you'd say. Getting it wrong on purpose is allowed: seeing how people react is the whole idea."));
+  const st = stopOf(id);
+  if (st) { const b = el("div", "bridge"); b.append(el("span", "br-day", `Day ${dayOf(id) + 1} · ${DAYS[dayOf(id)].title}`), st.into); $("#log").append(b); }
   addNarr(cur.intro);
   renderRail(); beginTurn();
 }
@@ -1262,9 +1298,10 @@ function renderEnd() {
   if (!cur._rematch && poolN) line("Surprises", (surprises.length ? surprises.map(x => x.cb.what).join(" and ").replace(/^./, c => c.toUpperCase()) + ". " : "None this time. ") + `You've met ${Math.min(met, poolN)} of ${poolN} that can happen here${sample ? ", and more keep appearing" : ""}.`);
   const mk = mastery[cur.id] || {};
   if (!cur._rematch) {
-    const msg = lastGained.includes("curve") ? "New: through a surprise without a slip. Mastered." : lastGained.includes("clean") ? "New: a clean run." + (poolSize(cur.id) ? " Next, get through a surprise cleanly." : "")
-      : mk.curve ? "All three. Mastered." : mk.clean ? "Next: get through a surprise without a slip." : "Next: a clean run, with no slips at all.";
-    line("Marks", marksEl(cur.id), " " + msg);
+    const can = CAN[cur.id] ? lcFirst(CAN[cur.id]) : "do this";
+    const msg = lastGained.includes("curve") ? (lastGained.includes("clean") ? `New: you can ${can} on your own, even when something unexpected comes up. Mastered.` : "Clean through a surprise too. Mastered.") : lastGained.includes("clean") ? `New: you can ${can} on your own.` + (poolSize(cur.id) ? " Next, get through a surprise cleanly." : "")
+      : mk.curve ? "All three. Mastered." : mk.clean ? `You can ${can}. Next: get through a surprise without a slip.` : `A clean run, with no slips, and you can say you can ${can} on your own.`;
+    line(lastGained.includes("clean") ? "You can now" : "Next", marksEl(cur.id), " " + msg);
   }
   if (rush) line("Rush hour", rushLate ? `You kept people waiting ${rushLate === 1 ? "once" : rushLate === 2 ? "twice" : rushLate + " times"}. Next time, say the first thing that fits; a short answer beats a perfect late one.` : "You kept up. Nobody had to wait.");
   if (!runMisses.length && !cur._rematch && helpLevel() < 2) {
@@ -1274,10 +1311,15 @@ function renderEnd() {
   if (twistNote) { line("New here", twistNote.replace(/^Something new can now happen here: /, "")); twistNote = ""; }
   // One clear next step, the rest as quieter options
   const row = el("div", "endcard");
-  const ord = railOrder(), at = ord.findIndex(x => x.id === cur.id);
-  const after = ord.slice(at + 1).concat(ord.slice(0, at));
-  const next = after.find(x => !done[x.id]) || after[0];
-  const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
+  const di = dayOf(cur.id), stops = di < 0 ? [] : DAYS[di].stops, si = stops.findIndex(x => x.id === cur.id);
+  const later = stops.slice(si + 1), nextStop = later.find(x => !done[x.id]) || later[0];
+  let nx;
+  if (nextStop) { const ns = S.find(x => x.id === nextStop.id); nx = el("button", "btn", `Next stop: ${ns.en}`); nx.onclick = () => start(ns.id); }
+  else if (di >= 0) { nx = el("button", "btn", `Day ${di + 1}: your evening`); nx.onclick = () => startHome(di); }
+  else {
+    const ord = railOrder(), at = ord.findIndex(x => x.id === cur.id), after = ord.slice(at + 1).concat(ord.slice(0, at)), next = after.find(x => !done[x.id]) || after[0];
+    nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
+  }
   if (runMisses.length) {
     const rm = el("button", "btn", runMisses.length === 1 ? "Rematch the moment you missed" : `Rematch the ${runMisses.length} moments you missed`);
     rm.onclick = () => rematch();
@@ -1523,7 +1565,7 @@ function renderReviewMove() {
     if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
     const row = el("div", "endcard");
     const nb = el("button", "btn", "Back to Mistakes"); nb.onclick = () => openNotebook();
-    const home = el("button", "btn ghost", "Today"); home.onclick = () => startHome();
+    const home = el("button", "btn ghost", "Your day"); home.onclick = () => startHome();
     row.append(nb, home, backBtn()); m.append(head, row); return;
   }
   const n = rq[ri];
@@ -2099,83 +2141,144 @@ function startTripWarmup() {
 function backBtn() { const s = S.find(x => x.id === lastScene()) || S[0], b = el("button", "btn ghost", `Back to ${s.place} ${s.en}`); b.onclick = () => start(s.id); return b; }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
-/* ---------- today: one page that reads everything the app knows and says where to start ---------- */
-// Nothing new is tracked here. It ranks what's already there: mistakes due back, the next place,
-// the one thing most worth going deeper on, and whether you're heading out.
-function todayPicks() {
-  const picks = [], due = dueItems().length, ord = railOrder();
-  if (due) picks.push({ kind: "Due back", han: "复习", title: due === 1 ? "One mistake is back" : `${due} mistakes are back`, why: due === 1 ? "Getting it right today is what makes it stick." : "Getting them right today is what makes them stick.", go: () => startReview() });
-  // Go deeper: your most common kind of slip first, then a place you've only scraped through, then surprises, then rush hour
-  const c = patternCounts(), top = PATTERNS.filter(p => c[p.id] && c[p.id].open >= 2).sort((a, b) => c[b.id].open - c[a.id].open)[0];
-  const scraped = ord.find(s => done[s.id] && !(mastery[s.id] || {}).clean);
-  const unmet = ord.find(s => done[s.id] && (mastery[s.id] || {}).clean && (seenCb[s.id] || []).length < poolSize(s.id));
-  const calm = ord.filter(s => (mastery[s.id] || {}).clean);
-  let deep = null;
-  if (top) deep = { kind: "Your pattern", han: top.zh, title: `Drill: ${top.en.toLowerCase()}`, why: `${plural(c[top.id].open, "open mistake")} of this kind. ${top.tip}`, go: () => startPattern(top.id) };
-  else if (scraped) { const miss = notebook.filter(n => n.sid === scraped.id && !n.learned).length;
-    deep = { kind: "Go back", han: scraped.place, title: `Go for a clean run at the ${scraped.en.toLowerCase()}`, why: miss ? `You got through, with ${plural(miss, "mistake")} still open there.` : "You got through. Now do it without a slip.", go: () => start(scraped.id) }; }
-  else if (unmet) { const left = poolSize(unmet.id) - (seenCb[unmet.id] || []).length;
-    deep = { kind: "Something new", han: unmet.place, title: `The ${unmet.en.toLowerCase()} has more to throw at you`, why: `${left === 1 ? "One surprise" : `${left} surprises`} there you haven't met yet.`, go: () => start(unmet.id) }; }
-  else if (calm.length) { const s = calm[dayKey().split("-").reduce((a, b) => a + +b, 0) % calm.length]; // a different one each day
-    deep = { kind: "Rush hour", han: s.place, title: `The ${s.en.toLowerCase()}, with nobody waiting`, why: "You've done it cleanly. Now answer before they lose patience.", go: () => start(s.id, { rush: true }) }; }
-  const next = ord.find(s => !done[s.id]);
-  if (next) picks.push({ kind: "Next up", han: next.place, title: next.en, why: next.goal, go: () => start(next.id) });
-  if (deep) picks.push(deep);
-  const ready = trip.day === dayKey() && trip.ids.length;
-  picks.push(ready
-    ? { kind: "Your pocket", han: "口袋", title: `Ready for ${tripPlaces().map(s => s.en.toLowerCase()).join(", ")}`, why: "Your cheat sheet for today, or log what happened if you're back.", go: () => startTrip() }
-    : { kind: "Your pocket", han: "口袋", title: "Heading out today?", why: "Pick where you're going and get the lines for just those places.", go: () => { tripEditing = true; startTrip(); } });
-  return picks;
+/* ---------- your day: the start page, one day of the ten at a time ---------- */
+// Morning gets you ready (yesterday's slips, the words and lines for today's stops), Out is the stops
+// themselves, in story order, and Evening gathers what went wrong today so it comes back tomorrow.
+let homeDay = 0, dailyShift = 0;
+function deeperPick() {
+  // After the ten days: your most common kind of slip, then a place you only scraped through, then surprises, then rush hour
+  const ord = railOrder(), c = patternCounts(), top = PATTERNS.filter(p => c[p.id] && c[p.id].open >= 2).sort((a, b) => c[b.id].open - c[a.id].open)[0];
+  const scraped = ord.find(s => done[s.id] && !canDo(s.id));
+  const unmet = ord.find(s => done[s.id] && canDo(s.id) && (seenCb[s.id] || []).length < poolSize(s.id));
+  const calm = ord.filter(s => canDo(s.id));
+  if (top) return { kind: "Your pattern", han: top.zh, title: `Drill: ${top.en.toLowerCase()}`, why: `${plural(c[top.id].open, "open mistake")} of this kind. ${top.tip}`, go: () => startPattern(top.id) };
+  if (scraped) return { kind: "Go back", han: scraped.place, title: `${CAN[scraped.id] || scraped.en}, cleanly this time`, why: "You got through. Now do it without a slip, and it goes on your list.", go: () => start(scraped.id) };
+  if (unmet) { const left = poolSize(unmet.id) - (seenCb[unmet.id] || []).length;
+    return { kind: "Something new", han: unmet.place, title: `The ${unmet.en.toLowerCase()} has more to throw at you`, why: `${left === 1 ? "One surprise" : `${left} surprises`} there you haven't met yet.`, go: () => start(unmet.id) }; }
+  if (calm.length) { const s = calm[dayKey().split("-").reduce((a, b) => a + +b, 0) % calm.length];
+    return { kind: "Rush hour", han: s.place, title: `The ${s.en.toLowerCase()}, with nobody waiting`, why: "You've done it cleanly. Now answer before they lose patience.", go: () => start(s.id, { rush: true }) }; }
+  return null;
 }
-function startHome() {
-  mode = "home"; busy = false; finished = false; clearRush(); cur = { who: "今天", whoEn: "today" };
-  setHead("今天", "jīntiān", "Today", "", said ? "Picked from how you've been doing: what's due, what's next, and where to go deeper." : "Here's where to start.");
+function homeCard(p, first) {
+  const b = el("button", "today-card" + (first ? " first" : "") + (p.done ? " done" : ""));
+  b.append(el("span", "tc-han", p.han), el("span", "tc-kind", p.kind), el("span", "tc-title", p.title), el("span", "tc-why", p.why));
+  b.onclick = p.go; return b;
+}
+function startHome(day) {
+  homeDay = day == null ? curDay() : Math.max(0, Math.min(DAYS.length - 1, day));
+  mode = "home"; busy = false; finished = false; clearRush();
+  const d = DAYS[homeDay], n = homeDay + 1, stops = d.stops.map(x => S.find(s => s.id === x.id));
+  cur = { who: d.han, whoEn: "today" };
+  const cans = stops.map(s => lcFirst(CAN[s.id] || s.en));
+  setHead(`第${NUM_HAN[n] || n}天`, `dì ${NUM_PY[n] || n} tiān`, `Day ${n}: ${d.title}`, "By tonight you can: ", cans.slice(0, -1).join(", ") + (cans.length > 1 ? " and " : "") + cans[cans.length - 1] + ".");
   const log = $("#log"); log.textContent = "";
-  const box = el("div", "today");
-  todayPicks().forEach((p, i) => {
-    const b = el("button", "today-card" + (i ? "" : " first"));
-    b.append(el("span", "tc-han", p.han), el("span", "tc-kind", p.kind), el("span", "tc-title", p.title), el("span", "tc-why", p.why));
-    b.onclick = p.go; box.append(b);
+  // Ten dots: where you are in the ten days, and a way to look at any of them
+  const nav = el("div", "days"); nav.setAttribute("aria-label", "The ten days");
+  DAYS.forEach((x, i) => {
+    const b = el("button", "day-dot" + (dayDone(i) ? " done" : "") + (i === homeDay ? " on" : ""), String(i + 1));
+    b.title = `Day ${i + 1}: ${x.title}`; b.setAttribute("aria-label", b.title + (dayDone(i) ? ", done" : "")); b.setAttribute("aria-current", i === homeDay ? "true" : "false");
+    b.onclick = () => startHome(i); nav.append(b);
   });
-  log.append(box, dailyThree()); log.scrollTop = 0;
+  log.append(nav);
+  const part = (en, zh, sub) => { const h = el("div", "day-part"); h.append(el("span", "dp-zh", zh), el("span", "dp-en", en)); if (sub) h.append(el("span", "dp-sub", sub)); log.append(h); };
+  // Morning: get ready
+  const due = dueItems().length, started = stops.some(s => done[s.id]);
+  part("Morning", "早上", started ? null : "Get ready");
+  const am = el("div", "today");
+  if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One slip is back" : `${due} slips are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview() }, true));
+  am.append(homeCard({ kind: "Your pocket", han: "口袋", title: stops.length === 1 ? "Lines for today's stop" : `Lines for today's ${stops.length === 2 ? "two" : "three"} stops`, why: "What to say, what you'll hear and the traps, including your own. Read it, or warm up.",
+    go: () => { trip = { day: dayKey(), ids: stops.map(s => s.id) }; store.set("sm-trip", trip); tripEditing = false; startTrip(); } }));
+  log.append(am, wordsForToday(d));
+  // Out: the stops, in story order
+  part("Out", "出门", `${stops.filter(s => done[s.id]).length} of ${stops.length}`);
+  const out = el("div", "today stops"), next = stops.find(s => !done[s.id]);
+  stops.forEach((s, i) => {
+    const miss = notebook.filter(x => x.sid === s.id && !x.learned).length;
+    const why = !done[s.id] ? d.stops[i].into : canDo(s.id) ? `You can ${lcFirst(CAN[s.id] || "do this")} on your own.` : miss ? `Got through, with ${plural(miss, "slip")} still open.` : "Got through. A clean run puts it on your list.";
+    out.append(homeCard({ kind: done[s.id] ? (canDo(s.id) ? "Done, cleanly" : "Done") : s === next ? "Next stop" : `Stop ${i + 1}`, han: s.place, title: s.en, why, done: done[s.id], go: () => start(s.id) }, s === next && !due));
+  });
+  log.append(out);
+  // Evening: what went wrong today comes back tomorrow
+  if (started) {
+    part("Evening", "晚上", dayDone(homeDay) ? null : "So far");
+    const pm = el("div", "today"), ids = stops.map(s => s.id);
+    const slips = notebook.filter(x => ids.includes(x.sid) && !x.learned), kinds = {};
+    slips.forEach(x => { const g = tagOf(x); if (g) kinds[g] = (kinds[g] || 0) + 1; });
+    const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
+    if (!slips.length) pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: "No slips open from today", why: "Nothing to bring back tomorrow. Your notebook has everything else.", go: () => openNotebook() }));
+    else pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: `${plural(slips.length, "slip")} from today`, why: "They're in your notebook, and they come back tomorrow morning.", go: () => openNotebook() }));
+    if (pat) pm.append(homeCard({ kind: "Tonight's drill", han: pat.zh, title: `Mostly ${pat.en.toLowerCase()}`, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
+    pm.append(homeCard({ kind: "For real", han: "真的", title: "Anything happen out there for real?", why: "If you're in China, log what you said or heard. It joins today's slips.", go: () => startField(ids[0]) }));
+    log.append(pm);
+  }
+  // Ten days done: the trunk keeps going
+  if (homeDay === DAYS.length - 1 && dayDone(homeDay)) {
+    part("After the ten days", "以后", null);
+    const more = el("div", "today"), dp = deeperPick(); if (dp) more.append(homeCard(dp));
+    if (sample) more.append(homeCard({ kind: "Off the map", han: "随便逛", title: "A day you haven't practised", why: "Claude makes up a new situation, or one you name.", go: () => startWander() }));
+    if (more.childNodes.length) log.append(more);
+  }
+  log.append(canList());
+  log.scrollTop = 0;
   renderRail(); renderMove();
 }
-/* Today's three: a word, a bit of slang and a phrase from everyday life, the same all day, new tomorrow */
-let dailyShift = 0;
+/* Words for today: a word, a bit of slang and a phrase, from today's stops where there is one */
 const DAILY_KINDS = [["word", "Word", "词"], ["slang", "Slang", "俚语"], ["phrase", "Phrase", "一句话"]];
-function dailyPick(kind, shift) {
-  const pool = (window.DAILY || {})[kind] || []; if (!pool.length) return null;
+function dailyPick(kind, shift, ids) {
+  const all = (window.DAILY || {})[kind] || [], here = ids ? all.filter(x => ids.includes(x.at)) : [];
+  const pool = here.length > shift ? here : all; if (!pool.length) return null;
   const d = Math.floor(Date.parse(dayKey()) / 864e5) || 0; // days since 1970, so each day steps through the pool
   const step = { word: 7, slang: 11, phrase: 13 }[kind]; // different strides so the three don't repeat as a set
   return pool[((d + shift) * step % pool.length + pool.length) % pool.length];
 }
-function dailyThree() {
-  const wrap = el("section", "daily"); wrap.setAttribute("aria-label", "Today's three");
-  const head = el("div", "daily-head"); head.append(el("span", "daily-title", "Today's three"), el("span", "daily-sub", "From everyday life in China. New ones tomorrow."));
-  const again = el("button", "linkish", "Another three"); again.onclick = () => { dailyShift++; wrap.replaceWith(dailyThree()); };
+function wordsForToday(day) {
+  const ids = day ? day.stops.map(x => x.id) : null;
+  const wrap = el("section", "daily"); wrap.setAttribute("aria-label", "Words for today");
+  const head = el("div", "daily-head"); head.append(el("span", "daily-title", "Words for today"), el("span", "daily-sub", "For today's stops, and everyday life in China."));
+  const again = el("button", "linkish", "Another three"); again.onclick = () => { dailyShift++; wrap.replaceWith(wordsForToday(day)); };
   head.append(again); wrap.append(head);
   const grid = el("div", "daily-grid");
   DAILY_KINDS.forEach(([k, en, zh]) => {
-    const x = dailyPick(k, dailyShift); if (!x) return;
+    const x = dailyPick(k, dailyShift, ids); if (!x) return;
     const c = el("div", "daily-card");
     c.append(el("span", "dc-kind", `${en} ${zh}`), el("span", "dc-han", x.h), el("span", "dc-py", x.p), el("span", "dc-en", x.e), el("p", "dc-use", x.use));
     const row = el("div", "say-back"), out = el("span", "sb-out");
     if (canSpeak) { const h = el("button", "linkish", "Hear it"); h.onclick = () => speak(x.h.replace(/^AA$/, "AA制")); row.append(h); }
-    if (SR && !micBroken && /[\u4e00-\u9fff]/.test(x.h)) { const m = el("button", "linkish", "Say it back"); m.onclick = () => sayBack(m, x.h, out); row.append(m); }
+    if (SR && !micBroken && /[一-鿿]/.test(x.h)) { const m = el("button", "linkish", "Say it back"); m.onclick = () => sayBack(m, x.h, out); row.append(m); }
     const s = x.at && S.find(z => z.id === x.at);
-    if (s) { const g = el("button", "linkish", `Try it: ${s.en}`); g.onclick = () => start(s.id); row.append(g); }
+    if (s && !(ids && ids.includes(s.id))) { const g = el("button", "linkish", `Try it: ${s.en}`); g.onclick = () => start(s.id); row.append(g); }
+    else if (s) row.append(el("span", "dc-where", `For today: ${s.en}`));
     row.append(out); c.append(row); grid.append(c);
   });
   wrap.append(grid);
   return wrap;
 }
+/* What you can do on your own: the one measure of progress that matches the mission */
+let canOpen = false;
+function canList() {
+  const wrap = el("section", "cando"), all = DAYS.flatMap(d => d.stops.map(x => x.id)), n = all.filter(canDo).length;
+  const head = el("button", "cando-head"); head.setAttribute("aria-expanded", canOpen ? "true" : "false");
+  head.append(el("span", "cd-title", "What you can do on your own"), el("span", "cd-n", `${n} of ${all.length}`));
+  const bar = el("span", "cd-bar"), fill = el("i"); fill.style.width = Math.round(100 * n / all.length) + "%"; bar.append(fill); head.append(bar);
+  head.onclick = () => { canOpen = !canOpen; wrap.replaceWith(canList()); };
+  wrap.append(head);
+  if (canOpen) {
+    const ul = el("ul", "cd-list");
+    all.forEach(id => { const li = el("li", canDo(id) ? "on" : "", CAN[id] || id); li.title = canDo(id) ? "Done cleanly" : done[id] ? "Done, but not cleanly yet" : "Not yet"; ul.append(li); });
+    wrap.append(ul, el("p", "cd-note", "A place goes on the list when you get through it with no slips."));
+  }
+  return wrap;
+}
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
-  const head = el("div", "move-head");
+  const d = DAYS[homeDay], next = d.stops.map(x => S.find(s => s.id === x.id)).find(s => !done[s.id]);
+  const row = el("div", "endcard");
+  if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
+  else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => startHome(homeDay + 1); row.append(go); }
   const all = el("button", "btn ghost", "Or pick any place");
   // On a phone that opens the folded list; on a wide screen the list is already there, so jump to its find box
   all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
-  const row = el("div", "endcard"); row.append(all); m.append(row);
+  row.append(all); m.append(row);
 }
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
 const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard"];
