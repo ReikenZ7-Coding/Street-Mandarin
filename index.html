@@ -110,7 +110,9 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 }
 
 /* Scene */
-.scene { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 0; }
+.scene { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; overflow: clip; min-width: 0; }
+/* On long pages the action stays in reach: "Get me ready" shouldn't be a scroll away from the picker */
+.scene.page .move { position: sticky; bottom: 0; z-index: 2; background: var(--surface); box-shadow: 0 -6px 12px -10px rgba(0,0,0,.25); }
 .scene-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 18px; padding: 18px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
 .place { font-family: var(--f-han); font-weight: 900; font-size: 56px; line-height: 1; grid-row: span 3; align-self: center; }
 .place-py { font-family: var(--f-py); color: var(--muted); font-size: 14px; }
@@ -1841,7 +1843,7 @@ let trip = store.get("sm-trip", { ids: [], day: "" }), tripEditing = false;
 function startTrip() {
   mode = "trip"; busy = false; cur = { who: "出门", whoEn: "you" };
   if (trip.day !== dayKey()) tripEditing = true; // a new day, a new plan
-  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Tell it where you're going today and you get a cheat sheet for just those places, a warm-up, and big text to show people. Every line has what worked in every place you've survived.");
+  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Pick where you're going today for a cheat sheet, a warm-up and big text to show people. Every line has what worked everywhere you've been.");
   renderTrip(); renderRail(); renderMove();
 }
 function tripPlaces() { return trip.ids.map(id => S.find(s => s.id === id)).filter(Boolean); }
