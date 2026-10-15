@@ -400,7 +400,7 @@ function renderStreak() {
   if (!said) return;
   const n = streakLen();
   if (n > 1) box.append(el("span", "zh", `连续${n}天`), `${n} days in a row · `);
-  else if (n === 1) box.append(el("span", "zh", "今天练了"), "Practised today · ");
+  else if (n === 1) box.append(...(days.includes(dayKey()) ? [el("span", "zh", "今天练了"), "Practised today · "] : [el("span", "zh", "昨天练了"), "Practised yesterday · "]));
   box.append(plural(said, "line") + " answered so far");
 }
 function practised() {
@@ -876,29 +876,57 @@ function listenOnce(inp, mic, done) {
   rec.onend = () => { if (mic.isConnected) { mic.textContent = "Speak"; mic.disabled = false; } };
   try { rec.start(); } catch { micBroken = true; renderMove(); }
 }
+// One judge for anything typed: the scene, reviews and the real-life logger all use it.
+// Courtesy words don't change what you asked for, so 不要辣 is as good as 不要辣，谢谢
+const isHanText = x => /[一-鿿]/.test(x);
+const coreHan = x => { let h = normHan(x); for (let i = 0; i < 2; i++) h = h.replace(/^(你好|请问|请|麻烦你?)/, "").replace(/(谢谢你?|谢了|麻烦了|麻烦你了)$/, "").replace(/(了|吧|啊|呀|哦|啦)$/, ""); return h; };
+const pyWords = x => x.normalize("NFD").replace(/ü/g, "v").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z]+/).filter(Boolean);
+const corePy = x => { const w = pyWords(x); for (let i = 0; i < 2; i++) { while (/^(nihao|qing|qingwen|mafan)$/.test(w[0])) w.shift(); while (/^(xiexie|xiexienin|le|ba|a|ya|o|la)$/.test(w[w.length - 1])) w.pop(); } return w.join(""); };
+const hasTones = x => /[̀-ͯ]|[1-5]/.test(x.normalize("NFD"));
+function matchTyped(text, t) {
+  const h = normHan(text), py = normPy(text), han = isHanText(text), goods = t.opts.filter(o => o.k === "good");
+  // 1. Exactly a scripted line. Toneless pinyin can fit two lines (冰 bīng and 病 bìng): give the benefit of the doubt
+  const exact = t.opts.filter(o => normHan(o.h) === h || (!han && py && normPy(o.p) === py));
+  if (exact.length) {
+    const toned = !han && hasTones(text) && exact.find(o => o.p.normalize("NFD").toLowerCase().replace(/[^a-z̀-ͯ]/g, "") === text.normalize("NFD").toLowerCase().replace(/[^a-z̀-ͯ]/g, ""));
+    // Without tone marks, a good line that sounds the same (give or take 谢谢) wins over a slip that only differs by tone
+    const same = !han && !hasTones(text) && goods.find(o => corePy(o.p) === corePy(text));
+    return { o: toned || exact.find(o => o.k === "good") || same || exact[0], how: "exact" };
+  }
+  // 2. A good line give or take the courtesies
+  const core = han ? coreHan(text) : corePy(text), coreOf = o => han ? coreHan(o.h) : corePy(o.p);
+  if (core) {
+    const g = goods.find(o => coreOf(o) === core), clash = t.opts.some(o => o.k !== "good" && coreOf(o) === core);
+    if (g && !clash) return { o: g, how: "core" };
+  }
+  // 3. One small slip away from a good line
+  const size = o => han ? [...coreHan(o.h)].length : corePy(o.p).length;
+  const dist = o => han ? lev(core || h, coreHan(o.h)) : lev(core || py, corePy(o.p));
+  const near = goods.find(o => { const d = dist(o); return d > 0 && d <= Math.max(1, Math.floor(size(o) / 8)); });
+  if (near) return { o: near, how: "near" };
+  // 4. A near-copy of a slip the script knows, but only if you actually said the thing that makes it a slip
+  //    (我要牛肉面 shares a lot with 我是牛肉面, but it has no 是, so it isn't that mistake)
+  const good = goods[0];
+  const marks = o => han ? [...new Set(normHan(o.h))].filter(c => !normHan(good.h).includes(c)) : pyWords(o.p).filter(w => !pyWords(good.p).includes(w));
+  const said = han ? h : pyWords(text);
+  const slip = t.opts.filter(o => o.k !== "good").map(o => [o, dist(o) / Math.max(1, size(o))])
+    .filter(([o, d]) => d <= 0.25 && marks(o).length && marks(o).some(m => said.includes(m))).sort((a, b) => a[1] - b[1])[0];
+  if (slip) return { o: slip[0], how: "slip" };
+  return { o: null, how: "none", good };
+}
 function submitTyped(text, t) {
   if (busy || !text) return;
-  const h = normHan(text), py = normPy(text);
-  const hit = t.opts.find(o => normHan(o.h) === h) || (py && t.opts.find(o => normPy(o.p) === py));
-  if (hit) return choose(hit);
-  const good = t.opts.find(o => o.k === "good");
-  const near = t.opts.filter(o => o.k === "good").find(o => {
-    const d = /[\u4e00-\u9fff]/.test(text) ? lev(h, normHan(o.h)) : lev(py, normPy(o.p));
-    return d > 0 && d <= Math.max(1, Math.floor((/[\u4e00-\u9fff]/.test(text) ? normHan(o.h).length : normPy(o.p).length) / 8));
-  });
-  if (near) {
-    // Name the slip when the app can spot it; otherwise just say it was close
-    const named = judgeOffline(text, near), why = named ? named.note : "Almost. One small slip, but they'd get what you mean.";
+  const m = matchTyped(text, t), good = m.good || t.opts.find(o => o.k === "good");
+  if (m.how === "exact" || m.how === "core" || m.how === "slip") return choose(m.how === "core" ? Object.assign({}, m.o, { h: text, p: "", e: "" }) : m.o);
+  if (m.how === "near") {
+    // Name the slip when the app can spot it; otherwise show exactly where it differs
+    const named = judgeOffline(text, m.o), why = named ? named.note : `Almost. One small slip: compare yours with ${m.o.h} ${m.o.p}`;
     addMe(text, "", "", "okay");
-    addFeedback("okay", why, [near.h, near.p]);
-    logMistake({ sid: cur.id, ...turnRef(), kind: "okay", said: text, fix: near.h, fixPy: near.p, why: named ? why : "Typed answer was one small slip away." });
-    return choose(Object.assign({}, near, { quiet: true }));
+    addFeedback("okay", why, [m.o.h, m.o.p]);
+    logMistake({ sid: cur.id, ...turnRef(), kind: "okay", said: text, fix: m.o.h, fixPy: m.o.p, why });
+    return choose(Object.assign({}, m.o, { quiet: true }));
   }
   // Off the script. First, what the app can judge by itself, with no AI at all
-  const isHan = /[\u4e00-\u9fff]/.test(text);
-  const gap = o => isHan ? lev(h, normHan(o.h)) / Math.max(1, [...normHan(o.h)].length) : lev(py, normPy(o.p)) / Math.max(1, normPy(o.p).length);
-  const slip = t.opts.filter(o => o.k !== "good").map(o => [o, gap(o)]).sort((a, b) => a[1] - b[1])[0];
-  if (slip && slip[1] <= 0.25) return choose(slip[0]); // a near-copy of a slip the script already knows
   const judged = judgeOffline(text, good);
   if (judged) {
     addMe(text, "", "", judged.kind);
@@ -924,6 +952,14 @@ function judgeOffline(text, good, opt = {}) {
   const hit = (k, n) => { notes.push(n); if (kind !== "wrong") kind = k; };
   if (!/[\u4e00-\u9fff]/.test(text)) {
     if (/\b(the|want|please|where|how|much|is|are|can|thanks|thank|hello|yes|no)\b/i.test(text)) hit("wrong", "That's English, and most people here won't follow it. Have a go in Chinese, even just the key word.");
+    else if (!opt.strict) {
+      // Pinyin: every word you typed is in the good line, and only some of it is missing
+      const FILL = /^(xiexie|le|ba|a|ya|o|nihao|qing|wo|ni|shi|hen|de|ma)$/;
+      const want = pyWords(good.p).filter(w => !FILL.test(w)), got = pyWords(text);
+      const miss = want.filter(w => !got.includes(w)), extra = got.filter(w => !FILL.test(w) && !pyWords(good.p).includes(w));
+      if (!extra.length && miss.length && miss.length < want.length && miss.length <= Math.ceil(want.length / 2))
+        hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
+    }
     return kind ? { kind, note: notes.join(" ") } : null;
   }
   if (h.includes("不有")) hit("okay", "有 yǒu is the one verb that never takes 不. It's always 没有 méiyǒu.");
@@ -938,7 +974,9 @@ function judgeOffline(text, good, opt = {}) {
   // Key words: the content tiles of the good answer
   const tiles = (good.b || "").split("|").map(normHan).filter(w => w && !/^[吧呢吗啊了的呀哦嗯我你他她是很]$/.test(w));
   const miss = tiles.filter(w => !h.includes(w));
-  if (!kind && !opt.strict && tiles.length >= 2 && miss.length && miss.length <= Math.ceil(tiles.length / 2) && miss.length < tiles.length) hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
+  // If you named something the line doesn't have (天安门 instead of 火车站), it's not a clipped version of it
+  const extra = [...new Set(h)].filter(c => !g.includes(c) && !"我你他她是很了的吧吗啊呢呀哦嗯个一请谢".includes(c));
+  if (!kind && !opt.strict && extra.length < 2 && tiles.length >= 2 && miss.length && miss.length <= Math.ceil(tiles.length / 2) && miss.length < tiles.length) hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
   return kind ? { kind, note: notes.join(" ") } : null;
 }
 
@@ -1147,7 +1185,9 @@ function logMistake(entry) {
     if (!runMisses.includes(t)) runMisses.push(t);
     (ghost[cur.id] = ghost[cur.id] || {})[moveKey(t)] = entry.said; store.set("sm-ghost", ghost);
   }
-  const same = notebook.find(n => !n.learned && n.sid === entry.sid && n.said === entry.said);
+  // One entry per moment: a new slip at the same moment replaces the old one
+  const at = x => x.turn != null ? "t" + x.turn : x.cb != null ? "c" + x.cb : null, k = at(entry);
+  const same = notebook.find(n => !n.learned && n.sid === entry.sid && (n.said === entry.said || (k && at(n) === k)));
   if (same) notebook.splice(notebook.indexOf(same), 1);
   notebook.unshift(Object.assign(entry, { t: now, step: 0, due: now + GAPS[0] * DAY }));
   notebook = notebook.slice(0, 200);
@@ -1225,12 +1265,16 @@ function renderNotebook() {
 let rq = [], ri = 0, rRight = 0, rLearned = 0, rAnswered = false, rReveal = false;
 // Each time a mistake comes back it asks a little more of you: pick it, then build it, then say it with nothing on screen
 const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "From memory", "type it from memory"]];
-let rHow = "pick", rGood = null, rTiles = null, rHeld = false;
+let rHow = "pick", rGood = null, rTiles = null, rHeld = false, rAgain = new Set();
+// A miss comes back once more at the end of the round, so you produce the fix while it's fresh
+function again(n) { if (!rAgain.has(n)) { rAgain.add(n); rq.push(n); } }
 function startReview() {
   mode = "review"; busy = false; transcript = [];
   const due = dueItems();
-  rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0)).slice(0, 10);
-  ri = 0; rRight = 0; rLearned = 0;
+  const seenAt = new Set();
+  rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0))
+    .filter(n => { const k = n.sid + (n.turn != null ? "t" + n.turn : n.cb != null ? "c" + n.cb : "s" + n.said); if (seenAt.has(k)) return false; seenAt.add(k); return true; }).slice(0, 10);
+  ri = 0; rRight = 0; rLearned = 0; rAgain = new Set();
   setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Each time one comes back it asks a bit more: pick it, then build it, then type it from memory. Three right and it leaves your notebook.");
   $("#log").textContent = "";
   renderRail();
@@ -1258,7 +1302,8 @@ function reviewItem() {
     if (t.npc) addNpc(n.turn != null ? voiceFor(s.id, n.turn, t.npc) : t.npc);
     order = shuffle(t.opts);
     rGood = t.opts.find(o => o.k === "good" && o.b) || null;
-    rHow = rGood ? LADDER[Math.min(n.step || 0, 2)][0] : "pick";
+    rHow = rGood ? (rAgain.has(n) ? "build" : LADDER[Math.min(n.step || 0, 2)][0]) : "pick";
+    if (rAgain.has(n)) rHeld = "again";
     if (rHow === "build") {
       const ans = rGood.b.split("|"), pool = [...new Set(s.turns.flatMap(x => x.opts.filter(o => o.b).flatMap(o => o.b.split("|"))))].filter(w => !ans.includes(w));
       rTiles = { ans, tiles: shuffle(ans.concat(shuffle(pool).slice(0, 2))).map((w, i) => ({ w, i })), chosen: [] };
@@ -1275,15 +1320,16 @@ function reviewChoose(o) {
   addMe(o.h, o.p, o.e, o.k);
   const right = o.k === "good";
   if (!right && o.r) addNpc(o.r);
-  markReviewed(n, right, rHeld);
-  if (right) { rRight++; if (n.learned) rLearned++; }
-  addFeedback(o.k, right ? (n.learned ? "Third time right. It's learned and leaves your notebook." : rHeld ? `Right, with the choices on screen. ${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.` : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`) : o.note,
+  markReviewed(n, right, !!rHeld);
+  if (right && rHeld !== "again") { rRight++; if (n.learned) rLearned++; }
+  if (!right) again(n);
+  addFeedback(o.k, right ? (n.learned ? "Third time right. It's learned and leaves your notebook." : rHeld ? `${rHeld === "near" ? "Close: one small slip, so it stays where it was." : rHeld === "again" ? "Got it this time." : "Right, with the choices on screen."} ${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.` : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`) : o.note,
     o.fix, right ? null : { label: "Still tricky", cost: "Back to the start: it returns tomorrow." });
   renderReviewMove();
 }
 function ladderEl(n) {
   // Where this mistake is on its way out: each rung is one more return, asking a bit more
-  const box = el("div", "ladder"), at = rHeld ? 0 : Math.min(n.step || 0, 2);
+  const box = el("div", "ladder"), at = Math.max(0, LADDER.findIndex(x => x[0] === rHow));
   LADDER.forEach(([, label], i) => { const r = el("span", i < (n.step || 0) ? "done" : i === at ? "on" : "", label); box.append(r); });
   box.setAttribute("aria-label", `Return ${(n.step || 0) + 1} of 3: ${LADDER[at][1]}`);
   return box;
@@ -1298,7 +1344,8 @@ function reviewBuilder(n) {
     const built = st.chosen.map(x => x.w);
     if (built.join("|") === st.ans.join("|")) return reviewChoose(rGood);
     const same = built.length === st.ans.length && [...built].sort().join() === [...st.ans].sort().join();
-    reviewMiss(built.join(""), same ? "Right words, wrong order. Word order carries a lot of the meaning in Chinese." : n.why);
+    reviewMiss(built.join(""), same ? "Right words, wrong order. Word order carries a lot of the meaning in Chinese." :
+      built.length < st.ans.length && built.every(w => st.ans.includes(w)) ? "Close, but something's missing." : "Some of those words don't belong in this answer.");
   };
   row.append(go); box.append(slots, bank, row); return box;
 }
@@ -1308,22 +1355,18 @@ function reviewTyper(n) {
   const go = el("button", "btn", "Send"); go.type = "submit"; form.append(inp, go);
   form.onsubmit = ev => {
     ev.preventDefault(); const v = inp.value.trim(); if (!v) return;
-    const h = normHan(v), py = normPy(v), t = scriptedTurn(S.find(x => x.id === n.sid), n);
-    const hit = t.opts.find(o => normHan(o.h) === h || (py && normPy(o.p) === py));
-    if (hit) return reviewChoose(Object.assign({}, hit, { h: v, p: "", e: "" }));
-    const han = /[一-鿿]/.test(v), near = t.opts.filter(o => o.k === "good").find(o => {
-      const a = han ? normHan(o.h) : normPy(o.p); return lev(han ? h : py, a) <= Math.max(1, Math.floor(a.length / 8));
-    });
-    if (near) return reviewChoose(Object.assign({}, near, { h: v, p: "", e: "" }));
-    const named = judgeOffline(v, rGood, { strict: true });
-    reviewMiss(v, named ? named.note : n.why);
+    const t = scriptedTurn(S.find(x => x.id === n.sid), n), m = matchTyped(v, t);
+    if (m.how === "exact" || m.how === "core" || m.how === "slip") return reviewChoose(Object.assign({}, m.o, { h: v, p: "", e: "" }));
+    const judged = m.how === "near" ? null : judgeOffline(v, rGood);
+    if (m.how === "near" || (judged && judged.kind === "okay")) { rHeld = "near"; return reviewChoose(Object.assign({}, rGood, { h: v, p: "", e: "" })); }
+    reviewMiss(v, judged ? judged.note : "That isn't the line for this moment.");
   };
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
   return form;
 }
 function reviewMiss(said, why) {
   const n = rq[ri]; rAnswered = true;
-  addMe(said, "", "", "wrong"); markReviewed(n, false);
+  addMe(said, "", "", "wrong"); markReviewed(n, false); again(n);
   addFeedback("wrong", why, [rGood.h, rGood.p], { label: "Still tricky", cost: "Back to the start: it returns tomorrow." });
   renderReviewMove();
 }
@@ -1612,7 +1655,7 @@ const PATTERNS = [
   { id: "numbers", zh: "数字", en: "Numbers and prices", tip: "Ten-eight is 18, eight-ten is 80. Counting uses 两." },
   { id: "agreeing", zh: "答应", en: "Saying yes by accident", tip: "Repeating a word, or 好的, agrees to it." },
   { id: "listening", zh: "听懂", en: "Missing what they asked", tip: "Answer the question they asked, not the one you expected." },
-  { id: "grammar", zh: "语法", en: "Building the sentence", tip: "是 links two equal things; most sentences need a real verb." },
+  { id: "grammar", zh: "语法", en: "Grammar slips", tip: "是 links two equal things; most sentences need a real verb." },
   { id: "where", zh: "方向", en: "Places and directions", tip: "楼 floor, 号 number, 旁边 next to, 里面 inside." },
   { id: "words", zh: "用词", en: "The wrong word", tip: "Close in meaning isn't the same word." },
   { id: "manners", zh: "语气", en: "Too blunt", tip: "一下, 能…吗 and 不用了 soften almost anything." }
@@ -2026,7 +2069,10 @@ function closest(text, items, han, py) {
     const a = isHan ? normHan(han(x)) : normPy(py(x) || ""); if (!a) return;
     const q = isHan ? h : p;
     // A fragment of a real line counts as that line: people remember bits, not whole sentences
-    const d = q.length >= (isHan ? 2 : 5) && (a.includes(q) || q.includes(a)) ? 0.1 : lev(q, a) / Math.max(1, [...a].length);
+    const frag = q.length >= (isHan ? 2 : 5) && [...a].length >= (isHan ? 2 : 5) && (a.includes(q) || q.includes(a));
+    // Different numbers mean a different line, however close the rest is
+    const nq = isHan ? numsIn(h) : "", na = isHan ? numsIn(normHan(han(x))) : "";
+    const d = (frag ? 0.1 : lev(q, a) / Math.max(1, [...a].length)) + (nq && na && nq !== na ? 0.5 : 0);
     if (!best || d < best.d) best = { x, d };
   });
   return best;
@@ -2055,9 +2101,13 @@ function fieldSaid(s, text) {
   const share = o => isHan ? [...new Set(normHan(text))].filter(c => normHan(o.h).includes(c)).length : 0;
   const ranked = goods.map(x => [x.o, share(x.o)]).sort((a, b) => b[1] - a[1]);
   const g = ranked[0] && ranked[0][1] >= 2 ? ranked[0][0] : (closest(text, goods, x => x.o.h, x => x.o.p) || { x: goods[0] }).x.o, judged = judgeOffline(text, g, { strict: true });
-  const note = judged ? judged.note : "That's not a line the app knows for this place, so it can't say exactly what went wrong. Here's the closest line it knows; adjust it to what you needed.";
-  addFeedback(judged ? judged.kind : "okay", note, [g.h, g.p], judged ? null : { seal: "?", label: "Not sure" });
-  logMistake({ sid: s.id, turn: null, cb: null, kind: judged ? judged.kind : "okay", said: text, fix: g.h, fixPy: g.p, why: note, real: true });
+  if (!judged) {
+    // Nothing to learn from a guess, so it isn't filed: show the nearest line and let them try again
+    addFeedback("okay", `That's not a line the app knows for “${s.en}”, so it won't guess what went wrong or file it. The nearest line it knows is below. If it was a different place, pick it above and try again.`, [g.h, g.p], { seal: "?", label: "Not sure" });
+    return;
+  }
+  addFeedback(judged.kind, judged.note, [g.h, g.p]);
+  logMistake({ sid: s.id, turn: null, cb: null, kind: judged.kind, said: text, fix: g.h, fixPy: g.p, why: judged.note, real: true });
 }
 function fieldHeard(s, text) {
   const lines = realMoments(s).filter(m => m.t.npc);
