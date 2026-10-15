@@ -229,6 +229,8 @@ body.hint-off .opt .en-line { display: none; }
 .ladder span { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 .ladder span.done { color: var(--jade); border-color: var(--jade); }
 .ladder span.on { background: var(--jade); border-color: var(--jade); color: var(--surface); font-weight: 600; }
+.foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.foot textarea { width: 100%; min-height: 70px; font: 12px/1.4 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); color: var(--fg); }
 .first-run { border-left: 3px solid var(--jade); padding: 6px 12px; font-size: 14px; color: var(--fg); background: var(--surface-2); border-radius: 0 8px 8px 0; }
 .rush { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
 .rush i { display: block; height: 100%; width: 100%; background: var(--cinnabar); transform-origin: left; animation: rush linear forwards; }
@@ -348,6 +350,7 @@ body.hint-off .opt .en-line { display: none; }
       </div>
     </aside>
   </div>
+  <footer class="foot" id="foot"></footer>
 </div>
 
 <script src="scenes.js"></script>
@@ -1908,6 +1911,42 @@ function renderHomeMove() {
   all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
   const row = el("div", "endcard"); row.append(all); m.append(row);
 }
+/* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
+const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open"];
+function progressCode() {
+  const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
+  return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+}
+function loadProgress(code) {
+  const m = String(code).trim().match(/^SM1:([A-Za-z0-9+/=]+)$/); if (!m) return false;
+  let o; try { o = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch { return false; }
+  if (!o || typeof o !== "object") return false;
+  KEYS.forEach(k => { try { if (typeof o[k] === "string") localStorage.setItem(k, o[k]); else localStorage.removeItem(k); } catch {} });
+  return true;
+}
+let footOpen = "";
+function renderFoot() {
+  const f = $("#foot"); f.textContent = "";
+  f.append(el("span", null, "Your progress lives in this browser only."));
+  const out = el("button", "linkish", "Copy it to move it"), inn = el("button", "linkish", "Bring progress in");
+  out.onclick = async () => {
+    const code = progressCode(); footOpen = "out"; renderFoot();
+    try { await navigator.clipboard.writeText(code); $("#foot .foot-msg").textContent = "Copied. Paste it into Street Mandarin on your other device."; } catch {}
+  };
+  inn.onclick = () => { footOpen = footOpen === "in" ? "" : "in"; renderFoot(); };
+  f.append(out, inn);
+  if (footOpen === "out") {
+    const t = el("textarea"); t.readOnly = true; t.value = progressCode(); t.setAttribute("aria-label", "Your progress code");
+    t.onfocus = () => t.select();
+    f.append(t, el("span", "foot-msg", "Select it all and copy it, then paste it on your other device."));
+  }
+  if (footOpen === "in") {
+    const t = el("textarea"); t.placeholder = "Paste the code that starts SM1:"; t.setAttribute("aria-label", "Progress code to bring in");
+    const go = el("button", "btn small", "Replace my progress with this"), msg = el("span", "foot-msg");
+    go.onclick = () => { if (loadProgress(t.value)) location.reload(); else msg.textContent = "That doesn't look like a progress code. It starts with SM1:"; };
+    f.append(t, go, msg);
+  }
+}
 /* ---------- it happened for real: bring a real-life slip back into the app ---------- */
 // You tell it what you said or heard out there. It finds the matching moment in that place,
 // explains it with what the app already knows, and files it so it comes back for review.
@@ -2376,7 +2415,7 @@ document.addEventListener("keydown", ev => {
     if (b && !document.querySelector("#move .opt")) { ev.preventDefault(); b.click(); }
   }
 });
-applyPrefs(); renderNotebook(); renderStreak();
+applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
 // Coming back: start from a short "today" page. The very first visit goes straight into the noodle shop.
 if (said) startHome(); else start(lastScene());

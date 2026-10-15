@@ -40,6 +40,10 @@ In a place:
 
 On a phone, the side list folds away behind one button that always names where you are.
 
+Progress lives in the browser. The footer can copy it out as one code and bring it in on another device.
+
+In Your pocket, the traps for each place you're heading to start with your own slips there.
+
 ## With and without AI
 
 Everything above works with no AI at all:
