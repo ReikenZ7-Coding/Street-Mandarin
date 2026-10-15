@@ -74,7 +74,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .help-desc { font-size: 12px; color: var(--muted); max-width: 300px; text-align: right; }
-@media (max-width: 760px) { .help { align-items: flex-start; } .help-desc { text-align: left; } .seg button { padding: 6px 10px; } }
+@media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .help-desc { display: none; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
@@ -120,6 +120,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 @media (max-width: 480px) { .place { font-size: 42px; } }
 
 .log { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; max-height: min(62vh, 620px); min-height: 220px; overflow-y: auto; }
+.scene.page .log { max-height: none; }
 .narr { color: var(--muted); font-style: italic; font-size: 14px; max-width: 60ch; }
 .row { display: flex; gap: 10px; align-items: flex-end; }
 .row.me { justify-content: flex-end; }
@@ -189,13 +190,9 @@ body.hint-off .opt .en-line { display: none; }
 
 /* Notebook */
 .notebook { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.nb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.nb-title { font-family: var(--f-han); font-weight: 900; font-size: 22px; }
-.nb-sub { font-size: 13px; color: var(--muted); margin: 0; }
-.nb-count { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--cinnabar); }
 .nb-list { display: flex; flex-direction: column; gap: 8px; }
-.notebook { padding: 20px 22px; }
-.nb-title { font-size: 34px; }
+.notebook { padding: 0; gap: 0; overflow: hidden; }
+.nb-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
 .nb-sum { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; }
 .nb-sum b { font-variant-numeric: tabular-nums; }
 .nb-sum .due b { color: var(--cinnabar); }
@@ -337,13 +334,17 @@ body.hint-off .opt .en-line { display: none; }
     </main>
 
     <aside class="notebook" aria-label="Mistake notebook">
-      <div class="nb-head"><span class="nb-title">错题本</span><span class="nb-count" id="nb-count">0</span></div>
-      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you get wrong lands here, then comes back after 1, 3 and 7 days, asking a bit more each time: pick it, build it, then say it from memory. Get it right three times and it's learned.</p>
+      <div class="scene-head">
+        <div class="place">错题本</div><div class="place-py">cuòtíběn</div><div class="place-en">Mistakes</div>
+        <div class="goal"><b>How it works: </b>the notebook every Chinese student keeps. What you get wrong comes back after 1, 3 and 7 days, asking a bit more each time: pick it, build it, then type it from memory. Three right and it's learned.</div>
+      </div>
+      <div class="nb-body">
       <div class="nb-sum" id="nb-sum"></div>
       <div class="nb-actions" id="nb-actions"></div>
       <div id="nb-patterns"></div>
       <div class="nb-list" id="nb-list"></div>
       <div class="nb-actions nb-clear" id="nb-clear"></div>
+      </div>
     </aside>
   </div>
 </div>
@@ -609,6 +610,8 @@ function renderRail() {
   rail.append(rv, ear, pk);
   if (sample) rail.append(tool("随便逛", "Wander", "Claude makes up a new situation", mode === "wander" && !(cur && cur.live), () => startWander()));
   $(".layout").classList.toggle("nb-view", mode === "notebook");
+  // Pages you read (not conversations) get the full height instead of a scroll box
+  $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field"].includes(mode));
   const nDone = S.filter(s => done[s.id]).length;
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
   rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived${nMast ? ` · ${nMast} mastered` : ""}` : "Places"));
@@ -713,7 +716,7 @@ function start(id, opt = {}) {
   $("#log").textContent = "";
   if (rush) addNarr("Rush hour: people are busy and won't wait while you think. Answer before the bar runs out.");
   // The very first time: one line on how this works, then straight in
-  if (!said) $("#log").append(el("div", "first-run", "You're here with a goal and no textbook. Pick what you'd say. If it's wrong, the other person reacts the way a real local would, and that's how you learn. Getting it wrong on purpose is allowed."));
+  if (!said) $("#log").append(el("div", "first-run", "Pick what you'd say. Getting it wrong on purpose is allowed: seeing how people react is the whole idea."));
   addNarr(cur.intro);
   renderRail(); beginTurn();
 }
@@ -754,7 +757,7 @@ function renderMove() {
   head.append(el("h3", null, `Your move · ${turn + 1} of ${cur.turns.length}`), el("span", "prompt", t.prompt));
   const good = t.opts.find(o => o.k === "good" && o.b);
   const modes = el("div", "modes"); modes.setAttribute("role", "group"); modes.setAttribute("aria-label", "How to answer");
-  [["Pick an answer", "pick"], ["Build it yourself", "build"], [SR ? "Type or say it" : "Type it", "type"]].forEach(([label, v]) => {
+  [["Pick it", "pick"], ["Build it", "build"], [SR ? "Type or say it" : "Type it", "type"]].forEach(([label, v]) => {
     const c = el("button", "chip", label); c.setAttribute("aria-pressed", prefs.how === v);
     c.onclick = () => { prefs.how = v; store.set("sm-prefs", prefs); renderMove(); };
     modes.append(c);
@@ -788,7 +791,7 @@ function typer(t) {
   inp.placeholder = "Type it in characters or pinyin (tones optional)";
   inp.setAttribute("aria-label", "Your answer");
   inp.disabled = busy;
-  const send = el("button", "btn", busy ? "…" : "Say it"); send.type = "submit"; send.disabled = busy;
+  const send = el("button", "btn", busy ? "…" : "Send"); send.type = "submit"; send.disabled = busy;
   form.append(inp, send);
   if (SR && !micBroken) {
     const mic = el("button", "btn ghost", "Speak"); mic.type = "button"; mic.disabled = busy;
@@ -796,7 +799,7 @@ function typer(t) {
     form.append(mic);
   }
   form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) submitTyped(v, t); };
-  box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to Claude playing " + cur.whoEn + "." : "Answers are checked against what a local would understand. Pinyin without tone marks is fine."));
+  box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to Claude playing " + cur.whoEn + "." : "Checked against what a local would understand."));
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
   return box;
 }
@@ -1107,7 +1110,7 @@ function nbItem(n) {
   const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
   const top = el("div", "where");
   top.append((s ? s.en : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.real ? " · for real" : n.kind === "okay" ? " · close enough" : ""));
-  const st = el("span", "when", whenText(n));
+  const st = el("span", "when", whenText(n) === "Due now" ? "" : whenText(n)); // the "Due now" heading already says it
   const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
   GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
   top.append(st, dots);
@@ -1129,7 +1132,6 @@ function openNotebook() {
 }
 function renderNotebook() {
   const active = activeItems(), due = dueItems(), learned = notebook.filter(n => n.learned);
-  $("#nb-count").textContent = active.length;
   const sum = $("#nb-sum"); sum.textContent = "";
   if (notebook.length) {
     const part = (n, l, c) => { const x = el("span", c || ""); x.append(el("b", null, String(n)), " " + l); return x; };
@@ -1140,7 +1142,7 @@ function renderNotebook() {
     const r = el("button", "btn", due.length ? `Review ${due.length} now` : "Practise them anyway");
     r.onclick = () => startReview(); a.append(r);
   }
-  const real = el("button", "btn ghost", "Add one from real life"); real.onclick = () => startField(); a.append(real);
+  const real = el("button", "btn ghost", "It happened for real"); real.onclick = () => startField(); a.append(real);
   const pbox = $("#nb-patterns"); pbox.textContent = ""; renderPatterns(pbox);
   const list = $("#nb-list"); list.textContent = "";
   if (!notebook.length) list.append(el("div", "nb-empty", "Empty for now. Go into a place and pick a wrong answer on purpose if you're curious what happens; that's the point."));
@@ -1162,14 +1164,14 @@ function renderNotebook() {
 /* ---------- review round: mistakes come back ---------- */
 let rq = [], ri = 0, rRight = 0, rLearned = 0, rAnswered = false, rReveal = false;
 // Each time a mistake comes back it asks a little more of you: pick it, then build it, then say it with nothing on screen
-const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "From memory", "say it from memory"]];
+const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "From memory", "type it from memory"]];
 let rHow = "pick", rGood = null, rTiles = null, rHeld = false;
 function startReview() {
   mode = "review"; busy = false; transcript = [];
   const due = dueItems();
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0)).slice(0, 10);
   ri = 0; rRight = 0; rLearned = 0;
-  setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Each time one comes back it asks a bit more: pick it, then build it, then say it from memory. Three right and it leaves your notebook.");
+  setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Each time one comes back it asks a bit more: pick it, then build it, then type it from memory. Three right and it leaves your notebook.");
   $("#log").textContent = "";
   renderRail();
   if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
@@ -1243,7 +1245,7 @@ function reviewBuilder(n) {
 function reviewTyper(n) {
   const form = el("form", "free"), inp = el("input"); inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN";
   inp.placeholder = "Characters or pinyin, tones optional"; inp.setAttribute("aria-label", "What you say");
-  const go = el("button", "btn", "Say it"); go.type = "submit"; form.append(inp, go);
+  const go = el("button", "btn", "Send"); go.type = "submit"; form.append(inp, go);
   form.onsubmit = ev => {
     ev.preventDefault(); const v = inp.value.trim(); if (!v) return;
     const h = normHan(v), py = normPy(v), t = scriptedTurn(S.find(x => x.id === n.sid), n);
@@ -1279,10 +1281,9 @@ function renderReviewMove() {
     head.append(el("h3", null, "Round done"));
     if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
     const row = el("div", "endcard");
-    const back = backBtn(); back.className = "btn";
-    let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
-    back.onclick = () => start(S.some(s => s.id === last) ? last : S[0].id);
-    row.append(back); m.append(head, row); return;
+    const nb = el("button", "btn", "Back to Mistakes"); nb.onclick = () => openNotebook();
+    const home = el("button", "btn ghost", "Today"); home.onclick = () => startHome();
+    row.append(nb, home, backBtn()); m.append(head, row); return;
   }
   const n = rq[ri];
   head.append(el("h3", null, `Mistake ${ri + 1} of ${rq.length}`));
@@ -1290,11 +1291,11 @@ function renderReviewMove() {
   if (rAnswered) {
     const row = el("div", "endcard");
     const nx = el("button", "btn", ri + 1 < rq.length ? "Next mistake" : "Finish round");
-    nx.onclick = () => { ri++; if (ri < rq.length) reviewItem(); else { addNarr(`Round done: ${rRight} of ${rq.length} right.`); renderReviewMove(); } };
+    nx.onclick = () => { ri++; if (ri < rq.length) reviewItem(); else renderReviewMove(); };
     row.append(nx); m.append(row); return;
   }
   if (order.length && rHow !== "pick") {
-    head.append(el("span", "prompt", rHow === "build" ? "Build it from the words." : "Say it, with nothing on screen."));
+    head.append(el("span", "prompt", rHow === "build" ? "Build it from the words." : "Type it, with nothing on screen."));
     m.append(ladderEl(n), rHow === "build" ? reviewBuilder(n) : reviewTyper(n));
     const down = el("button", "linkish", "I'm stuck, show me the choices");
     down.onclick = () => { rHow = "pick"; rHeld = true; renderReviewMove(); };
@@ -1371,17 +1372,14 @@ function startDrill(kind) {
     cur = { who: "朋友", whoEn: "a new friend" };
     dq = Array.from({ length: 6 }, () => "1" + "3456789"[rnd(7)] + Array.from({ length: 9 }, () => rnd(10)).join(""));
     setHead("号码", "hàomǎ", "Phone numbers by ear", "How it works: ", "Someone reads out their number. Type the digits. Listen for 幺 yāo, which is 1.");
-    addNarr("Six people give you their number. Type it as you hear it.");
   } else if (dKind === "time") {
     cur = { who: "朋友", whoEn: "a friend" };
     dq = Array.from({ length: 8 }, () => `${6 + rnd(17)}:${String([0, 5, 10, 15, 20, 30, 40, 45, 50][rnd(9)]).padStart(2, "0")}`);
     setHead("时间", "shíjiān", "Times by ear", "How it works: ", "A friend sets a time to meet. Type it as h:mm; 12- or 24-hour both count. Listen for 半, 一刻 and 下午.");
-    addNarr("Eight plans, eight times. Don't be late.");
   } else {
     cur = CASHIER;
     dq = shuffle(PRICES).slice(0, 8);
     setHead("数字", "shùzì", "Prices by ear", "How it works: ", canSpeak ? "Hear the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五." : "Read the total and type the number. The classic traps: 十八 vs 八十, 一百五 vs 一百零五, 块五.");
-    addNarr("Eight totals from eight different checkouts. Type what you'd pay, in digits.");
   }
   renderRail(); drillItem();
 }
@@ -1425,6 +1423,7 @@ const pocketTabs = on => tabRow("Your pocket", [["Today", "today", () => startTr
 function renderDrillMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
+  m.append(earTabs(dKind));
   if (di >= dq.length) {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${dRight} of ${dq.length} right.`));
     const row = el("div", "endcard");
@@ -1434,14 +1433,11 @@ function renderDrillMove() {
     row.append(again, rd, back); m.append(head, row); return;
   }
   const rdb = el("button", "linkish", "Number reader"); rdb.onclick = () => startReader();
-  if (di === 0 && !dAnswered) {
-    m.append(earTabs(dKind));
-  }
   head.append(el("h3", null, `${dKind === "phone" ? "Number" : dKind === "time" ? "Time" : "Total"} ${di + 1} of ${dq.length}`), el("span", "prompt", dKind === "phone" ? "What's their number?" : dKind === "time" ? "When are you meeting?" : "How much do you pay?"), rdb);
   m.append(head);
   if (dAnswered) {
-    const nx = el("button", "btn", di + 1 < dq.length ? "Next total" : "See how you did");
-    nx.onclick = () => { di++; if (di < dq.length) drillItem(); else { addNarr(`Done: ${dRight} of ${dq.length} right.`); renderMove(); } };
+    const nx = el("button", "btn", di + 1 < dq.length ? `Next ${dKind === "phone" ? "number" : dKind === "time" ? "time" : "total"}` : "See how you did");
+    nx.onclick = () => { di++; if (di < dq.length) drillItem(); else renderMove(); };
     const row = el("div", "endcard"); row.append(nx); m.append(row); return;
   }
   const form = el("form", "free");
@@ -1512,6 +1508,7 @@ function earsItem() {
 function renderEarsMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
+  m.append(earTabs("ears"));
   if (ei >= eq.length) {
     head.append(el("h3", null, "Round done"), el("span", "prompt", `${eRight} of ${eq.length} heard right.`));
     const row = el("div", "endcard");
@@ -1520,11 +1517,10 @@ function renderEarsMove() {
     row.append(again, back); m.append(head, row); return;
   }
   head.append(el("h3", null, `Line ${ei + 1} of ${eq.length}`), el("span", "prompt", eq[ei].mine ? "One of your own slips. What did they say?" : "What did they say?"));
-  if (ei === 0 && !eAnswered) m.append(earTabs("ears"));
   m.append(head);
   if (eAnswered) {
     const nx = el("button", "btn", ei + 1 < eq.length ? "Next line" : "See how you did");
-    nx.onclick = () => { ei++; if (ei < eq.length) earsItem(); else { addNarr(`Done: ${eRight} of ${eq.length} heard right.`); renderMove(); } };
+    nx.onclick = () => { ei++; if (ei < eq.length) earsItem(); else renderMove(); };
     const row = el("div", "endcard"); row.append(nx); m.append(row); return;
   }
   const it = eq[ei], opts = shuffle([it.said, it.other]);
@@ -1785,7 +1781,7 @@ let trip = store.get("sm-trip", { ids: [], day: "" }), tripEditing = false;
 function startTrip() {
   mode = "trip"; busy = false; cur = { who: "出门", whoEn: "you" };
   if (trip.day !== dayKey()) tripEditing = true; // a new day, a new plan
-  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Tell it where you're going today and you get a cheat sheet for just those places, a warm-up, and big text to show people. Every line is the full phrasebook.");
+  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Tell it where you're going today and you get a cheat sheet for just those places, a warm-up, and big text to show people. Every line has what worked in every place you've survived.");
   renderTrip(); renderRail(); renderMove();
 }
 function tripPlaces() { return trip.ids.map(id => S.find(s => s.id === id)).filter(Boolean); }
@@ -1793,7 +1789,6 @@ function renderTrip() {
   const log = $("#log"); log.textContent = "";
   if (tripEditing || !trip.ids.length) {
     // The picker fills the big area: places by folder, tap the ones you're heading to
-    addNarr("Where are you going today? Tap the places.");
     const grid = el("div", "trip-pick");
     GROUPS.forEach(g => {
       const list = g.ids.map(id => S.find(s => s.id === id)).filter(Boolean); if (!list.length) return;
@@ -1841,7 +1836,7 @@ function renderTripMove() {
   const row = el("div", "endcard");
   const warm = el("button", "btn", "Warm up on every moment"); warm.onclick = () => startTripWarmup();
   const edit = el("button", "btn ghost", "Change places"); edit.onclick = () => { tripEditing = true; renderTrip(); renderMove(); };
-  const real = el("button", "btn ghost", "Back already? Log what happened"); real.onclick = () => startField(trip.ids[0]);
+  const real = el("button", "btn ghost", "It happened for real"); real.onclick = () => startField(trip.ids[0]);
   row.append(warm, real, edit); m.append(head, row);
 }
 function startTripWarmup() {
@@ -1862,7 +1857,7 @@ function lastScene() { let last = null; try { last = localStorage.getItem("sm-la
 // the one thing most worth going deeper on, and whether you're heading out.
 function todayPicks() {
   const picks = [], due = dueItems().length, ord = railOrder();
-  if (due) picks.push({ kind: "Due back", han: "复习", title: due === 1 ? "One mistake is back" : `${due} mistakes are back`, why: "Getting them right today is what makes them stick.", go: () => startReview() });
+  if (due) picks.push({ kind: "Due back", han: "复习", title: due === 1 ? "One mistake is back" : `${due} mistakes are back`, why: due === 1 ? "Getting it right today is what makes it stick." : "Getting them right today is what makes them stick.", go: () => startReview() });
   // Go deeper: your most common kind of slip first, then a place you've only scraped through, then surprises, then rush hour
   const c = patternCounts(), top = PATTERNS.filter(p => c[p.id] && c[p.id].open >= 2).sort((a, b) => c[b.id].open - c[a.id].open)[0];
   const scraped = ord.find(s => done[s.id] && !(mastery[s.id] || {}).clean);
@@ -1871,7 +1866,7 @@ function todayPicks() {
   let deep = null;
   if (top) deep = { kind: "Your pattern", han: top.zh, title: `Drill: ${top.en.toLowerCase()}`, why: `${plural(c[top.id].open, "open mistake")} of this kind. ${top.tip}`, go: () => startPattern(top.id) };
   else if (scraped) { const miss = notebook.filter(n => n.sid === scraped.id && !n.learned).length;
-    deep = { kind: "Go back", han: scraped.place, title: `A clean run at the ${scraped.en.toLowerCase()}`, why: miss ? `You got through, with ${plural(miss, "mistake")} still open there.` : "You got through. Now do it without a slip.", go: () => start(scraped.id) }; }
+    deep = { kind: "Go back", han: scraped.place, title: `Go for a clean run at the ${scraped.en.toLowerCase()}`, why: miss ? `You got through, with ${plural(miss, "mistake")} still open there.` : "You got through. Now do it without a slip.", go: () => start(scraped.id) }; }
   else if (unmet) { const left = poolSize(unmet.id) - (seenCb[unmet.id] || []).length;
     deep = { kind: "Something new", han: unmet.place, title: `The ${unmet.en.toLowerCase()} has more to throw at you`, why: `${left === 1 ? "One surprise" : `${left} surprises`} there you haven't met yet.`, go: () => start(unmet.id) }; }
   else if (calm.length) { const s = calm[dayKey().split("-").reduce((a, b) => a + +b, 0) % calm.length]; // a different one each day
@@ -1901,15 +1896,17 @@ function startHome() {
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
-  head.append(el("h3", null, "Or anywhere"), el("span", "prompt", "Every place and practice space is in the list."));
-  m.append(head);
+  const all = el("button", "btn ghost", "Or pick any place");
+  // On a phone that opens the folded list; on a wide screen the list is already there, so jump to its find box
+  all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
+  const row = el("div", "endcard"); row.append(all); m.append(row);
 }
 /* ---------- it happened for real: bring a real-life slip back into the app ---------- */
 // You tell it what you said or heard out there. It finds the matching moment in that place,
 // explains it with what the app already knows, and files it so it comes back for review.
-let fieldSid = null;
+let fieldSid = null, fieldLogged = false;
 function startField(sid) {
-  mode = "field"; busy = false; transcript = [];
+  mode = "field"; busy = false; transcript = []; fieldLogged = false;
   fieldSid = sid || (trip.day === dayKey() && trip.ids[0]) || fieldSid || lastScene();
   cur = S.find(x => x.id === fieldSid);
   setHead("真的", "zhēn de", "It happened for real", "What it's for: ", "Back from a real place? Tell it what you said, or what you heard and didn't get. It finds that moment here, explains it, and brings it back for review like any other mistake.");
@@ -1978,7 +1975,7 @@ function fieldHeard(s, text) {
 function renderFieldMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
-  head.append(el("h3", null, "Where were you?"), el("span", "prompt", cur ? cur.en : ""));
+  head.append(el("h3", null, "Where were you?"));
   const today = trip.day === dayKey() ? trip.ids : [];
   const pick = el("select", "field-place"); pick.setAttribute("aria-label", "Place");
   railOrder().forEach(s => { const o = el("option", null, `${s.place} ${s.en}${today.includes(s.id) ? " · today" : ""}`); o.value = s.id; if (s.id === fieldSid) o.selected = true; pick.append(o); });
@@ -1991,14 +1988,14 @@ function renderFieldMove() {
     ev.preventDefault(); const s = S.find(x => x.id === fieldSid); if (!s) return;
     const a = said.value.trim(), b = heard.value.trim(); if (!a && !b) return;
     if (a) fieldSaid(s, a); if (b) fieldHeard(s, b);
-    said.value = ""; heard.value = "";
+    said.value = ""; heard.value = ""; fieldLogged = true; renderMove();
   };
   form.append(said, heard, go);
   const row = el("div", "endcard");
   const nb = el("button", "btn ghost", "See it in Mistakes"); nb.onclick = () => openNotebook();
   const back = el("button", "btn ghost", "Practise this place"); back.onclick = () => start(fieldSid);
   row.append(nb, back);
-  m.append(head, pick, form, row);
+  m.append(head, pick, form); if (fieldLogged) m.append(row);
 }
 
 /* ---------- phrasebook: every line that worked, from places you've survived ---------- */
@@ -2098,9 +2095,7 @@ function renderPhrasesMove() {
   inp.oninput = () => { pbQuery = inp.value; renderPhrases(); };
   form.onsubmit = ev => ev.preventDefault();
   form.append(inp);
-  const back = backBtn();
-  const row = el("div", "endcard"); row.append(back);
-  m.append(head, form, row);
+  m.append(head, form);
 }
 
 /* ---------- wander: Claude makes up a fresh everyday situation and plays it out ---------- */
@@ -2187,7 +2182,7 @@ function renderWanderMove() {
   const inp = el("input"); inp.id = "wander-input"; inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN"; inp.disabled = busy;
   inp.placeholder = busy ? "…" : "Characters, pinyin, or English if you're stuck";
   inp.setAttribute("aria-label", "What you say");
-  const send = el("button", "btn", busy ? "…" : "Say it"); send.type = "submit"; send.disabled = busy;
+  const send = el("button", "btn", busy ? "…" : "Send"); send.type = "submit"; send.disabled = busy;
   form.append(inp, send);
   if (SR && !micBroken) {
     const mic = el("button", "btn ghost", "Speak"); mic.type = "button"; mic.disabled = busy;
@@ -2283,7 +2278,7 @@ function renderFree(m) {
   const inp = el("input"); inp.id = "free-input"; inp.type = "text"; inp.autocomplete = "off";
   inp.placeholder = finished ? "Keep chatting with " + cur.whoEn + "…" : "Or say it your own way: hanzi, pinyin, even English";
   inp.setAttribute("aria-label", "Say it your own way");
-  const send = el("button", "btn", busy ? "…" : "Say it"); send.type = "submit"; send.disabled = busy; inp.disabled = busy;
+  const send = el("button", "btn", busy ? "…" : "Send"); send.type = "submit"; send.disabled = busy; inp.disabled = busy;
   form.append(inp, send);
   form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) offScript(v); };
   m.append(form, el("p", "free-note", "Replies to your own words come from Claude, using your Claude account."));
