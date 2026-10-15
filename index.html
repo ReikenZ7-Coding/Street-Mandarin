@@ -106,6 +106,13 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .ls-narr .lw { font: inherit; font-family: var(--f-han); font-weight: 700; color: var(--jade); background: none; border: 0; border-bottom: 1px dotted var(--jade); padding: 0 1px; cursor: pointer; }
 .ls-narr .lw-gloss { font-size: 13px; color: var(--muted); margin-left: 3px; }
 .ls-prompt { font-size: 14px; color: var(--muted); }
+.ls-chap-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.ls-chap-row .linkish { font-size: 14px; }
+#log .row.speaking .bubble { border-color: var(--jade); box-shadow: 0 0 0 2px var(--jade-soft); }
+button.ls-person { font: inherit; color: var(--fg); text-align: left; cursor: pointer; }
+button.ls-person:hover:not(:disabled), button.ls-person:focus-visible { border-color: var(--jade); }
+button.ls-person:disabled { cursor: default; opacity: 0.7; }
+.ls-person .lp-n { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .ls-prev { border-left: 3px solid var(--line); padding: 4px 0 4px 12px; font-size: 14px; color: var(--muted); display: grid; gap: 2px; font-style: italic; }
 .ls-meanwhile { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
 .ls-narr .lw-gloss::before { content: "("; } .ls-narr .lw-gloss::after { content: ")"; }
@@ -2284,6 +2291,13 @@ function dailyPick(kind, shift, ids) {
   const step = { word: 7, slang: 11, phrase: 13 }[kind]; // different strides so the three don't repeat as a set
   return pool[((d + shift) * step % pool.length + pool.length) % pool.length];
 }
+// A word your Long Story is still teaching you (you keep tapping it, or you've barely met it)
+function lsMorningWord() {
+  if (!LS || dailyShift) return null;
+  const list = Object.entries(LS.words).filter(([, w]) => w.e && (w.tapped >= 1 || w.seen <= 2)); if (!list.length) return null;
+  const d = Math.floor(Date.parse(dayKey()) / 864e5) || 0, [h, w] = list[d % list.length];
+  return { h, p: w.p, e: w.e, use: `From your Long Story, ${LS.bible.title_english}. ${w.tapped ? "You've looked it up there, so here it is again before tonight's chapter." : "It's new there, and it'll come back."}` };
+}
 function wordsForToday(day) {
   const ids = day ? day.stops.map(x => x.id) : null;
   const wrap = el("section", "daily"); wrap.setAttribute("aria-label", "Words for today");
@@ -2292,7 +2306,7 @@ function wordsForToday(day) {
   head.append(again); wrap.append(head);
   const grid = el("div", "daily-grid");
   DAILY_KINDS.forEach(([k, en, zh]) => {
-    const x = dailyPick(k, dailyShift, ids); if (!x) return;
+    const x = (k === "word" && lsMorningWord()) || dailyPick(k, dailyShift, ids); if (!x) return;
     const c = el("div", "daily-card");
     c.append(el("span", "dc-kind", `${en} ${zh}`), el("span", "dc-han", x.h), el("span", "dc-py", x.p), el("span", "dc-en", x.e), el("p", "dc-use", x.use));
     const row = el("div", "say-back"), out = el("span", "sb-out");
@@ -2603,7 +2617,7 @@ function lsHome() {
     log.append(sec);
   }
   const cast = el("section", "ls-cast"); cast.append(el("h4", "pb-title", "The people in it"));
-  b.cast.forEach(c => { const card = el("div", "ls-person"); card.append(el("span", "lp-han", c.name_hanzi), el("span", "lp-py", c.name_pinyin), el("span", "lp-role", c.role)); cast.append(card); });
+  b.cast.forEach(c => { const card = el("button", "ls-person"), n = lsLinesOf(c).length; card.append(el("span", "lp-han", c.name_hanzi), el("span", "lp-py", c.name_pinyin), el("span", "lp-role", c.role), el("span", "lp-n", n ? `${plural(n, "line")} to you` : "Not met yet")); card.disabled = !n; card.onclick = () => lsPerson(c); cast.append(card); });
   log.append(cast);
   log.append(lsWordsEl());
   log.scrollTop = 0;
@@ -2622,6 +2636,19 @@ function lsWordsEl() {
   }
   return wrap;
 }
+// Everything someone has said in the chapters you've read: how they talk, in one place
+function lsLinesOf(c) {
+  const out = [];
+  for (let v = 1; v <= LS.n; v++) for (let k = 1; k <= LS_CH; k++) { const ch = lsCh(v, k); if (!ch || !ch.counted) continue; ch.blocks.forEach(b => { if (b.t === "l" && b.who === c.name_hanzi) out.push(b); }); }
+  return out;
+}
+function lsPerson(c) {
+  lsView = "person"; lsMoment = null;
+  setHead(c.address && c.address !== c.name_hanzi ? c.address : c.name_hanzi, c.name_pinyin, `${c.name_hanzi}, ${c.role}`, "How they talk: ", c.voice || "Their own way.");
+  const log = $("#log"); log.textContent = "";
+  lsLinesOf(c).forEach(b => log.append(lsLine(b)));
+  log.scrollTop = 0; renderMove();
+}
 function lsRead(v, c) {
   const ch = lsCh(v, c); if (!ch) return lsWrite(v, c);
   lsView = "read"; lsAt = { v, c }; mode = "long"; busy = false;
@@ -2634,7 +2661,9 @@ function lsRead(v, c) {
   if (pv && pv.summary && !ch.said && Date.now() - (LS.lastAt || 0) > 4 * 36e5) { const f = el("div", "ls-prev"); f.append(el("span", "ls-label", "Previously"), pv.summary); log.append(f); }
   LS.lastAt = Date.now();
   if (ch.fb) { const f = el("div", "ls-fb"); f.append(el("span", "ls-label", "What you said last time"), ch.fb.note); if (ch.fb.fix) f.append(" ", el("span", "han-inline", ch.fb.fix[0]), " ", el("span", "py", ch.fb.fix[1])); log.append(f); }
-  log.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
+  const th = el("div", "ls-chap-row"); th.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
+  if (canSpeak) { const lb = el("button", "linkish", "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
+  log.append(th);
   let last = null;
   ch.blocks.forEach(bl => {
     if (bl.t === "n") {
@@ -2652,6 +2681,21 @@ function lsRead(v, c) {
   cur = { id: "long", who: lsLastWho(ch).slice(-2), whoEn: "them", en: `Long Story: ${b.title_english}`, place: b.title_hanzi, turns: lsMoment ? [lsMoment] : [] };
   turn = 0; order = lsMoment ? shuffle(lsMoment.opts) : []; bState = null; transcript = []; lsReady = false;
   log.scrollTop = 0; renderRail(); renderMove();
+}
+// Every line of the chapter's dialogue, in order, at speaking speed: the conversation as you'd hear it
+function lsListen(btn) {
+  if (!canSpeak) return;
+  if (btn.dataset.on) { speechSynthesis.cancel(); return; }
+  const rows = [...document.querySelectorAll("#log .row.npc")]; if (!rows.length) return;
+  speechSynthesis.cancel(); btn.dataset.on = "1"; btn.textContent = "Stop";
+  const voice = speechSynthesis.getVoices().find(v => /zh[-_]CN/i.test(v.lang));
+  const stop = () => { delete btn.dataset.on; btn.textContent = "Listen to the conversation"; rows.forEach(r => r.classList.remove("speaking")); };
+  rows.forEach((r, i) => {
+    const u = new SpeechSynthesisUtterance(r.querySelector(".han").textContent); u.lang = "zh-CN"; u.rate = 0.9; if (voice) u.voice = voice;
+    u.onstart = () => { rows.forEach(x => x.classList.remove("speaking")); r.classList.add("speaking"); r.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+    if (i === rows.length - 1) { u.onend = stop; u.onerror = stop; }
+    speechSynthesis.speak(u);
+  });
 }
 const lsLastWho = ch => { const l = [...ch.blocks].reverse().find(b => b.t === "l"), c = l && lsCast(l.who); return l ? (c ? c.address || c.name_hanzi : l.who) : "路人"; };
 // What you say at the end of a chapter is kept; slips go to Mistakes with the whole moment, so they come back for review
@@ -2699,7 +2743,20 @@ function lsRecap(v) {
   line("What you said", ul);
   const slips = chs.filter(ch => ch.said && (ch.said.k === "okay" || ch.said.k === "wrong")).length;
   line("Slips", slips ? `${plural(slips, "slip")}, now in Mistakes. They come back for review.` : "None. Everything you said landed.");
-  log.append(res); log.scrollTop = 0;
+  log.append(res);
+  if (v === LS.n && lsVolDone(v)) {
+    // The end: the whole story in a few lines, and what it was about all along
+    const all = Object.values(LS.chapters).filter(ch => ch.said), slipsAll = all.filter(ch => ch.said.k === "okay" || ch.said.k === "wrong").length;
+    const end = el("dl", "score"), l2 = (k, x) => end.append(el("dt", null, k), el("dd", null, x));
+    log.append(el("div", "day-part"));
+    log.lastChild.append(el("span", "dp-zh", "完"), el("span", "dp-en", "The whole story"));
+    if (LS.bible.answer) l2("What it was about", LS.bible.answer);
+    l2("You read", `${plural(all.length, "chapter")} over ${plural(LS.n, "volume")}, and said ${plural(all.length, "line")} of your own.`);
+    l2("Chinese", `${plural(Object.keys(LS.words).length, "word")} met, ${Object.values(LS.words).filter(w => w.seen >= 3 && w.tapped < 2).length} of them you now read without English.`);
+    l2("Slips", slipsAll ? `${plural(slipsAll, "slip")} along the way, all in Mistakes.` : "None. Every line landed.");
+    log.append(end);
+  }
+  log.scrollTop = 0;
   renderRail(); renderMove();
 }
 function renderLongMove() {
@@ -2721,7 +2778,9 @@ function renderLongMove() {
   if (lsView === "read" && lsMoment && !lsReady) {
     // Read first: the answer waits until you've reached the end of the chapter
     const go = el("button", "btn", "Your line"); go.onclick = () => { lsReady = true; renderMove(); scrollLog(); };
-    row.append(go, el("span", "ls-prompt", lsMoment.prompt)); m.append(row); return;
+    row.append(go, el("span", "ls-prompt", lsMoment.prompt));
+    if (sample) { const re = el("button", "linkish", "Rewrite this chapter"); re.onclick = () => { const { v, c } = lsAt; delete LS.chapters[lsKey(v, c)]; lsSave(); lsWrite(v, c); }; row.append(re); }
+    m.append(row); return;
   }
   if (lsView === "read" && lsMoment) {
     // The chapter's last line needs an answer: the same three ways as anywhere else
@@ -2749,7 +2808,8 @@ function renderLongMove() {
   }
   if (lsView === "recap") {
     const v = lsAt ? lsAt.v : 1;
-    if (v < LS.n && lsLocked(v + 1)) row.append(el("span", "ls-prompt", `Volume ${v + 1} opens tomorrow. Come back for it, like the next episode.`));
+    if (v === LS.n) { const go = el("button", "btn", "Start another story"); go.onclick = () => { LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); }; row.append(go); }
+    else if (v < LS.n && lsLocked(v + 1)) row.append(el("span", "ls-prompt", `Volume ${v + 1} opens tomorrow. Come back for it, like the next episode.`));
     else if (v < LS.n) { const go = el("button", "btn", `Volume ${v + 1}: ${(LS.bible.volumes[v] || {}).title_english}`); go.onclick = () => lsCh(v + 1, 1) ? lsRead(v + 1, 1) : (lsAt = { v: v + 1, c: 1 }, lsWrite(v + 1, 1)); row.append(go); }
   }
   if (lsView === "home") {

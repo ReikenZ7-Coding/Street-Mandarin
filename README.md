@@ -33,7 +33,9 @@ The side list shows the ten days, one open at a time, with a Next up tag. Tap th
 - **It's read, then said.** Each chapter is narration and dialogue, and ends on a line someone says to you. You answer the same three ways as in Short Story, and the next chapter is written after you answer, so a slip plays out in the story (kindly) before someone helps you fix it. Your own words work too, and the next chapter says how they'd land.
 - **The Chinese grows as you read.** Chinese words sit inside the English narration, glossed the first couple of times you meet them and plain Chinese after that (tap any to see it again). Later volumes carry more Chinese, up to whole sentences.
 - **Nothing is lost.** Slips go into Mistakes with their whole moment and come back for review; every chapter is kept to reread; the story's words are listed with how often you've met them. Each volume ends with a short recap.
-- It's the evening's reading in Short Story: the day page's Evening has a "Tonight's reading" card.
+- **Read it, hear it.** "Listen to the conversation" plays a chapter's dialogue line by line. Each person in the cast has a page with everything they've said to you, so you can hear how they talk.
+- **At your pace, or a volume a day.** By default the next volume opens the day after you finish one, like a serial; you can choose to read on freely instead. The next chapter starts writing the moment you answer, and after a break the chapter opens with a line on what happened. A chapter that reads badly can be rewritten before you answer.
+- **It's the evening's reading in Short Story.** The day page's Evening has a "Tonight's reading" card, and the morning's word is one your story is still teaching you. The last volume ends with what the story was about and what you read.
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional). Word tiles show their pinyin while the help dial is on English or Pinyin.
