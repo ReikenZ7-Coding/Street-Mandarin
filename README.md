@@ -18,16 +18,22 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 
 ## How it's organised
 
-**Your ten days**: the whole app hangs off one story, your first ten days in China (`journey.js`). Each day is two or three places that follow on from each other: day one is noodles by the station, a SIM card, then the hotel. A short line carries you from one stop into the next, and the end card sends you to the next stop, then to your evening.
+**Short Story**: the whole app hangs off one story, your first ten days in China (`journey.js`). Each day is two or three places that follow on from each other: day one is noodles by the station, a SIM card, then the hotel. A short line carries you from one stop into the next, and the end card sends you to the next stop, then to your evening.
 
 Every day has the same three parts, and each feeds the next:
 - **Morning**: slips from before that are due back, your pocket filled in for today's stops, and words for today (a word, a bit of slang and a phrase, from today's stops where there is one).
 - **Out**: the day's stops, in story order.
 - **Evening**: today's slips, one drill for the kind you made most, and "Anything happen out there for real?" for when you're actually in China. What you got wrong comes back the next morning.
 
-Progress is one list: **what you can do on your own** ("Check into a hotel", "Pay and split a bill"…). A place goes on it when you get through it with no slips. After the ten days, the day page points you at what's most worth going deeper on, and Wander makes up new days.
+Progress is one list: **what you can do on your own** ("Check into a hotel", "Pay and split a bill"…). A place goes on it when you get through it with no slips. After the ten days, the day page points you at what's most worth going deeper on.
 
 The side list shows the ten days, one open at a time, with a Next up tag. Tap the title to get back to your day. One find box above them searches places and phrases together ("toilet", "多少", "duoshao").
+
+**Long Story**: a light novel Claude writes around you, set in a real Chinese city, 7 to 30 volumes long (a week to a month), one day per volume and four chapters per day. You pick the length and a theme (or your own idea, or "surprise me"). Claude plans the whole story first: a story question, a turn in the middle, a cast of three to five people who each talk their own way, and the everyday situations each day teaches. Then it writes each chapter as you reach it.
+- **It's read, then said.** Each chapter is narration and dialogue, and ends on a line someone says to you. You answer the same three ways as in Short Story, and the next chapter is written after you answer, so a slip plays out in the story (kindly) before someone helps you fix it. Your own words work too, and the next chapter says how they'd land.
+- **The Chinese grows as you read.** Chinese words sit inside the English narration, glossed the first couple of times you meet them and plain Chinese after that (tap any to see it again). Later volumes carry more Chinese, up to whole sentences.
+- **Nothing is lost.** Slips go into Mistakes with their whole moment and come back for review; every chapter is kept to reread; the story's words are listed with how often you've met them. Each volume ends with a short recap.
+- It's the evening's reading in Short Story: the day page's Evening has a "Tonight's reading" card.
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional). Word tiles show their pinyin while the help dial is on English or Pinyin.
@@ -57,7 +63,7 @@ Everything above works with no AI at all:
 
 When Claude is available, through the claude.ai Artifact runtime (`window.claude`), you also get:
 - Claude replies in character to anything off the script, and explains any mistake not on file.
-- Wander: a situation you haven't practised, or one you name.
+- Long Story: the whole novel is written by Claude.
 - Play it live: a place replayed with no script, somewhere of the same kind, with a hidden twist.
 - After each run, Claude invents a new surprise for that place.
 

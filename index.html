@@ -88,6 +88,38 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .cd-list li.on { border: 1px solid var(--jade); background: var(--jade-soft); color: var(--fg); }
 .cd-list li.on::before { content: "✓ "; color: var(--jade); }
 .cd-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.ls-setup { display: grid; gap: 22px; }
+.ls-field { display: grid; gap: 8px; }
+.ls-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+.ls-field .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ls-field input[type=range] { width: 100%; max-width: 420px; accent-color: var(--jade); }
+.ls-n { font-size: 14px; color: var(--muted); }
+.ls-themes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.ls-own { font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); width: 100%; box-sizing: border-box; }
+.ls-note, .ls-where { font-size: 14px; color: var(--muted); margin: 0; }
+.ls-where { margin-top: 8px; }
+.ls-err { color: var(--cinnabar); font-size: 14px; margin: 0 0 8px; }
+.ls-chap { font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); margin: 4px 0 6px; }
+.ls-narr { font-size: 16px; line-height: 1.75; max-width: 62ch; margin: 0; }
+.ls-narr .lw { font: inherit; font-family: var(--f-han); font-weight: 700; color: var(--jade); background: none; border: 0; border-bottom: 1px dotted var(--jade); padding: 0 1px; cursor: pointer; }
+.ls-narr .lw-gloss { font-size: 13px; color: var(--muted); margin-left: 3px; }
+.ls-prompt { font-size: 14px; color: var(--muted); }
+.ls-narr .lw-gloss::before { content: "("; } .ls-narr .lw-gloss::after { content: ")"; }
+.ls-fb { border-left: 3px solid var(--ochre); padding: 4px 0 4px 12px; font-size: 14px; display: grid; gap: 2px; }
+.ls-toc, .ls-cast { display: grid; gap: 8px; margin-top: 18px; }
+.ls-cast { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ls-cast .pb-title { grid-column: 1 / -1; }
+.ls-person { display: grid; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
+.ls-person .lp-han { font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
+.ls-person .lp-py { font-size: 13px; color: var(--muted); }
+.ls-person .lp-role { font-size: 14px; }
+.ls-words { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
+.ls-words li { display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.ls-words .han { font-family: var(--f-han); font-weight: 700; font-size: 17px; }
+.ls-words .py, .ls-words .lw-n { font-size: 13px; color: var(--muted); }
+.ls-vols { margin-top: 2px; }
+.day-dot:disabled { opacity: 0.5; cursor: default; }
+@media (max-width: 760px) { .ls-themes { grid-template-columns: 1fr; } .ls-words li { grid-template-columns: auto 1fr; } .ls-words .en-line, .ls-words .lw-n { grid-column: 2; } }
 .daily { margin-top: 22px; }
 .daily-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
 .daily-title { font-weight: 700; font-size: 16px; }
@@ -361,7 +393,7 @@ body.hint-off .opt .en-line { display: none; }
 <div class="wrap">
   <header class="top">
     <div>
-      <button class="brand" id="home-btn" title="Your day: where you are in the ten days"><h1>街头中文</h1><span class="en">Street Mandarin</span></button>
+      <button class="brand" id="home-btn" title="Your day in Short Story"><h1>街头中文</h1><span class="en">Street Mandarin</span></button>
       <p class="tagline">No lessons. Walk into a real situation, say something, get it wrong, and learn from how people react.</p>
       <p class="streak" id="streak" aria-live="polite"></p>
     </div>
@@ -631,6 +663,8 @@ function setHead(place, py, en, goalLabel, goal) {
 const DAYS = ((window.JOURNEY || {}).days || []).map(d => Object.assign({}, d, { stops: d.stops.filter(x => S.some(s => s.id === x.id)) })).filter(d => d.stops.length);
 const CAN = (window.JOURNEY || {}).can || {};
 const NUM_PY = ["", "yī", "èr", "sān", "sì", "wǔ", "liù", "qī", "bā", "jiǔ", "shí"], NUM_HAN = "〇一二三四五六七八九十";
+const zhNum = n => n <= 10 ? NUM_HAN[n] : n < 20 ? "十" + (n % 10 ? NUM_HAN[n % 10] : "") : NUM_HAN[Math.floor(n / 10)] + "十" + (n % 10 ? NUM_HAN[n % 10] : "");
+const pyNum = n => n <= 10 ? NUM_PY[n] : n < 20 ? "shí" + (n % 10 ? NUM_PY[n % 10] : "") : NUM_PY[Math.floor(n / 10)] + "shí" + (n % 10 ? NUM_PY[n % 10] : "");
 const dayOf = id => DAYS.findIndex(d => d.stops.some(x => x.id === id));
 const stopOf = id => { const d = dayOf(id); return d < 0 ? null : DAYS[d].stops.find(x => x.id === id); };
 const dayDone = i => DAYS[i].stops.every(x => done[x.id]);
@@ -680,14 +714,18 @@ function renderRail() {
   const today = trip.day === dayKey() && trip.ids.length;
   const pk = tool("口袋", "Your pocket", today ? `Ready for ${plural(trip.ids.length, "place")} today` : "Lines that work, ready for today", mode === "trip" || mode === "phrases" || (mode === "pattern" && !pPat), () => startTrip());
   rail.append(rv, ear, pk);
-  if (sample) rail.append(tool("随便逛", "Wander", "Claude makes up a new situation", mode === "wander" && !(cur && cur.live), () => startWander()));
+  // Long Story: the novel you read in the evenings. (Wander's job, making things up, now lives here.)
+  const lnx = LS && lsNext();
+  rail.append(el("h2", "rail-sub", "Long Story"));
+  const lt = tool("长篇", LS ? LS.bible.title_english || "Long Story" : "Long Story", LS ? (lnx ? `Volume ${lnx.v} of ${LS.n}, chapter ${lnx.c}` : "Finished. Start another?") : "A novel Claude writes around you", mode === "long", () => startLong());
+  lt.id = "tool-long"; rail.append(lt);
   $(".layout").classList.toggle("nb-view", mode === "notebook");
   // Pages you read (not conversations) get the full height instead of a scroll box
-  $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field"].includes(mode));
+  $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field", "long"].includes(mode));
   const nDone = S.filter(s => done[s.id]).length;
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
   const nCan = S.filter(s => canDo(s.id)).length;
-  rail.append(el("h2", "rail-sub", nDone ? `Ten days · ${nDone} of ${S.length} places${nCan ? ` · ${nCan} you can do alone` : ""}` : "Your ten days"));
+  rail.append(el("h2", "rail-sub", nDone ? `Short Story · ${nDone} of ${S.length} places${nCan ? ` · ${nCan} you can do alone` : ""}` : "Short Story · ten days"));
   const placeBtn = (s, next) => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
@@ -791,7 +829,7 @@ function start(id, opt = {}) {
   // The very first time: one line on how this works, then straight in
   if (!said) $("#log").append(el("div", "first-run", "Pick what you'd say. Getting it wrong on purpose is allowed: seeing how people react is the whole idea."));
   const st = stopOf(id);
-  if (st) { const b = el("div", "bridge"); b.append(el("span", "br-day", `Day ${dayOf(id) + 1} · ${DAYS[dayOf(id)].title}`), st.into); $("#log").append(b); }
+  if (st) { const b = el("div", "bridge"); b.append(el("span", "br-day", `Short Story · Day ${dayOf(id) + 1} · ${DAYS[dayOf(id)].title}`), st.into); $("#log").append(b); }
   addNarr(cur.intro);
   renderRail(); beginTurn();
 }
@@ -843,6 +881,7 @@ function renderMove() {
   if (mode === "trip") return renderTripMove();
   if (mode === "field") return renderFieldMove();
   if (mode === "home") return renderHomeMove();
+  if (mode === "long") return renderLongMove();
   const m = $("#move"); m.textContent = "";
   if (finished) { clearRush(); return renderEnd(); }
   const t = cur.turns[turn];
@@ -1122,6 +1161,7 @@ function tilePinyin(b, p) {
 }
 const tilePyCache = {};
 function tilePyFor(scene) {
+  if (scene.id === "long") { const m = {}; scene.turns.forEach(t => t.opts.forEach(o => { if (o.b) Object.assign(m, tilePinyin(o.b, o.p)); })); return m; }
   if (!tilePyCache[scene.id]) { const m = {}; sceneMoments(scene).forEach(t => t.opts.forEach(o => { if (o.b) Object.assign(m, tilePinyin(o.b, o.p)); })); tilePyCache[scene.id] = m; }
   return tilePyCache[scene.id];
 }
@@ -1159,13 +1199,13 @@ function builder(t, good) {
   const slots = el("div", "slots"); slots.setAttribute("aria-label", "Your sentence");
   if (!bState.chosen.length) slots.append(el("span", "slots-empty", "Tap the words in order"));
   bState.chosen.forEach(tile => {
-    const b = tileBtn(tile.w, "tile on", S.find(x => x.id === cur.id)); b.disabled = busy;
+    const b = tileBtn(tile.w, "tile on", S.find(x => x.id === cur.id) || cur); b.disabled = busy;
     b.onclick = () => { bState.chosen = bState.chosen.filter(x => x !== tile); renderMove(); };
     slots.append(b);
   });
   const bank = el("div", "bank");
   bState.tiles.filter(x => !bState.chosen.includes(x)).forEach(tile => {
-    const b = tileBtn(tile.w, "tile", S.find(x => x.id === cur.id)); b.disabled = busy;
+    const b = tileBtn(tile.w, "tile", S.find(x => x.id === cur.id) || cur); b.disabled = busy;
     b.onclick = () => { bState.chosen.push(tile); renderMove(); };
     bank.append(b);
   });
@@ -1209,6 +1249,7 @@ function clearGhost() {
 }
 function choose(o) {
   if (busy) return;
+  if (mode === "long") { if (o.quiet) { lsSay(o, "okay"); lsMoment = null; return renderMove(); } return longChoose(o); }
   clearRush();
   if (o.k === "good") clearGhost(); else if (o.tag) runMissTags.push(o.tag);
   if (o.quiet) return advance();
@@ -1351,6 +1392,7 @@ const dueItems = () => activeItems().filter(n => (n.due || 0) <= Date.now());
 function saveNotebook() { store.set("sm-notebook", notebook); renderNotebook(); renderRail(); }
 function logMistake(entry) {
   const now = Date.now();
+  if (entry.sid === "long" && mode === "long" && lsMoment) Object.assign(entry, { turn: null, cb: null, mt: lsMoment, src: LS.bible.title_english, who: cur.who });
   if (mode === "scene" && cur && cur.turns && cur.turns[turn]) {
     const t = cur.turns[turn];
     if (!runMisses.includes(t)) runMisses.push(t);
@@ -1376,8 +1418,10 @@ function whenText(n) {
   return d <= 0 ? "Due now" : d === 1 ? "Comes back tomorrow" : `Comes back in ${d} days`;
 }
 let confirmClear = false, lastActive = -1;
+// A slip from the Long Story carries its own moment, so it can come back like any scripted one
+const sceneFor = n => S.find(x => x.id === n.sid) || (n.mt ? { id: "long", en: `Long Story: ${n.src || ""}`.replace(/: $/, ""), place: "长篇", who: n.who || "书", whoEn: "them", turns: [n.mt] } : null);
 function nbItem(n) {
-  const s = S.find(x => x.id === n.sid);
+  const s = sceneFor(n);
   const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
   const top = el("div", "where");
   top.append((s ? s.en : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.real ? " · for real" : n.kind === "okay" ? " · close enough" : ""));
@@ -1390,7 +1434,7 @@ function nbItem(n) {
   if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
   it.append(el("div", "why", n.why));
   if (!n.learned) {
-    const sc = S.find(x => x.id === n.sid), t = scriptedTurn(sc, n);
+    const sc = sceneFor(n), t = scriptedTurn(sc, n);
     const ctx = { sid: n.sid, place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null };
     if (canExplain(ctx)) { const ask = el("button", "why-btn", "Why, exactly?"); ask.onclick = () => explainWhy(ask, ctx); it.append(ask); }
   }
@@ -1455,7 +1499,7 @@ function startReview() {
 }
 function reviewItem() {
   rAnswered = false; rReveal = false; rHow = "pick"; rGood = null; rTiles = null; rHeld = false;
-  const n = rq[ri], s = S.find(x => x.id === n.sid), t = scriptedTurn(s, n);
+  const n = rq[ri], s = sceneFor(n), t = scriptedTurn(s, n);
   if (s) cur = s;
   const pair = n.sid === "ears" && PAIRS.concat(myPairs()).find(p => p.a[0] === n.fix || p.b[0] === n.fix);
   if (pair) {
@@ -1516,7 +1560,7 @@ function ladderEl(n) {
 function reviewBuilder(n) {
   const st = rTiles, box = el("div", "build"), slots = el("div", "slots"), bank = el("div", "bank");
   if (!st.chosen.length) slots.append(el("span", "slots-empty", "Tap the words in order"));
-  const sc = S.find(x => x.id === n.sid);
+  const sc = sceneFor(n);
   st.chosen.forEach(tile => { const b = tileBtn(tile.w, "tile on", sc); b.onclick = () => { st.chosen = st.chosen.filter(x => x !== tile); renderReviewMove(); }; slots.append(b); });
   st.tiles.filter(x => !st.chosen.includes(x)).forEach(tile => { const b = tileBtn(tile.w, "tile", sc); b.onclick = () => { st.chosen.push(tile); renderReviewMove(); }; bank.append(b); });
   const row = el("div", "endcard"), go = el("button", "btn", "Send it"); go.disabled = !st.chosen.length;
@@ -1535,7 +1579,7 @@ function reviewTyper(n) {
   const go = el("button", "btn", "Send"); go.type = "submit"; form.append(inp, go);
   form.onsubmit = ev => {
     ev.preventDefault(); const v = inp.value.trim(); if (!v) return;
-    const t = scriptedTurn(S.find(x => x.id === n.sid), n), m = matchTyped(v, t);
+    const t = scriptedTurn(sceneFor(n), n), m = matchTyped(v, t);
     if (m.how === "exact" || m.how === "core" || m.how === "slip") return reviewChoose(Object.assign({}, m.o, { h: v, p: "", e: "" }));
     const judged = m.how === "near" ? null : judgeOffline(v, m.good || rGood, { also: m.also });
     if (m.how === "near" || (judged && judged.kind === "okay")) return reviewChoose(Object.assign({}, rGood, { h: v, p: "", e: "", _close: m.how === "near" ? "slip" : "partial" }));
@@ -1765,7 +1809,7 @@ function myPairs() {
   const out = [], seen = new Set();
   activeItems().forEach(n => {
     if (n.sid === "ears" || tagOf(n) !== "sounds") return;
-    const s = S.find(x => x.id === n.sid), t = scriptedTurn(s, n); if (!t) return;
+    const s = sceneFor(n), t = scriptedTurn(s, n); if (!t) return;
     const bad = t.opts.find(o => o.h === n.said), good = t.opts.find(o => o.k === "good" && o.h === n.fix) || t.opts.find(o => o.k === "good");
     if (!bad || !good || seen.has(bad.h)) return; seen.add(bad.h);
     out.push({ a: [good.h, good.p, good.e], b: [bad.h, bad.p, bad.e], why: bad.note, mine: true });
@@ -1840,11 +1884,11 @@ const PATTERNS = [
   { id: "words", zh: "用词", en: "The wrong word", tip: "Close in meaning isn't the same word." },
   { id: "manners", zh: "语气", en: "Too blunt", tip: "一下, 能…吗 and 不用了 soften almost anything." }
 ];
-const scriptedTurn = (s, n) => s && (n.cb != null ? (cbFor(s, n.cb) || {}).turn : n.turn != null ? s.turns[n.turn] : null);
+const scriptedTurn = (s, n) => n.mt || s && (n.cb != null ? (cbFor(s, n.cb) || {}).turn : n.turn != null ? s.turns[n.turn] : null);
 function tagOf(n) {
   if (n.tag) return n.tag;
   if (n.sid === "ears") return "sounds";
-  const t = scriptedTurn(S.find(x => x.id === n.sid), n);
+  const t = scriptedTurn(sceneFor(n), n);
   const o = t && t.opts.find(o => o.h === n.said);
   return o && o.tag || null;
 }
@@ -2170,7 +2214,7 @@ function startHome(day) {
   const d = DAYS[homeDay], n = homeDay + 1, stops = d.stops.map(x => S.find(s => s.id === x.id));
   cur = { who: d.han, whoEn: "today" };
   const cans = stops.map(s => lcFirst(CAN[s.id] || s.en));
-  setHead(`第${NUM_HAN[n] || n}天`, `dì ${NUM_PY[n] || n} tiān`, `Day ${n}: ${d.title}`, "By tonight you can: ", cans.slice(0, -1).join(", ") + (cans.length > 1 ? " and " : "") + cans[cans.length - 1] + ".");
+  setHead(`第${NUM_HAN[n] || n}天`, `dì ${NUM_PY[n] || n} tiān`, `Short Story, day ${n}: ${d.title}`, "By tonight you can: ", cans.slice(0, -1).join(", ") + (cans.length > 1 ? " and " : "") + cans[cans.length - 1] + ".");
   const log = $("#log"); log.textContent = "";
   // Ten dots: where you are in the ten days, and a way to look at any of them
   const nav = el("div", "days"); nav.setAttribute("aria-label", "The ten days");
@@ -2208,6 +2252,7 @@ function startHome(day) {
     if (!slips.length) pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: "No slips open from today", why: "Nothing to bring back tomorrow. Your notebook has everything else.", go: () => openNotebook() }));
     else pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: `${plural(slips.length, "slip")} from today`, why: "They're in your notebook, and they come back tomorrow morning.", go: () => openNotebook() }));
     if (pat) pm.append(homeCard({ kind: "Tonight's drill", han: pat.zh, title: `Mostly ${pat.en.toLowerCase()}`, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
+    pm.append(lsTonight());
     pm.append(homeCard({ kind: "For real", han: "真的", title: "Anything happen out there for real?", why: "If you're in China, log what you said or heard. It joins today's slips.", go: () => startField(ids[0]) }));
     log.append(pm);
   }
@@ -2215,7 +2260,7 @@ function startHome(day) {
   if (homeDay === DAYS.length - 1 && dayDone(homeDay)) {
     part("After the ten days", "以后", null);
     const more = el("div", "today"), dp = deeperPick(); if (dp) more.append(homeCard(dp));
-    if (sample) more.append(homeCard({ kind: "Off the map", han: "随便逛", title: "A day you haven't practised", why: "Claude makes up a new situation, or one you name.", go: () => startWander() }));
+
     if (more.childNodes.length) log.append(more);
   }
   log.append(canList());
@@ -2269,6 +2314,12 @@ function canList() {
   }
   return wrap;
 }
+// Tonight's reading: the evening is when you read on in your Long Story
+function lsTonight() {
+  const nx = LS && lsNext();
+  if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
+  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: "A light novel set in China, written around you by Claude, a volume a day.", go: () => startLong() });
+}
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
   const d = DAYS[homeDay], next = d.stops.map(x => S.find(s => s.id === x.id)).find(s => !done[s.id]);
@@ -2280,8 +2331,384 @@ function renderHomeMove() {
   all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
   row.append(all); m.append(row);
 }
+/* ---------- Long Story: a light novel Claude writes around you, one chapter at a time ---------- */
+// Short Story teaches you to survive a situation. Long Story is where you live in Chinese: the same people
+// come back, the words the story taught you return in Chinese without their English, and every chapter
+// ends on something you have to say. The next chapter is written after you answer, so it can react.
+const LS_CH = 4; // chapters per volume: roughly morning, midday, afternoon, night
+const LS_THEMES = [
+  ["小区的猫", "The cat that adopted you", "A stray cat in your housing compound keeps turning up at your door, and the neighbours all seem to know something about it."],
+  ["奶奶的菜谱", "Grandma's recipe", "You've come to find the street stall behind a recipe your grandmother brought home from China decades ago."],
+  ["咖啡馆", "Behind the counter", "You've taken a part-time job at a tiny café run by a tired owner who has one month to save it."],
+  ["乐队", "The band", "Your new flatmate's band has lost its singer, a gig is booked, and somehow you've been volunteered."]
+];
+let lsReady = false, LS = store.get("sm-long", null), lsView = "home", lsAt = null, lsMoment = null, lsErr = "", lsPick = { n: 7, theme: 0, own: "", name: "" }, lsOpenVol = null;
+const lsSave = () => { try { localStorage.setItem("sm-long", JSON.stringify(LS)); } catch { lsErr = "Your browser's storage is full, so this chapter won't be kept."; } };
+const lsKey = (v, c) => v + "." + c;
+const lsCh = (v, c) => LS && LS.chapters[lsKey(v, c)];
+// Where you are: the first chapter you haven't answered yet
+function lsNext() {
+  for (let v = 1; v <= LS.n; v++) for (let c = 1; c <= LS_CH; c++) { const ch = lsCh(v, c); if (!ch || !ch.said) return { v, c }; }
+  return null; // the end
+}
+const lsVolDone = v => { for (let c = 1; c <= LS_CH; c++) { const ch = lsCh(v, c); if (!ch || !ch.said) return false; } return true; };
+const lsCast = who => (LS.bible.cast || []).find(c => c.name_hanzi === who);
+
+/* the story's words: met in dialogue and narration, and fading out of English as you meet them again */
+function lsMeet(w, where) {
+  if (!w || !w.h || !/[一-鿿]/.test(w.h)) return;
+  const x = LS.words[w.h] = LS.words[w.h] || { p: w.p || "", e: w.e || "", seen: 0, tapped: 0, first: where };
+  if (!x.p && w.p) x.p = w.p; if (!x.e && w.e) x.e = w.e;
+  x.seen++;
+}
+// [[汉字|pīnyīn|English]] in narration: shown in Chinese, glossed until you've met it a few times
+function lsNarr(text) {
+  const p = el("p", "ls-narr");
+  String(text).split(/(\[\[[^\]]+\]\])/).forEach(part => {
+    const m = part.match(/^\[\[([^|\]]+)\|([^|\]]*)\|([^\]]*)\]\]$/);
+    if (!m) { if (part) p.append(part); return; }
+    const [, h, py, en] = m, w = LS.words[h] || { seen: 0, tapped: 0 };
+    const fresh = w.seen <= 2 || w.tapped >= 2 || helpLevel() === 0;
+    const b = el("button", "lw", h); b.title = `${py} · ${en}`;
+    const gloss = el("span", "lw-gloss", fresh ? `${helpLevel() <= 1 ? py + " · " : ""}${en}` : "");
+    b.onclick = () => {
+      if (gloss.dataset.open) { gloss.textContent = fresh ? gloss.dataset.short : ""; delete gloss.dataset.open; return; }
+      gloss.dataset.short = gloss.textContent; gloss.textContent = `${py} · ${en}`; gloss.dataset.open = "1";
+      if (LS.words[h]) { LS.words[h].tapped++; lsSave(); }
+      if (canSpeak) speak(h);
+    };
+    p.append(b); if (gloss.textContent) p.append(gloss);
+  });
+  return p;
+}
+function lsLine(b) {
+  const c = lsCast(b.who), name = c ? c.name_hanzi : String(b.who || "路人");
+  const row = el("div", "row npc");
+  const who = el("div", "who", (c && c.address || name).slice(-2)); who.title = c ? `${c.name_hanzi} ${c.name_pinyin}, ${c.role}` : name;
+  const bub = el("div", "bubble"); bub.append(bubbleContent(b.h, b.p, b.e, false));
+  row.append(who, bub); return row;
+}
+
+/* checking what Claude wrote, so a bad answer never reaches the page */
+const lsLine3 = l => Array.isArray(l) && l.length >= 2 && l.every(v => typeof v === "string");
+function lsCleanChapter(r, last) {
+  if (!r || !Array.isArray(r.blocks) || !r.blocks.length) throw new Error("shape");
+  const blocks = r.blocks.map(b => b && b.t === "n" && b.text ? { t: "n", text: String(b.text) }
+    : b && b.t === "l" && b.h && b.p ? { t: "l", who: String(b.who || "路人"), h: String(b.h), p: String(b.p), e: String(b.e || "") } : null).filter(Boolean);
+  if (blocks.length < 3) throw new Error("short");
+  let mo = r.moment;
+  if (mo) {
+    mo = { prompt: String(mo.prompt || ""), npc: null, opts: Array.isArray(mo.opts) ? mo.opts.slice(0, 3) : [] };
+    mo.opts.forEach(o => {
+      if (o.k !== "good" && !TAGSET.includes(o.tag)) o.tag = "words";
+      if (o.b && String(o.b).split("|").join("") !== normHan(o.h)) delete o.b;
+      if (o.r && !lsLine3(o.r)) delete o.r; else if (o.r && o.r.length === 2) o.r.push("");
+      if (o.fix && !lsLine3(o.fix)) delete o.fix;
+      delete o.carry; delete o.flag; delete o.end; delete o.quiet;
+    });
+    if (!validTurn(Object.assign({}, mo, { opts: mo.opts.map(o => Object.assign({ r: ["…", "", ""] }, o)) })) || mo.opts.filter(o => o.k === "good").length !== 1) mo = null;
+  }
+  if (!mo && !last) throw new Error("moment");
+  return {
+    title_en: String(r.title_english || "").slice(0, 80), title_zh: String(r.title_hanzi || "").slice(0, 12), blocks, moment: mo,
+    summary: String(r.summary || "").slice(0, 300),
+    words: (Array.isArray(r.new_words) ? r.new_words : []).filter(w => w && w.h && /[一-鿿]/.test(w.h)).slice(0, 8).map(w => ({ h: String(w.h), p: String(w.p || ""), e: String(w.e || "") })),
+    fb: r.feedback && r.feedback.note ? { kind: ["good", "okay", "wrong"].includes(r.feedback.kind) ? r.feedback.kind : "okay", note: String(r.feedback.note), fix: r.feedback.better_hanzi ? [String(r.feedback.better_hanzi), String(r.feedback.better_pinyin || "")] : null } : null
+  };
+}
+
+/* the two things Claude writes: the plan for the whole story, and each chapter as you reach it */
+function lsBiblePrompt(n, theme, name) {
+  return `You are planning a light novel to be read inside a Mandarin-learning app. The reader is a beginner-to-lower-intermediate learner of Mandarin, and they are the main character ("you", second person): a foreigner who has just arrived in a real city in mainland China${name ? `, whom people call ${name}` : ""}. Give them a believable reason for being there that fits the theme.
+It has ${n} volumes. Each volume is one day of the story, and the days run in order (a story longer than two weeks may skip a few days between volumes). Each volume will later be written as ${LS_CH} chapters, and every chapter ends on a moment where the reader has to say something in Chinese.
+Theme: ${theme ? String(theme).slice(0, 300) : "your choice. Something warm, specific and grounded in everyday life in mainland China, with a real story question that pulls the reader on, not a tourist checklist."}
+What makes it work:
+- A clear story question set up in volume 1 and answered in volume ${n}. A turn around the middle. The climax in the last two volumes.
+- Every day has its own small goal, and everyday situations (ordering food, transport, shopping, renting, a pharmacy, making friends, work) come up because the plot needs them. That is how the reader learns survival Chinese, so spread different situations across the days.
+- Pick a real city that suits the theme (not always Beijing or Shanghai), and name a real district or street if it helps.
+- 3 to 5 recurring characters, each with a two- or three-character Chinese name, a role, what they are to you, and a distinct way of speaking that a learner can notice (for example "short blunt sentences, calls you 小${name ? "" : "X"}", "says 哎呀 a lot", "speaks slowly and carefully to you").
+- Warm, funny and kind in tone, like a slice-of-life light novel. No romance beyond friendship, nothing dark.
+Return ONLY JSON: {"title_hanzi": a short title in Chinese (2 to 8 characters, no punctuation), "title_pinyin", "title_english", "city", "premise": two or three sentences for the back cover (English, no spoilers), "question": the story question (private), "answer": how it is resolved in the last volume (private, one or two sentences), "turn_volume": the number of the volume with the mid-story turn, "cast": [{"name_hanzi", "name_pinyin", "address": what you call them in Chinese (for example 张阿姨, 刘老板, 小雨), "role": who they are to you, in a few English words, "voice": how they talk}], "volumes": exactly ${n} items [{"title_english": a few words, "title_hanzi": 2 to 6 characters, "beat": one sentence under 35 words on what happens that day, naming people by their Chinese address (private), "situations": 1 or 2 short English labels of the everyday situations that day teaches, never repeating one from another day}]}`;
+}
+function lsSoFar(v, c) {
+  // Older volumes as one line each, this volume chapter by chapter, so the story remembers without growing forever
+  const out = [];
+  for (let k = 1; k < v; k++) {
+    const sums = [1, 2, 3, 4].map(i => (lsCh(k, i) || {}).summary).filter(Boolean);
+    out.push(`Volume ${k}: ${k >= v - 2 ? sums.join(" ") : (LS.bible.volumes[k - 1] || {}).beat || sums.join(" ")}`);
+  }
+  for (let i = 1; i < c; i++) { const ch = lsCh(v, i); if (ch) out.push(`Volume ${v}, chapter ${i}: ${ch.summary}`); }
+  return out.join("\n") || "Nothing yet. This is the very beginning.";
+}
+function lsChapterPrompt(v, c) {
+  const b = LS.bible, last = v === LS.n && c === LS_CH;
+  const prev = c > 1 ? lsCh(v, c - 1) : v > 1 ? lsCh(v - 1, LS_CH) : null, said = prev && prev.said;
+  const known = Object.entries(LS.words).sort((a, b) => b[1].seen - a[1].seen).slice(0, 60).map(([h, w]) => `${h}=${w.e}`).join(", ");
+  const r = LS.n > 1 ? (v - 1) / (LS.n - 1) : 1;
+  const density = r < 0.2 ? "Embed 1 or 2 Chinese words per paragraph of narration." : r < 0.5 ? "Embed 2 to 4 Chinese words per paragraph, mostly ones the reader already knows." : r < 0.8 ? "Embed 4 to 6 Chinese words per paragraph, mostly known ones, and now and then a whole short Chinese phrase." : "Embed plenty: most known words appear in Chinese, and one or two whole short sentences of narration are in Chinese.";
+  const lastLine = said ? `At the end of the last chapter, ${prev.moment ? `the moment was: ${prev.moment.prompt} The reader said: ` : "the reader said: "}"${said.h}"${said.k === "good" ? " (natural, it landed)." : said.k === "okay" ? " (understood, but a bit off: " + (said.note || "") + ")." : said.k === "wrong" ? " (a mistake: " + (said.note || "") + "). Open this chapter by playing out the misunderstanding it causes, lightly and kindly, and let someone help the reader get it right." : " (their own words, not one of the options)."}` : "";
+  return `You are writing chapter ${c} of ${LS_CH} of volume ${v} of ${LS.n} of a light novel inside a Mandarin-learning app. The reader is the main character, "you", a beginner-to-lower-intermediate learner of Mandarin${LS.name ? `, whom people call ${LS.name}` : ""}.
+The story plan (the "answer" is a secret: never reveal it before the last volume, only small hints): ${JSON.stringify({ title: b.title_english, city: b.city, premise: b.premise, question: b.question, answer: b.answer, cast: b.cast })}
+This volume is one day. Its plan: "${(b.volumes[v - 1] || {}).title_english}": ${(b.volumes[v - 1] || {}).beat}${((b.volumes[v - 1] || {}).situations || []).length ? ` Everyday situations it teaches: ${b.volumes[v - 1].situations.join(", ")}.` : ""}${v === b.turn ? " This is the volume with the story's big turn." : ""}${v < LS.n ? ` Tomorrow: ${(b.volumes[v] || {}).beat}` : " This is the final volume: answer the story question."}
+The ${LS_CH} chapters follow the day: 1 morning, 2 midday, 3 afternoon, 4 evening. This is chapter ${c}.
+The story so far:
+${lsSoFar(v, c)}
+${lastLine}
+${said && said.k === "own" ? `Also give "feedback" on the reader's own line: would a local follow it, and what would sound natural.` : ""}
+How to write it:
+- Narration: English, second person, present tense, a light-novel voice: vivid, warm, funny, specific to the city, short paragraphs. 250 to 400 words of narration in all, in 3 to 6 narration blocks.
+- Chinese inside narration is written as [[汉字|pīnyīn|English]]: one word or short set phrase per tag, no punctuation inside, tags only in narration text (never in dialogue). ${density} Words the reader has already met: ${known || "none yet"}. Reuse them; that is how they learn.
+- Dialogue: 4 to 8 lines from the cast or passers-by, in short natural spoken simplified Chinese a beginner can mostly follow (HSK 1 to 3, with an occasional new word), and an English meaning. Pinyin: tone marks, words joined (xièxie, bù hǎoyìsi), neutral tones unmarked, the tone changes of 一 and 不, room and phone numbers read digit by digit with 1 as yāo. Most lines are 15 characters or fewer; at most one longer line. At most one word above HSK 3 per chapter, and it goes in new_words. Each character keeps their own way of talking, and people address each other as the plan says (the "who" of a line is the speaker's name_hanzi). The reader never speaks in the blocks; their words come only in the moment at the end.
+- ${last ? "This is the last chapter of the whole story: resolve it, and end on a final line the reader says (a goodbye, a thank-you, a promise)." : "End on a cliffhanger moment: someone says something to the reader that needs an answer, as the last dialogue line."}
+- The moment: "prompt" is one English sentence telling the reader what they want to say (for example "Tell her you'll take the small one, and ask how much it is."). Exactly 3 options, each 12 characters or fewer and a direct answer to the last line: one "good" (natural, what a local would say, using words from this chapter or HSK 1 to 2), one "okay" (understood but off: too blunt, a wrong measure word, missing a key word), one "wrong" (a realistic beginner mistake of a different kind that would lead to a funny misunderstanding). Each option: "h" (Chinese), "p" (pinyin), "e" (English), "k" ("good", "okay" or "wrong"), "note" (one coaching sentence naming the key word with its pinyin), "r" (the other person's reaction as [hanzi, pinyin, English]); for okay and wrong also "fix": [hanzi, pinyin] of the good line and "tag": one of ${TAGSET.join(", ")}. The good option also gets "b": its Chinese split into 2 to 5 word tiles with "|" (the tiles joined must equal its Chinese without punctuation).
+Return ONLY JSON: {"title_english", "title_hanzi", "blocks": [{"t": "n", "text": narration} or {"t": "l", "who": a cast name_hanzi or a short role in Chinese like 老板, "h", "p", "e"}], "moment": {"prompt", "opts": [...]}, "summary": one sentence on what happened in this chapter (private, for continuity), "new_words": up to 6 key Chinese words that appear in this chapter [{"h", "p", "e"}]${said && said.k === "own" ? `, "feedback": {"kind": "good" or "okay" or "wrong", "note": one kind sentence, "better_hanzi", "better_pinyin"}` : ""}}`;
+}
+async function lsWrite(v, c) {
+  if (!sample || busy) return;
+  busy = true; lsErr = ""; renderMove();
+  try {
+    const r = await sample.json(lsChapterPrompt(v, c), { cache: false });
+    const ch = lsCleanChapter(r, v === LS.n && c === LS_CH);
+    LS.chapters[lsKey(v, c)] = ch; lsSave();
+    busy = false; lsRead(v, c);
+  } catch (e) {
+    busy = false;
+    lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : e && e.code === "rate_limited" ? "Claude's busy right now. Try again in a moment." : "That chapter didn't come out right. Try again.";
+    if (e && e.code === "not_granted") sample = null;
+    renderMove();
+  }
+}
+async function lsBegin() {
+  if (!sample || busy) return;
+  const n = Math.max(7, Math.min(30, lsPick.n | 0)), theme = lsPick.theme === -1 ? lsPick.own.trim() : lsPick.theme >= 0 ? `${LS_THEMES[lsPick.theme][1]}: ${LS_THEMES[lsPick.theme][2]}` : "";
+  busy = true; lsErr = ""; renderMove();
+  try {
+    const r = await sample.json(lsBiblePrompt(n, theme, lsPick.name.trim()), { cache: false });
+    if (!r || !r.title_hanzi || !Array.isArray(r.cast) || !r.cast.length || !Array.isArray(r.volumes) || r.volumes.length < n) throw new Error("shape");
+    const bible = { title_hanzi: String(r.title_hanzi), title_pinyin: String(r.title_pinyin || ""), title_english: String(r.title_english || ""), city: String(r.city || ""), premise: String(r.premise || ""), question: String(r.question || ""), answer: String(r.answer || ""), turn: +r.turn_volume || Math.ceil(n / 2),
+      cast: r.cast.slice(0, 5).filter(x => x && x.name_hanzi).map(x => ({ name_hanzi: String(x.name_hanzi), name_pinyin: String(x.name_pinyin || ""), address: String(x.address || x.name_hanzi), role: String(x.role || ""), voice: String(x.voice || "") })),
+      volumes: r.volumes.slice(0, n).map(x => ({ title_english: String((x && x.title_english) || ""), title_hanzi: String((x && x.title_hanzi) || ""), beat: String((x && x.beat) || ""), situations: Array.isArray(x && x.situations) ? x.situations.slice(0, 2).map(String) : [] })) };
+    LS = { bible, n, name: lsPick.name.trim(), started: Date.now(), chapters: {}, words: {} }; lsSave();
+    busy = false; lsWrite(1, 1);
+  } catch (e) {
+    busy = false; lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : "The plan didn't come out right. Try again."; renderMove();
+  }
+}
+
+/* the pages: story home (or setup), a chapter, and the end of a volume */
+function startLong() {
+  mode = "long"; busy = false; finished = false; clearRush(); lsView = "home"; lsMoment = null;
+  cur = { id: "long", who: "书", whoEn: "the story", en: "Long Story", turns: [] };
+  if (!LS) {
+    setHead("长篇", "chángpiān", "Long Story", "How it works: ", "Claude writes you a light novel set in China, a volume a day for a week or up to a month. You're the main character, and every chapter ends on something you have to say. The Chinese grows as you read.");
+    lsSetup();
+  } else {
+    const b = LS.bible;
+    setHead(b.title_hanzi, b.title_pinyin, b.title_english || "Long Story", "Long Story: ", b.premise);
+    lsHome();
+  }
+  renderRail(); renderMove();
+}
+function lsSetup() {
+  const log = $("#log"); log.textContent = "";
+  const box = el("div", "ls-setup");
+  const len = el("div", "ls-field"); len.append(el("span", "ls-label", "How long"));
+  const chips = el("div", "chips");
+  [[7, "A week"], [14, "Two weeks"], [30, "A month"]].forEach(([n, l]) => { const c = el("button", "chip", `${l} · ${n} volumes`); c.setAttribute("aria-pressed", lsPick.n === n); c.onclick = () => { lsPick.n = n; lsSetup(); renderMove(); }; chips.append(c); });
+  const range = el("input"); range.type = "range"; range.min = 7; range.max = 30; range.value = lsPick.n; range.setAttribute("aria-label", "Number of volumes");
+  const rv = el("span", "ls-n", `${lsPick.n} volumes, one day each`);
+  range.oninput = () => { lsPick.n = +range.value; const bb = $("#move .btn"); if (bb) bb.textContent = `Begin: ${lsPick.n} volumes`; rv.textContent = `${lsPick.n} volumes, one day each`; chips.querySelectorAll(".chip").forEach((c, i) => c.setAttribute("aria-pressed", [7, 14, 30][i] === lsPick.n)); };
+  len.append(chips, range, rv);
+  const th = el("div", "ls-field"); th.append(el("span", "ls-label", "What it's about"));
+  const tg = el("div", "ls-themes");
+  LS_THEMES.forEach(([zh, en, blurb], i) => { const c = el("button", "today-card" + (lsPick.theme === i ? " first" : "")); c.setAttribute("aria-pressed", lsPick.theme === i);
+    c.append(el("span", "tc-han", zh), el("span", "tc-title", en), el("span", "tc-why", blurb)); c.onclick = () => { lsPick.theme = i; lsSetup(); }; tg.append(c); });
+  const sur = el("button", "today-card" + (lsPick.theme === -2 ? " first" : "")); sur.setAttribute("aria-pressed", lsPick.theme === -2);
+  sur.append(el("span", "tc-han", "惊喜"), el("span", "tc-title", "Surprise me"), el("span", "tc-why", "Claude picks the city and the story.")); sur.onclick = () => { lsPick.theme = -2; lsSetup(); }; tg.append(sur);
+  const own = el("input", "ls-own"); own.type = "text"; own.placeholder = "Or your own idea: a mystery in a Chengdu teahouse…"; own.value = lsPick.own; own.setAttribute("aria-label", "Your own story idea");
+  own.oninput = () => { lsPick.own = own.value; lsPick.theme = own.value.trim() ? -1 : 0; tg.querySelectorAll(".today-card").forEach(c => { c.classList.remove("first"); c.setAttribute("aria-pressed", "false"); }); };
+  th.append(tg, own);
+  const nm = el("div", "ls-field"); nm.append(el("span", "ls-label", "What people call you (optional)"));
+  const ni = el("input", "ls-own"); ni.type = "text"; ni.placeholder = "马修, Matt, 小马…"; ni.value = lsPick.name; ni.maxLength = 12; ni.setAttribute("aria-label", "Your name in the story"); ni.oninput = () => { lsPick.name = ni.value; };
+  nm.append(ni);
+  box.append(len, th, nm);
+  if (!sample) box.append(el("p", "ls-note", "Long Story is written by Claude as you read, so it needs Claude. Open the app in Claude to start one. Short Story works without it."));
+  log.append(box); log.scrollTop = 0;
+}
+function lsHome() {
+  lsView = "home"; lsMoment = null;
+  const log = $("#log"); log.textContent = "";
+  const b = LS.bible, nx = lsNext();
+  // A strip of volumes: done, current, still to come. Tap one you've read to read it again
+  const strip = el("div", "days ls-vols"); strip.setAttribute("aria-label", "Volumes");
+  for (let v = 1; v <= LS.n; v++) {
+    const d = el("button", "day-dot" + (lsVolDone(v) ? " done" : "") + (nx && nx.v === v ? " on" : ""), String(v));
+    d.title = `Volume ${v}${lsVolDone(v) || (nx && nx.v >= v) ? ": " + (b.volumes[v - 1] || {}).title_english : ""}`;
+    d.disabled = !lsCh(v, 1); d.onclick = () => { lsOpenVol = v; lsHome(); };
+    strip.append(d);
+  }
+  log.append(strip);
+  const where = el("p", "ls-where", nx ? `${b.city ? b.city + ". " : ""}Volume ${nx.v} of ${LS.n}, chapter ${nx.c} of ${LS_CH}.` : "The end. You read it all.");
+  log.append(where);
+  const ov = lsOpenVol || (nx ? (lsCh(nx.v, 1) || nx.v === 1 ? nx.v : nx.v - 1) : LS.n);
+  if (lsCh(ov, 1)) {
+    const sec = el("section", "ls-toc"); sec.append(el("h4", "pb-title", `Volume ${ov}: ${(b.volumes[ov - 1] || {}).title_english}`));
+    for (let c = 1; c <= LS_CH; c++) { const ch = lsCh(ov, c); if (!ch) break;
+      const r = el("button", "today-card" + (ch.said ? " done" : " first"));
+      r.append(el("span", "tc-han", ch.title_zh || `第${NUM_HAN[c]}章`), el("span", "tc-kind", `Chapter ${c}`), el("span", "tc-title", ch.title_en), el("span", "tc-why", ch.said ? `You said ${ch.said.h}` : "Waiting for your answer"));
+      r.onclick = () => lsRead(ov, c); sec.append(r); }
+    log.append(sec);
+  }
+  const cast = el("section", "ls-cast"); cast.append(el("h4", "pb-title", "The people in it"));
+  b.cast.forEach(c => { const card = el("div", "ls-person"); card.append(el("span", "lp-han", c.name_hanzi), el("span", "lp-py", c.name_pinyin), el("span", "lp-role", c.role)); cast.append(card); });
+  log.append(cast);
+  log.append(lsWordsEl());
+  log.scrollTop = 0;
+}
+let lsWordsOpen = false;
+function lsWordsEl() {
+  const all = Object.entries(LS.words).sort((a, b) => b[1].seen - a[1].seen), wrap = el("section", "cando");
+  const head = el("button", "cando-head"); head.setAttribute("aria-expanded", lsWordsOpen ? "true" : "false");
+  head.append(el("span", "cd-title", "Words the story has taught you"), el("span", "cd-n", String(all.length)));
+  head.onclick = () => { lsWordsOpen = !lsWordsOpen; wrap.replaceWith(lsWordsEl()); };
+  wrap.append(head);
+  if (lsWordsOpen && all.length) {
+    const ul = el("ul", "ls-words");
+    all.forEach(([h, w]) => { const li = el("li"); li.append(el("span", "han", h), el("span", "py", w.p), el("span", "en-line", w.e), el("span", "lw-n", w.seen >= 3 && w.tapped < 2 ? "In Chinese now" : `Met ${w.seen === 1 ? "once" : w.seen + " times"}`)); ul.append(li); });
+    wrap.append(ul, el("p", "cd-note", "A word stays glossed until you've met it three times. Tap it in the story and it stays glossed a bit longer."));
+  }
+  return wrap;
+}
+function lsRead(v, c) {
+  const ch = lsCh(v, c); if (!ch) return lsWrite(v, c);
+  lsView = "read"; lsAt = { v, c }; mode = "long"; busy = false;
+  const b = LS.bible, vol = b.volumes[v - 1] || {};
+  setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}: `, ch.title_en);
+  const log = $("#log"); log.textContent = "";
+  // The words in a chapter count as met once, the first time you read it
+  const count = !ch.counted, where = lsKey(v, c);
+  if (ch.fb) { const f = el("div", "ls-fb"); f.append(el("span", "ls-label", "What you said last time"), ch.fb.note); if (ch.fb.fix) f.append(" ", el("span", "han-inline", ch.fb.fix[0]), " ", el("span", "py", ch.fb.fix[1])); log.append(f); }
+  log.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
+  let last = null;
+  ch.blocks.forEach(bl => {
+    if (bl.t === "n") {
+      if (count) (bl.text.match(/\[\[[^\]]+\]\]/g) || []).forEach(m => { const [h, p, e] = m.slice(2, -2).split("|"); lsMeet({ h, p, e }, where); });
+      log.append(lsNarr(bl.text));
+    } else { log.append(lsLine(bl)); last = [bl.h, bl.p, bl.e]; }
+  });
+  if (count) { ch.words.forEach(w => lsMeet(w, where)); ch.counted = true; lsSave(); }
+  if (ch.said) {
+    // Read again: what you said, and how it went
+    const row = el("div", "row me" + (ch.said.k === "good" || ch.said.k === "own" ? "" : " " + ch.said.k)); const bub = el("div", "bubble"); bub.append(bubbleContent(ch.said.h, ch.said.p || "", ch.said.e || "", true)); row.append(bub); log.append(row);
+    if (ch.said.r) log.append(lsLine({ who: lsLastWho(ch), h: ch.said.r[0], p: ch.said.r[1], e: ch.said.r[2] }));
+  }
+  lsMoment = ch.moment && !ch.said ? Object.assign({}, ch.moment, { npc: last }) : null;
+  cur = { id: "long", who: lsLastWho(ch).slice(-2), whoEn: "them", en: `Long Story: ${b.title_english}`, place: b.title_hanzi, turns: lsMoment ? [lsMoment] : [] };
+  turn = 0; order = lsMoment ? shuffle(lsMoment.opts) : []; bState = null; transcript = []; lsReady = false;
+  log.scrollTop = 0; renderRail(); renderMove();
+}
+const lsLastWho = ch => { const l = [...ch.blocks].reverse().find(b => b.t === "l"), c = l && lsCast(l.who); return l ? (c ? c.address || c.name_hanzi : l.who) : "路人"; };
+// What you say at the end of a chapter is kept; slips go to Mistakes with the whole moment, so they come back for review
+function lsSay(o, how) {
+  const { v, c } = lsAt, ch = lsCh(v, c); if (!ch || ch.said) return;
+  ch.said = { h: o.h, p: o.p || "", e: o.e || "", k: how || o.k, note: o.note || "", r: o.r || null };
+  lsSave();
+}
+function longChoose(o) {
+  if (busy || !lsMoment) return;
+  addMe(o.h, o.p, o.e, o.k);
+  if (o.r) addNpc(o.r);
+  addFeedback(o.k, o.note, o.k === "good" ? null : o.fix || [lsMoment.opts.find(x => x.k === "good").h, lsMoment.opts.find(x => x.k === "good").p]);
+  if (o.k !== "good") logMistake({ sid: "long", turn: null, cb: null, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note, tag: o.tag });
+  lsSay(o); lsMoment = null; renderRail(); renderMove();
+}
+// Your own words: the next chapter is written around them, and Claude says how they'd land
+function longFree(text) {
+  if (busy || !lsMoment) return;
+  addMe(text, "", "", "good");
+  addNarr("Your own words. The next chapter picks up from what you said, with a note on how it landed.");
+  lsSay({ h: text }, "own"); lsMoment = null; renderMove();
+}
+function lsAfter() {
+  // After you've answered: on to the next chapter, or the end of the volume
+  const { v, c } = lsAt;
+  if (c < LS_CH) return lsCh(v, c + 1) ? lsRead(v, c + 1) : lsWrite(v, c + 1);
+  lsRecap(v);
+}
+function lsRecap(v) {
+  lsView = "recap"; lsMoment = null; mode = "long";
+  const b = LS.bible, chs = [1, 2, 3, 4].map(c => lsCh(v, c)).filter(Boolean);
+  setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `End of volume ${v}: ${(b.volumes[v - 1] || {}).title_english}`, "", v === LS.n ? "The end of the story." : `${LS.n - v} ${LS.n - v === 1 ? "volume" : "volumes"} to go.`);
+  const log = $("#log"); log.textContent = "";
+  const res = el("dl", "score"), line = (k, ...x) => { const dd = el("dd"); dd.append(...x); res.append(el("dt", null, k), dd); };
+  const words = chs.flatMap(ch => ch.words).filter((w, i, a) => a.findIndex(x => x.h === w.h) === i);
+  if (words.length) { const span = el("span"); words.forEach((w, i) => { if (i) span.append(" · "); span.append(el("span", "han-inline", w.h), ` ${w.e}`); }); line("New words", span); }
+  const ul = el("ul"); chs.forEach(ch => { if (!ch.said) return; const li = el("li"); li.append(el("span", "han-inline", ch.said.h), ch.said.k === "good" ? " · landed" : ch.said.k === "own" ? " · in your own words" : ch.said.k === "okay" ? " · understood, but off" : " · a slip"); ul.append(li); });
+  line("What you said", ul);
+  const slips = chs.filter(ch => ch.said && (ch.said.k === "okay" || ch.said.k === "wrong")).length;
+  line("Slips", slips ? `${plural(slips, "slip")}, now in Mistakes. They come back for review.` : "None. Everything you said landed.");
+  log.append(res); log.scrollTop = 0;
+  renderRail(); renderMove();
+}
+function renderLongMove() {
+  const m = $("#move"); m.textContent = "";
+  const row = el("div", "endcard");
+  if (lsErr) m.append(el("p", "ls-err", lsErr));
+  if (busy) { m.append(el("div", "thinking", !LS ? "Claude is planning your story: the city, the people, and all the days…" : lsAt ? "Claude is writing the next chapter…" : "Claude is writing…")); return; }
+  if (!LS) {
+    const go = el("button", "btn", `Begin: ${lsPick.n} volumes`); go.disabled = !sample; go.onclick = () => lsBegin();
+    row.append(go); m.append(row); return;
+  }
+  if (lsView === "read" && lsMoment && !lsReady) {
+    // Read first: the answer waits until you've reached the end of the chapter
+    const go = el("button", "btn", "Your line"); go.onclick = () => { lsReady = true; renderMove(); scrollLog(); };
+    row.append(go, el("span", "ls-prompt", lsMoment.prompt)); m.append(row); return;
+  }
+  if (lsView === "read" && lsMoment) {
+    // The chapter's last line needs an answer: the same three ways as anywhere else
+    const t = lsMoment, head = el("div", "move-head");
+    head.append(el("h3", null, "Your line"), el("span", "prompt", t.prompt));
+    const good = t.opts.find(o => o.k === "good" && o.b);
+    const modes = el("div", "modes"); modes.setAttribute("role", "group"); modes.setAttribute("aria-label", "How to answer");
+    [["Pick it", "pick"], ["Build it", "build"], [SR ? "Type or say it" : "Type it", "type"]].forEach(([label, v]) => {
+      const c = el("button", "chip", label); c.setAttribute("aria-pressed", prefs.how === v);
+      c.onclick = () => { prefs.how = v; store.set("sm-prefs", prefs); renderMove(); }; modes.append(c);
+    });
+    m.append(head, modes);
+    if (prefs.how === "build" && good) m.append(builder(t, good));
+    else if (prefs.how === "type") m.append(typer(t));
+    else m.append(optionButtons(order, longChoose));
+    return;
+  }
+  if (lsView === "read") {
+    const { v, c } = lsAt, ch = lsCh(v, c);
+    if (ch && ch.said) {
+      const end = v === LS.n && c === LS_CH;
+      const go = el("button", "btn", end ? "The end" : c < LS_CH ? `Chapter ${c + 1}` : `End of volume ${v}`);
+      go.onclick = () => end ? lsRecap(v) : lsAfter(); row.append(go);
+    } else if (ch && !ch.moment) { const go = el("button", "btn", "The end"); go.onclick = () => { lsSay({ h: "…" }, "good"); lsRecap(v); }; row.append(go); }
+  }
+  if (lsView === "recap") {
+    const v = lsAt ? lsAt.v : 1;
+    if (v < LS.n) { const go = el("button", "btn", `Volume ${v + 1}: ${(LS.bible.volumes[v] || {}).title_english}`); go.onclick = () => lsCh(v + 1, 1) ? lsRead(v + 1, 1) : (lsAt = { v: v + 1, c: 1 }, lsWrite(v + 1, 1)); row.append(go); }
+  }
+  if (lsView === "home") {
+    const nx = lsNext();
+    if (nx) { const go = el("button", "btn", `Continue: volume ${nx.v}, chapter ${nx.c}`); go.disabled = !sample && !lsCh(nx.v, nx.c);
+      go.onclick = () => { lsAt = nx; lsCh(nx.v, nx.c) ? lsRead(nx.v, nx.c) : lsWrite(nx.v, nx.c); }; row.append(go); }
+    const fresh = el("button", "btn ghost", lsNew ? "Yes, start a new story" : "Start a new story");
+    fresh.onclick = () => { if (!lsNew) { lsNew = true; renderMove(); return; } lsNew = false; LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); };
+    row.append(fresh);
+    if (lsNew) m.append(el("p", "ls-err", "This story and its chapters will be gone. Slips from it stay in Mistakes."));
+  } else {
+    const home = el("button", "btn ghost", "Story home"); home.onclick = () => startLong(); row.append(home);
+  }
+  m.append(row);
+}
+let lsNew = false;
+
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard"];
+const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
@@ -2716,6 +3143,7 @@ function renderFree(m) {
 
 async function offScript(text) {
   if (busy) return;
+  if (mode === "long") return longFree(text);
   busy = true;
   addMe(text, "", "", "good");
   const think = el("div", "thinking", cur.whoEn.replace(/^./, c => c.toUpperCase()) + " is thinking…"); $("#log").append(think); scrollLog();
