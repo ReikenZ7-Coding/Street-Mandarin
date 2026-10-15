@@ -13,7 +13,7 @@ window.PEOPLE = [
     starters: [
       { h: "谢谢老板！你的面很好吃。", p: "Xièxie lǎobǎn! Nǐ de miàn hěn hǎochī.", e: "Thanks, boss! Your noodles are delicious." },
       { h: "今天有什么好吃的？", p: "Jīntiān yǒu shénme hǎochī de?", e: "What's good today?" },
-      { h: "明天中午我去你那儿吃面。", p: "Míngtiān zhōngwǔ wǒ qù nǐ nàr chī miàn.", e: "I'll come for noodles tomorrow lunchtime." }] },
+      { h: "明天中午我去你那里吃面。", p: "Míngtiān zhōngwǔ wǒ qù nǐ nàli chī miàn.", e: "I'll come for noodles tomorrow lunchtime." }] },
   { id: "lin", han: "林晓", py: "Lín Xiǎo", en: "Lin Xiao", av: "林", met: "wechat",
     role: "your classmate, 21, who sat next to you in your first Chinese class and helped you all lesson",
     style: "A university student who texts fast and casually: 哈哈哈, 好滴, 绝了, 太牛了, emoji, and the odd [表情] sticker. Loves bubble tea, games and gossip about class. Sometimes slips in an English word to practise. Splits thoughts into several short messages.",
@@ -36,7 +36,7 @@ window.PEOPLE = [
     role: "the taxi driver who took you to the station, from the northeast, now driving in Shanghai",
     style: "A funny, talkative taxi driver from Dongbei (the northeast). Uses northeastern words like 咋了, 嘎嘎 (very), 老铁 and 唠嗑, and explains them if asked. Talks traffic, football, cheap good food and his hometown's winters. Sends voice messages while waiting at red lights.",
     level: "natural", voice: true,
-    hi: { h: "老铁，我刘师傅！以后打车直接找我，不绕路。", p: "Lǎotiě, wǒ Liú shīfu! Yǐhòu dǎchē zhíjiē zhǎo wǒ, bú rào lù.", e: "Buddy, it's Driver Liu! From now on, call me direct for a cab. No detours." },
+    hi: { h: "老铁，我是刘师傅！以后打车直接找我，不绕路。", p: "Lǎotiě, wǒ shì Liú shīfu! Yǐhòu dǎchē zhíjiē zhǎo wǒ, bú rào lù.", e: "Buddy, it's Driver Liu! From now on, call me direct for a cab. No detours." },
     starters: [
       { h: "刘师傅好！老铁是什么意思？", p: "Liú shīfu hǎo! Lǎotiě shì shénme yìsi?", e: "Hi, Driver Liu! What does 'laotie' mean?" },
       { h: "明天早上八点你有空吗？", p: "Míngtiān zǎoshang bā diǎn nǐ yǒu kòng ma?", e: "Are you free at eight tomorrow morning?" },
@@ -47,7 +47,7 @@ window.PEOPLE = [
     level: "simple", voice: false,
     hi: { h: "热水修好了吧？有问题随时找我。", p: "Rèshuǐ xiū hǎo le ba? Yǒu wèntí suíshí zhǎo wǒ.", e: "The hot water's fixed now, right? If there's any problem, message me any time." },
     starters: [
-      { h: "修好了，谢谢张姐！", p: "Xiū hǎo le, xièxie Zhāng jiě!", e: "It's fixed, thanks, Zhang!" },
+      { h: "修好了，谢谢张姐！", p: "Xiū hǎo le, xièxie Zhāng jiě!", e: "It's fixed, thanks, Ms Zhang!" },
       { h: "垃圾什么时候扔？", p: "Lājī shénme shíhou rēng?", e: "When do I put the rubbish out?" },
       { h: "这个月的房租怎么付？", p: "Zhège yuè de fángzū zěnme fù?", e: "How do I pay this month's rent?" }] },
   { id: "zhou", han: "周老师", py: "Zhōu lǎoshī", en: "Teacher Zhou", av: "周", met: null,
@@ -84,17 +84,17 @@ window.PEOPLE = [
     hi: { h: "嘿，我是咖啡店的阿杰。周末有个小live，来吗？", p: "Hēi, wǒ shì kāfēidiàn de Ā Jié. Zhōumò yǒu ge xiǎo live, lái ma?", e: "Hey, it's Ajie from the café. There's a little live gig at the weekend, want to come?" },
     starters: [
       { h: "好啊！几点开始？", p: "Hǎo a! Jǐ diǎn kāishǐ?", e: "Sure! What time does it start?" },
-      { h: "你的拿铁很好喝。", p: "Nǐ de nátiě hěn hǎohē.", e: "Your latte is really good." },
+      { h: "你做的拿铁很好喝。", p: "Nǐ zuò de nátiě hěn hǎohē.", e: "The latte you make is really good." },
       { h: "上海有什么好玩的地方？", p: "Shànghǎi yǒu shénme hǎowán de dìfang?", e: "What are some fun places in Shanghai?" }] },
   { id: "zhao", han: "赵大爷", py: "Zhào dàye", en: "Grandpa Zhao", av: "赵", met: "bike",
-    role: "the retired man who showed you how to unlock a share bike, and does tai chi in the park every morning",
+    role: "the retired man from Tianjin, now living near his daughter in Shanghai, who showed you how to unlock a share bike and does tai chi in the park every morning",
     style: "A gentle, retired grandpa in his seventies. Writes slowly, always asks if you've eaten (吃了吗), talks about tai chi, his songbird, Chinese chess and the old days. Loves a 成语 (four-character idiom) and explains it simply when he uses one. Sends voice messages, since his grandson set them up for him.",
     level: "simple", voice: true,
-    hi: { h: "小朋友，吃了吗？明天早上来公园打太极吧。", p: "Xiǎo péngyou, chī le ma? Míngtiān zǎoshang lái gōngyuán dǎ tàijí ba.", e: "Young friend, have you eaten? Come and do tai chi in the park tomorrow morning." },
+    hi: { h: "小朋友，吃了吗？明天早上来公园打太极吧。", p: "Xiǎopéngyou, chī le ma? Míngtiān zǎoshang lái gōngyuán dǎ tàijí ba.", e: "Young friend, have you eaten? Come and do tai chi in the park tomorrow morning." },
     starters: [
       { h: "吃了，谢谢大爷！几点？", p: "Chī le, xièxie dàye! Jǐ diǎn?", e: "I have, thanks! What time?" },
       { h: "我不会打太极。", p: "Wǒ bú huì dǎ tàijí.", e: "I don't know how to do tai chi." },
-      { h: "您的鸟会唱歌吗？", p: "Nín de niǎo huì chànggē ma?", e: "Does your bird sing?" }] },
+      { h: "您养的鸟会唱歌吗？", p: "Nín yǎng de niǎo huì chànggē ma?", e: "Does your bird sing?" }] },
   { id: "zheng", han: "小郑", py: "Xiǎo Zhèng", en: "Xiao Zheng", av: "郑", met: "delivery",
     role: "the delivery rider who brings your food, from a village in Henan",
     style: "A busy delivery rider in his twenties. Mostly very short messages on the move: 到了, 在楼下, 放门口了, 马上. Between orders he's friendly and chats about his village, his little sister and how hot or cold it is on the bike. Sometimes sends a quick voice message.",
@@ -102,7 +102,7 @@ window.PEOPLE = [
     hi: { h: "你好，我是送外卖的小郑。你的地址写错了一个字，下次注意哦😂", p: "Nǐ hǎo, wǒ shì sòng wàimài de Xiǎo Zhèng. Nǐ de dìzhǐ xiě cuò le yí ge zì, xià cì zhùyì o.", e: "Hi, I'm Xiao Zheng, the delivery guy. You got one character wrong in your address, watch out next time 😂" },
     starters: [
       { h: "对不起！哪个字错了？", p: "Duìbuqǐ! Nǎge zì cuò le?", e: "Sorry! Which character was wrong?" },
-      { h: "谢谢你！辛苦了！", p: "Xièxie nǐ! Xīnkǔ le!", e: "Thank you! You must be tired!" },
+      { h: "谢谢你！辛苦了！", p: "Xièxie nǐ! Xīnkǔ le!", e: "Thank you! Thanks for your hard work!" },
       { h: "今天外面冷吗？", p: "Jīntiān wàimiàn lěng ma?", e: "Is it cold out there today?" }] },
   { id: "su", han: "苏晴", py: "Sū Qíng", en: "Su Qing", av: "晴", met: "photo",
     role: "the hiker who took your photo on the Bund, who goes to the mountains every weekend",

@@ -1772,6 +1772,7 @@ function reviewChoose(o) {
   addMe(o.h, o.p, o.e, close ? "okay" : o.k);
   if (o.k === "wrong" && o.r) addNpc(o.r);
   markReviewed(n, right || close, hold);
+  if (n.learned) leafFall(); // learned for good
   if (right && rHeld !== "again") { rRight++; if (n.learned) rLearned++; }
   if (o.k === "wrong") again(n);
   const rung = `${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.`;
@@ -2466,6 +2467,9 @@ function startHome(day) {
   if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One slip is back" : `${due} slips are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview() }, true));
   am.append(homeCard({ kind: "Your pocket", han: "口袋", title: stops.length === 1 ? "Lines for today's stop" : `Lines for today's ${stops.length === 2 ? "two" : "three"} stops`, why: "What to say, what you'll hear and the traps, including your own. Read it, or warm up.",
     go: () => { trip = { day: dayKey(), ids: stops.map(s => s.id) }; store.set("sm-trip", trip); tripEditing = false; startTrip(); } }));
+  // A note you pinned comes with you every morning, like the page you keep open in a paper notebook
+  const pinned = NOTES.find(x => x.pin);
+  if (pinned) am.append(homeCard({ kind: "Your pinned note", han: "笔记", title: noteTitle(pinned), why: pinned.body.split("\n").filter(l => l.trim()).slice(1, 3).join(" · ") || "Open it to add to it.", go: () => openNotes(pinned.id) }));
   log.append(am, wordsForToday(d));
   // Out: the stops, in story order
   part("Out", "出门", `${stops.filter(s => done[s.id]).length} of ${stops.length}`);
@@ -3084,6 +3088,7 @@ function lsRecap(v) {
   line("What you said", ul);
   const slips = chs.filter(ch => ch.said && (ch.said.k === "okay" || ch.said.k === "wrong")).length;
   line("Slips", slips ? `${plural(slips, "slip")}, now in Mistakes. They come back for review.` : "None. Everything you said landed.");
+  if (!slips) leafFall();
   log.append(res);
   if (v === LS.n && lsVolDone(v)) {
     // The end: the whole story in a few lines, and what it was about all along
@@ -3371,10 +3376,11 @@ const CHAT_LEVEL = {
   natural: "Natural casual texting with your own slang and particles, but kept short: a beginner reading the pinyin should be able to follow."
 };
 function chatPrompt(p, c, text) {
-  const hist = c.msgs.slice(-24).map(m => `${m.me ? "Them" : "You"}: ${m.h}`).join("\n");
-  const met = p.met ? (done[p.met] ? `You met them at your ${(S.find(x => x.id === p.met) || {}).en.toLowerCase()}, where they were a customer. ` : `You met them briefly at your ${(S.find(x => x.id === p.met) || {}).en.toLowerCase()}. `) : "";
+  const before = c.msgs[c.msgs.length - 1] && c.msgs[c.msgs.length - 1].me && c.msgs[c.msgs.length - 1].h === text ? c.msgs.slice(0, -1) : c.msgs;
+  const hist = before.slice(-24).map(m => `${m.me ? "Them" : "You"}: ${m.voice ? "(voice message) " : ""}${m.h}`).join("\n");
   const now = new Date(), part = now.getHours() < 5 ? "late at night" : now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening";
-  return `You are ${p.han} (${p.en}), ${p.role}, in Shanghai. You're texting on WeChat with a foreigner who recently arrived and is learning Mandarin (beginner to lower-intermediate). ${met}
+  const role = p.role.replace(/\byour\b/g, "the learner's").replace(/\byou\b/g, "the learner"); // the roles are written to the learner
+  return `You are ${p.han} (${p.en}), ${role}, in Shanghai. You're texting on WeChat with a foreigner who recently arrived and is learning Mandarin (beginner to lower-intermediate).
 How you text: ${p.style}
 How hard your Chinese is: ${CHAT_LEVEL[p.level] || CHAT_LEVEL.simple}
 What you know about them so far: ${c.about || "nothing yet beyond how you met."}
