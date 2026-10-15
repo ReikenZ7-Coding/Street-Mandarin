@@ -228,6 +228,10 @@ body.hint-off .opt .en-line { display: none; }
 .field { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .field input, .field-place { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); }
 .field .btn { align-self: flex-start; }
+.ladder { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.ladder span { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.ladder span.done { color: var(--jade); border-color: var(--jade); }
+.ladder span.on { background: var(--jade); border-color: var(--jade); color: var(--surface); font-weight: 600; }
 .first-run { border-left: 3px solid var(--jade); padding: 6px 12px; font-size: 14px; color: var(--fg); background: var(--surface-2); border-radius: 0 8px 8px 0; }
 .rush { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
 .rush i { display: block; height: 100%; width: 100%; background: var(--cinnabar); transform-origin: left; animation: rush linear forwards; }
@@ -334,7 +338,7 @@ body.hint-off .opt .en-line { display: none; }
 
     <aside class="notebook" aria-label="Mistake notebook">
       <div class="nb-head"><span class="nb-title">错题本</span><span class="nb-count" id="nb-count">0</span></div>
-      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you get wrong lands here, then comes back to test you after 1, 3 and 7 days. Get it right three times and it's learned.</p>
+      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you get wrong lands here, then comes back after 1, 3 and 7 days, asking a bit more each time: pick it, build it, then say it from memory. Get it right three times and it's learned.</p>
       <div class="nb-sum" id="nb-sum"></div>
       <div class="nb-actions" id="nb-actions"></div>
       <div id="nb-patterns"></div>
@@ -376,6 +380,8 @@ function streakLen() {
 function renderStreak() {
   const box = document.getElementById("streak"); if (!box) return;
   box.textContent = "";
+  // The pitch is for first visits; once you've answered something, the streak takes its place
+  const tag = document.querySelector(".tagline"); if (tag) tag.hidden = !!said;
   if (!said) return;
   const n = streakLen();
   if (n > 1) box.append(el("span", "zh", `连续${n}天`), `${n} days in a row · `);
@@ -1084,8 +1090,9 @@ function logMistake(entry) {
   notebook = notebook.slice(0, 200);
   saveNotebook();
 }
-function markReviewed(n, right) {
-  if (right) { n.step = (n.step || 0) + 1; if (n.step >= GAPS.length) n.learned = true; else n.due = Date.now() + GAPS[n.step] * DAY; }
+function markReviewed(n, right, hold) {
+  if (right && hold) n.due = Date.now() + GAPS[0] * DAY; // right, but only with the choices: same rung, back tomorrow
+  else if (right) { n.step = (n.step || 0) + 1; if (n.step >= GAPS.length) n.learned = true; else n.due = Date.now() + GAPS[n.step] * DAY; }
   else { n.step = 0; n.due = Date.now() + GAPS[0] * DAY; }
   saveNotebook();
 }
@@ -1154,12 +1161,15 @@ function renderNotebook() {
 
 /* ---------- review round: mistakes come back ---------- */
 let rq = [], ri = 0, rRight = 0, rLearned = 0, rAnswered = false, rReveal = false;
+// Each time a mistake comes back it asks a little more of you: pick it, then build it, then say it with nothing on screen
+const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "From memory", "say it from memory"]];
+let rHow = "pick", rGood = null, rTiles = null, rHeld = false;
 function startReview() {
   mode = "review"; busy = false; transcript = [];
   const due = dueItems();
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0)).slice(0, 10);
   ri = 0; rRight = 0; rLearned = 0;
-  setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Get each one right three times, a few days apart, and it leaves your notebook.");
+  setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Each time one comes back it asks a bit more: pick it, then build it, then say it from memory. Three right and it leaves your notebook.");
   $("#log").textContent = "";
   renderRail();
   if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
@@ -1167,7 +1177,7 @@ function startReview() {
   reviewItem();
 }
 function reviewItem() {
-  rAnswered = false; rReveal = false;
+  rAnswered = false; rReveal = false; rHow = "pick"; rGood = null; rTiles = null; rHeld = false;
   const n = rq[ri], s = S.find(x => x.id === n.sid), t = scriptedTurn(s, n);
   if (s) cur = s;
   const pair = n.sid === "ears" && PAIRS.concat(myPairs()).find(p => p.a[0] === n.fix || p.b[0] === n.fix);
@@ -1185,6 +1195,12 @@ function reviewItem() {
     addNarr(n.real ? `${s.en}, the one that happened for real. ${t.prompt}` : `${s.en}, again. ${t.prompt}`);
     if (t.npc) addNpc(t.npc);
     order = shuffle(t.opts);
+    rGood = t.opts.find(o => o.k === "good" && o.b) || null;
+    rHow = rGood ? LADDER[Math.min(n.step || 0, 2)][0] : "pick";
+    if (rHow === "build") {
+      const ans = rGood.b.split("|"), pool = [...new Set(s.turns.flatMap(x => x.opts.filter(o => o.b).flatMap(o => o.b.split("|"))))].filter(w => !ans.includes(w));
+      rTiles = { ans, tiles: shuffle(ans.concat(shuffle(pool).slice(0, 2))).map((w, i) => ({ w, i })), chosen: [] };
+    }
   } else {
     addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : n.sid === "ears" ? "A sound-alike" : "Off-script"}. You said: ${n.said}`);
     order = [];
@@ -1197,10 +1213,56 @@ function reviewChoose(o) {
   addMe(o.h, o.p, o.e, o.k);
   const right = o.k === "good";
   if (!right && o.r) addNpc(o.r);
-  markReviewed(n, right);
+  markReviewed(n, right, rHeld);
   if (right) { rRight++; if (n.learned) rLearned++; }
-  addFeedback(o.k, right ? (n.learned ? "Third time right. It's learned and leaves your notebook." : `Right this time. ${whenText(n)}.`) : o.note,
+  addFeedback(o.k, right ? (n.learned ? "Third time right. It's learned and leaves your notebook." : rHeld ? `Right, with the choices on screen. ${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.` : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`) : o.note,
     o.fix, right ? null : { label: "Still tricky", cost: "Back to the start: it returns tomorrow." });
+  renderReviewMove();
+}
+function ladderEl(n) {
+  // Where this mistake is on its way out: each rung is one more return, asking a bit more
+  const box = el("div", "ladder"), at = rHeld ? 0 : Math.min(n.step || 0, 2);
+  LADDER.forEach(([, label], i) => { const r = el("span", i < (n.step || 0) ? "done" : i === at ? "on" : "", label); box.append(r); });
+  box.setAttribute("aria-label", `Return ${(n.step || 0) + 1} of 3: ${LADDER[at][1]}`);
+  return box;
+}
+function reviewBuilder(n) {
+  const st = rTiles, box = el("div", "build"), slots = el("div", "slots"), bank = el("div", "bank");
+  if (!st.chosen.length) slots.append(el("span", "slots-empty", "Tap the words in order"));
+  st.chosen.forEach(tile => { const b = el("button", "tile on", tile.w); b.onclick = () => { st.chosen = st.chosen.filter(x => x !== tile); renderReviewMove(); }; slots.append(b); });
+  st.tiles.filter(x => !st.chosen.includes(x)).forEach(tile => { const b = el("button", "tile", tile.w); b.onclick = () => { st.chosen.push(tile); renderReviewMove(); }; bank.append(b); });
+  const row = el("div", "endcard"), go = el("button", "btn", "Say it"); go.disabled = !st.chosen.length;
+  go.onclick = () => {
+    const built = st.chosen.map(x => x.w);
+    if (built.join("|") === st.ans.join("|")) return reviewChoose(rGood);
+    const same = built.length === st.ans.length && [...built].sort().join() === [...st.ans].sort().join();
+    reviewMiss(built.join(""), same ? "Right words, wrong order. Word order carries a lot of the meaning in Chinese." : n.why);
+  };
+  row.append(go); box.append(slots, bank, row); return box;
+}
+function reviewTyper(n) {
+  const form = el("form", "free"), inp = el("input"); inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN";
+  inp.placeholder = "Characters or pinyin, tones optional"; inp.setAttribute("aria-label", "What you say");
+  const go = el("button", "btn", "Say it"); go.type = "submit"; form.append(inp, go);
+  form.onsubmit = ev => {
+    ev.preventDefault(); const v = inp.value.trim(); if (!v) return;
+    const h = normHan(v), py = normPy(v), t = scriptedTurn(S.find(x => x.id === n.sid), n);
+    const hit = t.opts.find(o => normHan(o.h) === h || (py && normPy(o.p) === py));
+    if (hit) return reviewChoose(Object.assign({}, hit, { h: v, p: "", e: "" }));
+    const han = /[一-鿿]/.test(v), near = t.opts.filter(o => o.k === "good").find(o => {
+      const a = han ? normHan(o.h) : normPy(o.p); return lev(han ? h : py, a) <= Math.max(1, Math.floor(a.length / 8));
+    });
+    if (near) return reviewChoose(Object.assign({}, near, { h: v, p: "", e: "" }));
+    const named = judgeOffline(v, rGood, { strict: true });
+    reviewMiss(v, named ? named.note : n.why);
+  };
+  setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
+  return form;
+}
+function reviewMiss(said, why) {
+  const n = rq[ri]; rAnswered = true;
+  addMe(said, "", "", "wrong"); markReviewed(n, false);
+  addFeedback("wrong", why, [rGood.h, rGood.p], { label: "Still tricky", cost: "Back to the start: it returns tomorrow." });
   renderReviewMove();
 }
 function selfGrade(right) {
@@ -1231,7 +1293,14 @@ function renderReviewMove() {
     nx.onclick = () => { ri++; if (ri < rq.length) reviewItem(); else { addNarr(`Round done: ${rRight} of ${rq.length} right.`); renderReviewMove(); } };
     row.append(nx); m.append(row); return;
   }
-  if (order.length) { head.append(el("span", "prompt", n.sid === "ears" ? "What did they say?" : "What do you say this time?")); m.append(optionButtons(order, reviewChoose)); return; }
+  if (order.length && rHow !== "pick") {
+    head.append(el("span", "prompt", rHow === "build" ? "Build it from the words." : "Say it, with nothing on screen."));
+    m.append(ladderEl(n), rHow === "build" ? reviewBuilder(n) : reviewTyper(n));
+    const down = el("button", "linkish", "I'm stuck, show me the choices");
+    down.onclick = () => { rHow = "pick"; rHeld = true; renderReviewMove(); };
+    const w = el("div", "endcard"); w.append(down); m.append(w); return;
+  }
+  if (order.length) { head.append(el("span", "prompt", n.sid === "ears" ? "What did they say?" : "What do you say this time?")); if (rGood) m.append(ladderEl(n)); m.append(optionButtons(order, reviewChoose)); return; }
   // Off-script mistake: recall it, then grade yourself honestly
   head.append(el("span", "prompt", "What should you have said?"));
   if (!rReveal && n.fix) {

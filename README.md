@@ -18,6 +18,8 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 
 ## How it's organised
 
+**Today**: when you come back, the app opens on one short page that says where to start: mistakes due back, the next place, one thing to go deeper on (your most common kind of slip, a place you only scraped through, surprises you haven't met, or rush hour), and your pocket if you're heading out. Tap the title to get back to it. A first visit goes straight into the noodle shop.
+
 **Places** (28 of them) live in five folders in the side list: Eat and drink, Get around, Shop, Sort things out, and Meet people. One folder is open at a time, places run from day-one essentials to harder ones, and a Next up tag shows where to go. Each place stands for a kind of place, so the noodle shop teaches you any counter where you order food. One find box above the folders searches places and phrases together ("toilet", "多少", "duoshao").
 
 In a place:
@@ -30,7 +32,7 @@ In a place:
 **How much help** is one dial instead of three switches: English (pinyin and English on answers), Pinyin, Characters, then Ears (hear it first, read it after). After a clean run the end card suggests stepping down a level.
 
 **Three practice spaces**, each with one job:
-- 错题本 **Mistakes**: everything you got wrong, which comes back after 1, 3 and 7 days and leaves once you get it right three times. It also shows the kinds of slip you keep making (numbers, saying yes by accident, measure words…), with a drill for each across every place.
+- 错题本 **Mistakes**: everything you got wrong, which comes back after 1, 3 and 7 days and leaves once you get it right three times. Each return asks more of you: the first time you pick the answer, the second you build it from word tiles, the third you say it from memory. If you're stuck you can step down to the choices, and it comes back tomorrow on the same rung. It also shows the kinds of slip you keep making (numbers, saying yes by accident, measure words…), with a drill for each across every place.
 - 耳朵 **Train your ear**: prices (十八 vs 八十, 一百五 vs 一百零五), phone numbers read with 幺, meeting times, and sound-alikes (买 vs 卖, 问 vs 吻), with your own slips mixed in. The number reader shows and says any number the way people really do.
 - 口袋 **Your pocket**: tell it where you're going today and you get a cheat sheet for those places (what to say, what you'll hear, the traps), a warm-up, and a big-text Show mode to hand your phone over. Every line holds the full, searchable phrasebook.
 
