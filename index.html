@@ -234,6 +234,8 @@ body.hint-off .opt .en-line { display: none; }
 .say-back { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; margin-top: 6px; font-size: 13px; }
 .sb-out.ok { color: var(--jade); font-weight: 600; }
 .sb-out.no { color: var(--cinnabar); }
+.tabs-slot:empty { display: none; }
+.tabs-slot { padding: 12px 20px 0; }
 .first-run { border-left: 3px solid var(--jade); padding: 6px 12px; font-size: 14px; color: var(--fg); background: var(--surface-2); border-radius: 0 8px 8px 0; }
 .rush { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
 .rush i { display: block; height: 100%; width: 100%; background: var(--cinnabar); transform-origin: left; animation: rush linear forwards; }
@@ -336,6 +338,7 @@ body.hint-off .opt .en-line { display: none; }
         <div class="place-en" id="place-en"></div>
         <div class="goal" id="goal"></div>
       </div>
+      <div class="tabs-slot" id="tabs"></div>
       <div class="log" id="log" aria-live="polite"></div>
       <section class="move" id="move"></section>
     </main>
@@ -571,7 +574,7 @@ Return ONLY a JSON object: "why" (2 to 4 plain-English sentences going one level
 function addNarr(t) { $("#log").append(el("div", "narr", t)); scrollLog(); }
 function scrollLog() { const l = $("#log"); l.scrollTop = l.scrollHeight; }
 function setHead(place, py, en, goalLabel, goal) {
-  $("#place").textContent = place; $("#place-py").textContent = py; $("#place-en").textContent = en;
+  $("#place").textContent = place; $("#place-py").textContent = py; $("#place-en").textContent = en; $("#tabs").textContent = "";
   const g = $("#goal"); g.textContent = ""; g.append(el("b", null, goalLabel), goal);
 }
 
@@ -1468,6 +1471,8 @@ function drillCheck(raw) {
   return { ok: got === v, shown: String(got), note: got === v ? `Right: ${w.zh} is ${v}.` : `${w.zh} ${w.py} is ${v}. ${priceTip(v, got)}` };
 }
 // Tabs inside a practice space, so related drills live together instead of as separate tools
+// Tabs sit right under the header, so they stay put while the conversation below changes
+function setTabs(row) { const t = $("#tabs"); t.textContent = ""; t.append(row); }
 function tabRow(label, tabs, on) {
   const row = el("div", "modes"); row.setAttribute("role", "group"); row.setAttribute("aria-label", label);
   tabs.forEach(([l, v, go]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", v === on ? "true" : "false"); c.onclick = go; row.append(c); });
@@ -1478,7 +1483,7 @@ const pocketTabs = on => tabRow("Your pocket", [["Today", "today", () => startTr
 function renderDrillMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
-  m.append(earTabs(dKind));
+  setTabs(earTabs(dKind));
   if (di >= dq.length) {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${dRight} of ${dq.length} right.`));
     const row = el("div", "endcard");
@@ -1563,7 +1568,7 @@ function earsItem() {
 function renderEarsMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
-  m.append(earTabs("ears"));
+  setTabs(earTabs("ears"));
   if (ei >= eq.length) {
     head.append(el("h3", null, "Round done"), el("span", "prompt", `${eRight} of ${eq.length} heard right.`));
     const row = el("div", "endcard");
@@ -1883,7 +1888,7 @@ function renderTrip() {
 function renderTripMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
-  m.append(pocketTabs("today"));
+  setTabs(pocketTabs("today"));
   if (tripEditing || !trip.ids.length) {
     head.append(el("h3", null, "Where to today?"), el("span", "prompt", `${trip.ids.length} picked`));
     const go = el("button", "btn", "Get me ready"); go.disabled = !trip.ids.length;
@@ -2182,7 +2187,7 @@ function renderPhrasesMove() {
   const m = $("#move"); m.textContent = "";
   const n = S.filter(s => done[s.id]).reduce((a, s) => a + s.turns.reduce((b, t) => b + t.opts.filter(o => o.k === "good").length, 0), 0);
   const head = el("div", "move-head");
-  m.append(pocketTabs("all"));
+  setTabs(pocketTabs("all"));
   head.append(el("h3", null, plural(n, "phrase")), el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
   const form = el("form", "free");
   const inp = el("input"); inp.type = "search"; inp.autocomplete = "off"; inp.value = pbQuery;
