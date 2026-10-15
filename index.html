@@ -10,37 +10,50 @@
 <style>
 /* Layout: scenario rail | live scene (conversation + your move) | 错题本 mistake notebook. Stacks to one column on phones. */
 :root {
-  --bg: #e9eeeb;
-  --surface: #f9fbfa;
-  --surface-2: #dfe6e2;
-  --fg: #13201c;
-  --muted: #56665f;
-  --line: #c9d3ce;
+  --bg: #eaefe6;
+  --surface: #fbfbf6;
+  --surface-2: #e3eade;
+  --fg: #16251e;
+  --muted: #55665c;
+  --line: #cbd6c8;
   --cinnabar: #b8321d;
   --cinnabar-soft: #f6dcd5;
   --ochre: #94600c;
   --ochre-soft: #f3e6c9;
   --jade: #0c6e53;
   --jade-soft: #d3ebe2;
-  --npc: #ffffff;
-  --me: #13201c;
-  --me-fg: #eef3f0;
+  --npc: #fffffb;
+  --me: #1f5a43;
+  --me-fg: #f3f7f1;
+  /* the landscape: bamboo, far and near mountains, mist, and a sun (a moon at night) */
+  --btn: #1f5a43; --btn-fg: #f6f8f2;
+  --sky: #f4f6ee; --mt-far: #d6e2d6; --mt-mid: #b9cfbd; --mt-near: #94b49f; --mist: #eef2e9;
+  --stalk: #6f9f7c; --stalk-hi: #a8c9ae; --node: #4f7f5d; --leaf: #5e9670; --sun: rgba(222, 182, 110, 0.2);
+  --head-mt: #c6d8c8;
   --f-ui: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
   --f-han: "Noto Serif SC", "Songti SC", "SimSun", serif;
   --f-py: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0d1412; --surface: #141d1a; --surface-2: #1c2723; --fg: #e4ebe7; --muted: #93a39c; --line: #2a3833;
+    --bg: #0b1411; --surface: #121c18; --surface-2: #18241f; --fg: #e3ebe5; --muted: #93a39a; --line: #29382f;
     --cinnabar: #f0654d; --cinnabar-soft: #3a1c16; --ochre: #e0a640; --ochre-soft: #352812;
-    --jade: #43c099; --jade-soft: #12302a; --npc: #1b2622; --me: #d9e4df; --me-fg: #101815;
+    --jade: #43c099; --jade-soft: #12302a; --npc: #18231f; --me: #bfe2cf; --me-fg: #0b1511;
+    --btn: #43c099; --btn-fg: #08130f;
+    --sky: #0a1310; --mt-far: #12201b; --mt-mid: #172a23; --mt-near: #1d342b; --mist: #0d1714;
+    --stalk: #24463a; --stalk-hi: #2f5a4a; --node: #183329; --leaf: #2a5444; --sun: rgba(236, 232, 205, 0.16);
+    --head-mt: #1d3029;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0d1412; --surface: #141d1a; --surface-2: #1c2723; --fg: #e4ebe7; --muted: #93a39c; --line: #2a3833;
+  --bg: #0b1411; --surface: #121c18; --surface-2: #18241f; --fg: #e3ebe5; --muted: #93a39a; --line: #29382f;
   --cinnabar: #f0654d; --cinnabar-soft: #3a1c16; --ochre: #e0a640; --ochre-soft: #352812;
-  --jade: #43c099; --jade-soft: #12302a; --npc: #1b2622; --me: #d9e4df; --me-fg: #101815;
+  --jade: #43c099; --jade-soft: #12302a; --npc: #18231f; --me: #bfe2cf; --me-fg: #0b1511;
+    --btn: #43c099; --btn-fg: #08130f;
+    --sky: #0a1310; --mt-far: #12201b; --mt-mid: #172a23; --mt-near: #1d342b; --mist: #0d1714;
+    --stalk: #24463a; --stalk-hi: #2f5a4a; --node: #183329; --leaf: #2a5444; --sun: rgba(236, 232, 205, 0.16);
+    --head-mt: #1d3029;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -492,6 +505,95 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
   .chat-row { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 10px 12px; } .av { width: 42px; height: 42px; font-size: 20px; } .cr-dot { left: 44px; }
   .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: 62vh; }
 }
+
+/* ---------- The look: a bamboo forest in the mountains ----------
+   Ink-wash ridges and mist behind the page, bamboo at its edges, seals for the Chinese labels,
+   bamboo segments for progress, and lines that arrive like ink. The green stays; everything else is the landscape. */
+html { background: var(--bg); }
+body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixed; }
+.wrap { position: relative; z-index: 1; }
+.scenery { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.sc-sun { position: absolute; top: 14px; left: 56%; width: 120px; height: 120px; border-radius: 50%; background: var(--sun); filter: blur(1px); }
+.sc-mts { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 42vh; }
+.sc-mts .far { fill: var(--mt-far); } .sc-mts .mid { fill: var(--mt-mid); } .sc-mts .near { fill: var(--mt-near); }
+.sc-mts .mistband { fill: var(--mist); }
+.sc-mts .drift { animation: drift 70s ease-in-out infinite alternate; }
+@keyframes drift { from { transform: translateX(-60px); } to { transform: translateX(60px); } }
+/* the bamboo stays in the margins beside the page, however wide the window */
+.sc-bamboo { position: absolute; bottom: 0; height: 100vh; width: clamp(0px, calc((100vw - 1180px) / 2), 200px); }
+.sc-bamboo.left { left: 0; }
+.sc-bamboo.right { right: 0; transform: scaleX(-1); }
+.sc-bamboo .stalk { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 9s ease-in-out infinite alternate; }
+.sc-bamboo .stalk:nth-child(2) { animation-duration: 11s; animation-delay: -3s; }
+.sc-bamboo .stalk:nth-child(3) { animation-duration: 13s; animation-delay: -6s; }
+@keyframes sway { from { transform: rotate(-0.9deg); } to { transform: rotate(1.1deg); } }
+.sc-bamboo .seg { fill: var(--stalk); } .sc-bamboo .hi { fill: var(--stalk-hi); } .sc-bamboo .nd { fill: var(--node); } .sc-bamboo .lf { fill: var(--leaf); }
+@media (max-width: 1240px) { .sc-bamboo { display: none; } }
+@media (max-width: 760px) { .sc-mts { height: 30vh; } .sc-sun { display: none; } header.top { position: relative; } .notes-btn { position: absolute; top: 0; right: 0; } .brand { padding-right: 96px; } }
+
+/* the brand sits on a brushed ridge */
+.brand h1 { position: relative; }
+.brand h1::after { content: ""; position: absolute; left: 0; right: -6px; bottom: -7px; height: 9px; background: var(--jade); opacity: .55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M0 11 C20 9 30 3 45 5 C60 7 66 10 80 8 C95 6 102 1 118 2 C134 3 140 9 156 8 C170 7 182 4 200 6 L200 12 L0 12Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M0 11 C20 9 30 3 45 5 C60 7 66 10 80 8 C95 6 102 1 118 2 C134 3 140 9 156 8 C170 7 182 4 200 6 L200 12 L0 12Z'/%3E%3C/svg%3E") no-repeat center / 100% 100%; }
+
+/* panels are paper mounted like a hanging scroll: a fine inner frame, and a landscape in the heading */
+.scene, .notebook { border-radius: 6px; box-shadow: 0 0 0 4px var(--surface-2), 0 0 0 5px var(--line), 0 24px 40px -30px rgba(20, 50, 35, .45); }
+.scene-head { position: relative; overflow: hidden; background: var(--surface-2); }
+.scene-head > * { position: relative; z-index: 1; }
+.scene-head::after { content: ""; position: absolute; right: 0; bottom: 0; width: min(70%, 560px); height: 92%; background: var(--head-mt); opacity: .75; pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 120' preserveAspectRatio='none'%3E%3Cpath opacity='.55' d='M0 120 L0 95 C40 80 70 40 110 46 C140 50 150 20 180 18 C215 16 225 62 260 60 C300 58 310 10 350 8 C390 6 400 55 440 52 C480 49 500 30 530 34 C545 36 552 44 560 46 L560 120Z'/%3E%3Cpath d='M0 120 L0 110 C60 104 90 82 140 86 C190 90 210 70 260 72 C320 74 340 96 400 92 C450 89 480 74 520 78 C540 80 552 86 560 88 L560 120Z'/%3E%3C/svg%3E") no-repeat right bottom / 100% 100%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 560 120' preserveAspectRatio='none'%3E%3Cpath opacity='.55' d='M0 120 L0 95 C40 80 70 40 110 46 C140 50 150 20 180 18 C215 16 225 62 260 60 C300 58 310 10 350 8 C390 6 400 55 440 52 C480 49 500 30 530 34 C545 36 552 44 560 46 L560 120Z'/%3E%3Cpath d='M0 120 L0 110 C60 104 90 82 140 86 C190 90 210 70 260 72 C320 74 340 96 400 92 C450 89 480 74 520 78 C540 80 552 86 560 88 L560 120Z'/%3E%3C/svg%3E") no-repeat right bottom / 100% 100%; }
+
+/* buttons: bamboo green, gently cut corners instead of hard pills */
+.btn { background: var(--btn); border-color: var(--btn); color: var(--btn-fg); border-radius: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 2px 0 -1px rgba(0,0,0,.18); transition: transform .12s, filter .15s; }
+.btn:hover:not([disabled]) { filter: brightness(1.08); }
+.btn:active:not([disabled]) { transform: translateY(1px); }
+.btn.ghost, .ghost.btn { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 16px; font-size: inherit; box-shadow: none; align-self: auto; }
+.btn.ghost.small, .btn.small { padding: 6px 12px; font-size: 13px; }
+.chip { border-radius: 8px; }
+.chip[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); border-color: var(--btn); }
+.seg, .seg button { border-radius: 8px; }
+.opt, .today-card, .daily-card, .scn, .menu-btn { border-radius: 8px; }
+.opt:hover { border-color: var(--jade); }
+.free input, .nt-search, .nt-text { border-radius: 8px; }
+
+/* the Chinese labels in the side list are seals: jade, and red for your mistakes */
+.scn.review { border-style: solid; }
+.scn.tool .han { background: var(--jade); color: var(--surface); font-size: 15px; padding: 6px 6px 5px; border-radius: 3px; transform: rotate(-3deg); letter-spacing: .02em; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); }
+.scn.review#tool-nb .han { background: var(--cinnabar); color: var(--surface); }
+.scn[aria-current="true"] { border-color: var(--jade); box-shadow: inset 4px 0 0 var(--jade); }
+.who { border-radius: 6px; }
+.av, .row.chat .who { border-radius: 4px; box-shadow: inset 0 0 0 2px rgba(255,255,255,.3); }
+.av.t1, .row.chat .who.t1 { background: #2f6e5a; } .av.t2, .row.chat .who.t2 { background: #5b7f3e; } .av.t3, .row.chat .who.t3 { background: #8a6a2e; }
+.av.t4, .row.chat .who.t4 { background: #3f6177; } .av.t5, .row.chat .who.t5 { background: #7a4f45; } .av.t0, .row.chat .who.t0 { background: var(--jade); }
+.av:not(.t0), .row.chat .who:not(.t0) { color: #fff; }
+:root[data-theme="dark"] .av:not(.t0), :root[data-theme="dark"] .row.chat .who:not(.t0) { filter: brightness(1.15); }
+
+/* progress is bamboo: the ten days are segments of one stalk, joined at the nodes */
+.days { gap: 0; padding: 4px 0; }
+.day-dot { width: 46px; height: 30px; border-radius: 3px; border: 0; margin-right: 4px; background: var(--surface-2); color: var(--muted); position: relative; box-shadow: inset 0 -3px 0 rgba(0,0,0,.06); }
+.day-dot::after { content: ""; position: absolute; right: -4px; top: -2px; bottom: -2px; width: 4px; border-radius: 2px; background: var(--line); }
+.day-dot:last-child::after { display: none; }
+.day-dot.done { background: var(--stalk); color: var(--btn-fg); }
+.day-dot.done::after { background: var(--node); }
+.day-dot.on { background: var(--surface); outline: 2px solid var(--jade); outline-offset: -2px; color: var(--fg); }
+@media (max-width: 760px) { .days { flex-wrap: nowrap; } .day-dot { flex: 1 1 0; min-width: 0; width: auto; height: 28px; margin-right: 3px; padding: 0; } .day-dot::after { right: -3px; width: 3px; } }
+.cando .cd-bar { border-radius: 2px; } .cando .cd-bar i { background: repeating-linear-gradient(90deg, var(--stalk) 0 30px, var(--node) 30px 33px); }
+/* section rules are bamboo too: long segments with a node between */
+.day-part { border-bottom: 0; background: repeating-linear-gradient(90deg, var(--line) 0 90px, transparent 90px 94px) left bottom / 100% 2px no-repeat; }
+
+/* lines arrive like ink soaking into paper */
+.ink { animation: ink .5s ease-out both; }
+.ink.noink { animation: none; }
+@keyframes ink { from { opacity: 0; filter: blur(3px); transform: translateY(4px); } to { opacity: 1; filter: none; transform: none; } }
+.scene.page .log > .ink { animation-duration: .35s; }
+
+/* a clean finish: a few bamboo leaves drift down */
+.leaves { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+.leaves i { position: absolute; top: -30px; width: 28px; height: 9px; border-radius: 0 100% 0 100%; background: var(--leaf); opacity: .85; animation: fall linear forwards; }
+@keyframes fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) { .sc-bamboo .stalk, .sc-mts .drift, .ink, .leaves i { animation: none !important; } .leaves { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -1447,6 +1549,7 @@ function rematch() {
 }
 function renderEnd() {
   const m = $("#move");
+  if (!runMisses.length && !cur._leaves) { cur._leaves = true; leafFall(); }
   const head = el("div", "move-head");
   head.append(el("h3", null, cur._rematch ? (runMisses.length ? "Rematch over, still a slip or two" : "Rematch won") : outcomes.length ? "You made it, at a price" : "You survived"));
   // A short scorecard: what it cost, what slipped, what surprised you, what you earned. One line each
@@ -1567,6 +1670,7 @@ function nbItem(n) {
     const ctx = { sid: n.sid, place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null };
     if (canExplain(ctx)) { const ask = el("button", "why-btn", "Why, exactly?"); ask.onclick = () => explainWhy(ask, ctx); it.append(ask); }
   }
+  if (n.fix) { const sv = el("button", "why-btn nb-save", "Save to notes"); sv.onclick = () => { noteAdd(`${n.fix}  ${n.fixPy || ""}  (not: ${n.said})${n.why ? "  " + n.why : ""}`, "Mistakes"); sv.textContent = "Saved"; sv.disabled = true; }; it.append(sv); }
   return it;
 }
 function openNotebook() {
@@ -2852,7 +2956,8 @@ function lsWordsEl() {
   if (lsWordsOpen && all.length) {
     const ul = el("ul", "ls-words");
     all.forEach(([h, w]) => { const li = el("li"); li.append(el("span", "han", h), el("span", "py", w.p), el("span", "en-line", w.e), el("span", "lw-n", w.seen >= 3 && w.tapped < 2 ? "In Chinese now" : `Met ${w.seen === 1 ? "once" : w.seen + " times"}`)); ul.append(li); });
-    wrap.append(ul, el("p", "cd-note", "A word stays glossed until you've met it in three chapters. Tap it in the story and it stays glossed a bit longer."));
+    const sv = el("button", "linkish", "Save the list to notes"); sv.onclick = () => { const n = noteNew(`Words from ${LS.bible.title_english}\n` + all.map(([h, w]) => `${h}  ${w.p}  ${w.e}`).join("\n") + "\n"); toast(`Saved to “${noteTitle(n)}”`); sv.textContent = "Saved"; sv.disabled = true; };
+    wrap.append(ul, el("p", "cd-note", "A word stays glossed until you've met it in three chapters. Tap it in the story and it stays glossed a bit longer. "), sv);
   }
   return wrap;
 }
@@ -3072,7 +3177,7 @@ let lsNew = false;
 // that wouldn't land gets a quiet note under your message and comes back in Mistakes.
 const PEOPLE = window.PEOPLE || [];
 let CHATS = store.get("sm-chats", {}), chatPrefs = Object.assign({ py: true, en: false }, store.get("sm-chat-prefs", {}));
-let chatWho = null, chatBusy = false, chatErr = "", chatReset = false, chatHow = null, chatDraft = "";
+let chatInked = {}, chatWho = null, chatBusy = false, chatErr = "", chatReset = false, chatHow = null, chatDraft = "";
 const personOf = id => PEOPLE.find(p => p.id === id);
 const chatOf = id => CHATS[id] || (CHATS[id] = { msgs: [], about: "" });
 const saveChats = () => { try { localStorage.setItem("sm-chats", JSON.stringify(CHATS)); } catch { chatErr = "Your browser's storage is full, so new messages won't be kept."; } };
@@ -3111,10 +3216,10 @@ const chatLast = p => { const m = (CHATS[p.id] || {}).msgs || []; return m.lengt
 function chatRow(p) {
   const c = CHATS[p.id] || { msgs: [] }, last = c.msgs[c.msgs.length - 1] || null, b = el("button", "chat-row");
   const unread = last ? !last.me && !last.seen : chatMet(p);
-  b.append(el("span", "av", p.av));
+  b.append(el("span", "av t" + (PEOPLE.indexOf(p) % 6), p.av));
   const mid = el("span", "cr-mid");
   const nm = el("span", "cr-name"); nm.append(el("span", "cr-han", p.han), el("span", "cr-en", p.en));
-  mid.append(nm, el("span", "cr-prev", last ? (last.me ? "You: " : "") + (last.voice ? "[语音] Voice message" : last.h) : chatMet(p) ? `Added you after the ${(S.find(x => x.id === p.met) || {}).en || ""}`.toLowerCase().replace(/^a/, "A") : chatWhere(p)));
+  mid.append(nm, el("span", "cr-prev", last ? (last.me ? "You: " : "") + (last.voice ? "[语音] Voice message" : last.h) : chatMet(p) ? `Added you after the ${((S.find(x => x.id === p.met) || {}).en || "").toLowerCase()}` : p.role.split(",")[0].replace(/^./, c => c.toUpperCase())));
   b.append(mid, el("span", "cr-side", last ? ago(last.t) : ""));
   if (unread) b.append(el("span", "cr-dot", ""));
   b.setAttribute("aria-label", `${p.han} ${p.en}${unread ? ", new message" : ""}`);
@@ -3153,17 +3258,19 @@ function chatBar() {
 function chatDraw(keep) {
   const log = $("#log"), y = log.scrollTop, c = chatOf(chatWho), p = personOf(chatWho); log.textContent = "";
   let lastT = 0;
+  const prev = keep ? c.msgs.length : chatInked[chatWho] || 0; // only new messages arrive like ink
   c.msgs.forEach((m, i) => {
-    if (m.t - lastT > 30 * 6e4) log.append(el("div", "chat-time", new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })));
+    if (m.t - lastT > 30 * 6e4) log.append(el("div", "chat-time" + (i < prev ? " noink" : ""), new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })));
     lastT = m.t;
-    log.append(chatMsg(m, p, i));
+    const n = chatMsg(m, p, i); if (i < prev) n.classList.add("noink"); log.append(n);
   });
+  chatInked[chatWho] = c.msgs.length;
   if (chatBusy) log.append(el("div", "chat-typing", `${p.han}正在输入… typing`));
   if (keep) log.scrollTop = y; else log.scrollTop = log.scrollHeight;
 }
 function chatMsg(m, p, i) {
   const row = el("div", "row chat " + (m.me ? "me" : "npc"));
-  if (!m.me) row.append(el("div", "who", p.av));
+  if (!m.me) row.append(el("div", "who t" + (PEOPLE.indexOf(p) % 6), p.av));
   const bub = el("div", "bubble");
   const showPy = chatPrefs.py || m.open, showEn = chatPrefs.en || m.open;
   if (m.voice && !m.shown && canSpeak) {
@@ -3633,6 +3740,7 @@ function showLocal(o, reply) {
   const en = el("div", "sl-en", o.e);
   const row = el("div", "sl-tools");
   if (canSpeak) { const b = el("button", "btn", "Play it"); b.onclick = ev => { ev.stopPropagation(); speak(o.h, 0.8); }; row.append(b); }
+  const sv = el("button", "btn ghost", "Save to notes"); sv.onclick = ev => { ev.stopPropagation(); noteAdd(`${o.h}  ${o.p || ""}  ${o.e || ""}`, "Your pocket"); sv.textContent = "Saved"; sv.disabled = true; }; row.append(sv);
   const x = el("button", "btn ghost", "Close"); x.onclick = close; row.append(x);
   ov.append(big, py, en);
   if (reply) {
@@ -3871,6 +3979,63 @@ document.addEventListener("keydown", ev => {
     if (b && !document.querySelector("#move .opt")) { ev.preventDefault(); b.click(); }
   }
 });
+
+/* ---------- the landscape behind the page: mountains, mist and bamboo (decoration only) ---------- */
+function bambooSvg(side) {
+  // Three stalks of different heights and thickness, each made of segments joined at nodes, with sprays of leaves
+  let rnd = side === "left" ? 7 : 19; const r = () => (rnd = (rnd * 9301 + 49297) % 233280) / 233280;
+  const stalks = [[40, 13, 0.0], [92, 9, 0.12], [140, 6, 0.26]];
+  let out = "";
+  stalks.forEach(([x, w, top]) => {
+    let g = "", y = 1000;
+    const end = 1000 * top - 40;
+    while (y > end) {
+      const h = 95 + r() * 55, y2 = Math.max(end, y - h);
+      g += `<rect class="seg" x="${x - w / 2}" y="${y2}" width="${w}" height="${y - y2}" rx="${w / 3}"/><rect class="hi" x="${x - w / 2 + w * 0.18}" y="${y2 + 6}" width="${w * 0.18}" height="${Math.max(0, y - y2 - 12)}" rx="1"/><rect class="nd" x="${x - w / 2 - 1.5}" y="${y2 - 2}" width="${w + 3}" height="4" rx="2"/>`;
+      if (y2 < 760 && r() < 0.55) {
+        // a spray of leaves from this node
+        const dir = r() < 0.5 ? -1 : 1, n = 3 + Math.floor(r() * 3);
+        for (let i = 0; i < n; i++) {
+          const a = dir * (18 + i * 16 + r() * 10), len = 38 + r() * 22;
+          g += `<path class="lf" transform="translate(${x} ${y2}) rotate(${dir < 0 ? 180 - a : a})" d="M0 0 C${len * 0.3} -${len * 0.12} ${len * 0.7} -${len * 0.1} ${len} 0 C${len * 0.7} ${len * 0.08} ${len * 0.3} ${len * 0.1} 0 0Z"/>`;
+        }
+      }
+      y = y2;
+    }
+    out += `<g class="stalk">${g}</g>`;
+  });
+  return `<svg class="sc-bamboo ${side}" viewBox="0 0 190 1000" preserveAspectRatio="xMinYMax slice">${out}</svg>`;
+}
+function scenery() {
+  const d = el("div", "scenery"); d.setAttribute("aria-hidden", "true");
+  d.innerHTML = `<div class="sc-sun"></div>
+<svg class="sc-mts" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
+  <path class="far" d="M0 200 C70 180 110 120 170 112 C230 104 250 160 310 150 C360 142 380 70 430 60 C480 50 510 130 560 128 C620 126 640 90 700 96 C770 103 790 40 850 30 C910 20 930 110 990 112 C1050 114 1080 70 1140 76 C1200 82 1220 140 1290 132 C1350 125 1390 96 1440 100 L1440 320 L0 320Z"/>
+  <g class="drift"><ellipse class="mistband" cx="420" cy="196" rx="420" ry="26" opacity=".8"/><ellipse class="mistband" cx="1120" cy="186" rx="380" ry="22" opacity=".7"/></g>
+  <path class="mid" d="M0 250 C60 236 100 196 150 190 C200 184 230 222 290 220 C340 218 370 160 420 152 C470 145 500 210 560 214 C620 218 660 190 720 192 C790 195 820 140 880 136 C940 132 960 206 1020 210 C1080 214 1120 178 1180 182 C1240 186 1270 226 1330 222 C1380 219 1410 206 1440 204 L1440 320 L0 320Z"/>
+  <g class="drift" style="animation-duration:90s;animation-delay:-30s"><ellipse class="mistband" cx="760" cy="246" rx="520" ry="22" opacity=".75"/></g>
+  <path class="near" d="M0 292 C90 276 160 262 250 268 C340 274 380 292 470 288 C560 284 610 258 700 262 C800 266 840 294 940 290 C1030 286 1080 268 1170 270 C1260 272 1310 290 1380 286 C1410 284 1430 280 1440 280 L1440 320 L0 320Z"/>
+</svg>` + bambooSvg("left") + bambooSvg("right");
+  document.body.prepend(d);
+}
+// New lines in the conversation arrive like ink; redraws of what's already there don't flicker
+// (a page drawn again within a moment, like a search as you type, doesn't animate again)
+let inkBig = 0;
+new MutationObserver(ms => {
+  const added = ms.flatMap(m => [...m.addedNodes]).filter(n => n.nodeType === 1);
+  if (added.length > 3) { const quiet = Date.now() - inkBig < 1500; inkBig = Date.now(); if (quiet) return; }
+  added.forEach(n => { if (!n.classList.contains("noink")) n.classList.add("ink"); });
+}).observe($("#log"), { childList: true });
+function leafFall() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = el("div", "leaves"); box.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 9; i++) {
+    const l = el("i"); l.style.left = (5 + Math.random() * 90) + "vw"; l.style.setProperty("--dx", (Math.random() * 160 - 80) + "px"); l.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+    l.style.animationDuration = (3.2 + Math.random() * 2.4) + "s"; l.style.animationDelay = (Math.random() * 0.9) + "s"; box.append(l);
+  }
+  document.body.append(box); setTimeout(() => box.remove(), 7000);
+}
+scenery();
 applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
 $("#notes-btn").onclick = () => notesShown() ? closeNotes() : openNotes();
