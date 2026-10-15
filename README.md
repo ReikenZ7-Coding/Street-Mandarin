@@ -10,7 +10,7 @@ Open `index.html` in a browser. There's no build step.
 
 ## Adding a place
 
-Scenes live in `scenes.js`. The comment at the top explains each field. Copy an existing scene, change the lines, and give one good answer per moment a `b` field with its word tiles split by `|`. Optional `curveballs` are things that can go off-script at that place: `after` is the index of the moment it follows. Each run picks none, one or two of them at random, preferring ones you haven't met.
+Scenes live in `scenes.js`. The Unscripted contacts live in `people.js` (who they are, where you met them, how they text, their first message). The comment at the top explains each field. Copy an existing scene, change the lines, and give one good answer per moment a `b` field with its word tiles split by `|`. Optional `curveballs` are things that can go off-script at that place: `after` is the index of the moment it follows. Each run picks none, one or two of them at random, preferring ones you haven't met.
 
 After editing `scenes.js` or `voices.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
 
@@ -37,6 +37,17 @@ The side list shows the ten days, one open at a time, with a Next up tag. Tap th
 - **Read it, hear it.** "Listen to the conversation" plays a chapter's dialogue line by line. Each person in the cast has a page with everything they've said to you, so you can hear how they talk.
 - **At your pace, or a volume a day.** By default the next volume opens the day after you finish one, like a serial; you can choose to read on freely instead. The next chapter starts writing the moment you answer, and after a break the chapter opens with a line on what happened. A chapter that reads badly can be rewritten before you answer.
 - **It's the evening's reading in Short Story.** The day page's Evening has a "Tonight's reading" card, and the morning's word is one your story is still teaching you. The last volume ends with what the story was about and what you read.
+
+**Unscripted (随便聊)**: your WeChat in China. Twelve people to keep chatting with, for as long as you like: the noodle boss, the fruit auntie, your landlady, a taxi driver, a teacher, a courier, a hiker who sends photos from bamboo forests, and more. Most of them are people you meet in Short Story places, so when you finish a place the end card says they've added you, and the Evening suggests saying hi.
+- **Everyone texts their own way**: slow and simple, slangy, with emoji, in proverbs, or in **voice messages** you tap to hear (the words stay hidden until you choose to see them, so it's listening practice).
+- **Two switches, Pinyin and English**, at the top of a chat. Turn on both and every message, theirs and yours, shows characters, pinyin and English. Tap any single message to see its pinyin and English, hear it, or save it to your notes.
+- **You never get stuck.** Type characters, pinyin or English, or speak. "How do I say…?" turns an English thought into two ways to text it.
+- **Slips become lessons, quietly.** If a message wouldn't land, a small note sits under it with a more natural way to say it, and the slip goes to Mistakes along with what they had said to you. The chat itself never stops to lecture.
+- **They remember you.** Each person keeps a short note of what they know about you, so long chats stay coherent. Now and then someone you've been chatting with messages first. Reset chat starts over with that person, after you confirm.
+
+**Notes (笔记)**: a notebook that opens beside any page, from the header, so you can write while you read or chat. Write anything: words, vocab, explanations. Notes save as you type and can be searched and pinned (your pinned note shows on the day page). "Save to notes" works on chat messages, Mistakes, Your pocket and the Long Story word list. "Read the Chinese aloud" speaks a note, and with Claude, "Add pinyin and meanings" adds a glossary under your note without touching what you wrote.
+
+**The look** is a bamboo forest in the mountains: ink-wash ridges and slow mist at the foot of the page, bamboo framing wide screens, seal-stamp labels, bamboo-segment progress, and leaves that fall once on a clean finish. It all stops when the device asks for reduced motion.
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional). Word tiles show their pinyin while the help dial is on English or Pinyin.
@@ -67,6 +78,7 @@ Everything above works with no AI at all:
 When Claude is available, through the claude.ai Artifact runtime (`window.claude`), you also get:
 - Claude replies in character to anything off the script, and explains any mistake not on file.
 - Long Story: the whole novel is written by Claude.
+- Unscripted: every reply, the notes under your messages, and "How do I say…?". Without Claude you can still see everyone and their first message.
 - Play it live: a place replayed with no script, somewhere of the same kind, with a hidden twist.
 - After each run, Claude invents a new surprise for that place.
 

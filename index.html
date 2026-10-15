@@ -317,6 +317,8 @@ body.hint-off .opt .en-line { display: none; }
 .scn.bump { animation: bump .6s ease; }
 .nb-item { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 14px; }
 .nb-item .where { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.nb-heard { font-size: 14px; color: var(--muted); margin-bottom: 2px; }
+.nb-heard .nb-who { font-size: 12px; }
 .nb-item .said { font-family: var(--f-han); text-decoration: line-through; text-decoration-color: var(--cinnabar); }
 .nb-item .said.okay { text-decoration-color: var(--ochre); }
 .nb-item .fix { font-family: var(--f-han); font-weight: 600; }
@@ -1671,12 +1673,13 @@ function nbItem(n) {
   GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
   top.append(st, dots);
   it.append(top);
+  if (n.heard) { const h = el("div", "nb-heard"); h.append(el("span", "nb-who", `${(personOf(n.who) || {}).han || "They"}: `), el("span", null, n.heard)); h.title = n.heardE || ""; it.append(h); }
   it.append(el("div", "said" + (n.kind === "okay" ? " okay" : ""), n.said));
   if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
   it.append(el("div", "why", n.why));
   if (!n.learned) {
     const sc = sceneFor(n), t = scriptedTurn(sc, n);
-    const ctx = { sid: n.sid, place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null };
+    const ctx = { sid: n.sid, place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : n.heard ? { text: n.heard } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null };
     if (canExplain(ctx)) { const ask = el("button", "why-btn", "Why, exactly?"); ask.onclick = () => explainWhy(ask, ctx); it.append(ask); }
   }
   if (n.fix) { const sv = el("button", "why-btn nb-save", "Save to notes"); sv.onclick = () => { noteAdd(`${n.fix}  ${n.fixPy || ""}  (not: ${n.said})${n.why ? "  " + n.why : ""}`, "Mistakes"); sv.textContent = "Saved"; sv.disabled = true; }; it.append(sv); }
