@@ -452,7 +452,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 /* ---------- speech ---------- */
 const canSpeak = "speechSynthesis" in window;
-function speak(text, rate = 0.85) {
+function speak(text, rate = mode === "scene" && rush ? 1.05 : 0.85) { // at rush hour people talk at full speed
   if (!canSpeak) return;
   try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN"; u.rate = rate;
     const v = speechSynthesis.getVoices().find(v => /zh[-_]CN/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u); } catch {}
@@ -730,7 +730,7 @@ function start(id, opt = {}) {
   try { localStorage.setItem("sm-last", id); } catch {}
   setHead(cur.place, cur.placePy, cur.en, rush ? "Rush hour. Your goal: " : "Your goal: ", cur.goal);
   $("#log").textContent = "";
-  if (rush) addNarr("Rush hour: people are busy and won't wait while you think. Answer before the bar runs out.");
+  if (rush) addNarr("Rush hour: people are busy, talk at full speed, and won't wait while you think. Answer before the bar runs out.");
   // The very first time: one line on how this works, then straight in
   if (!said) $("#log").append(el("div", "first-run", "Pick what you'd say. Getting it wrong on purpose is allowed: seeing how people react is the whole idea."));
   addNarr(cur.intro);
