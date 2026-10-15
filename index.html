@@ -109,7 +109,18 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .ls-prompt { font-size: 14px; color: var(--muted); }
 .ls-chap-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
 .ls-chap-row .linkish { font-size: 14px; }
+.ls-lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; align-self: center; }
+.ls-lang button { font: inherit; font-size: 13px; padding: 4px 12px; background: none; border: 0; color: var(--muted); cursor: pointer; }
+.ls-lang button[aria-pressed="true"] { background: var(--jade-soft); color: var(--fg); font-weight: 600; }
+.ls-zh { display: flex; flex-wrap: wrap; gap: 6px 4px; max-width: 62ch; margin: 0; }
+.ls-zh .zs { display: inline-flex; flex-direction: column; text-align: left; font: inherit; background: none; border: 0; border-radius: 6px; padding: 2px 4px; color: var(--fg); cursor: pointer; }
+.ls-zh .zs:hover, .ls-zh .zs:focus-visible { background: var(--jade-soft); }
+.ls-zh .zh { font-family: var(--f-han); font-size: 19px; line-height: 1.5; }
+.ls-zh .zp { font-size: 13px; color: var(--muted); }
+.ls-zh .ze { font-size: 14px; color: var(--muted); font-style: italic; max-width: 40ch; }
+.ls-zh-note { font-size: 13px; color: var(--muted); margin: 0; }
 #log .row.speaking .bubble { border-color: var(--jade); box-shadow: 0 0 0 2px var(--jade-soft); }
+.ls-zh .zs.speaking { background: var(--jade-soft); }
 button.ls-person { font: inherit; color: var(--fg); text-align: left; cursor: pointer; }
 button.ls-person:hover:not(:disabled), button.ls-person:focus-visible { border-color: var(--jade); }
 button.ls-person:disabled { cursor: default; opacity: 0.7; }
@@ -2471,6 +2482,69 @@ function lsCleanChapter(r, last) {
   };
 }
 
+/* All Chinese: the same chapter with its narration in simple Chinese too, sentence by sentence.
+   Written once when you first switch (or straight after the chapter, while you're reading in Chinese), then kept */
+function lsZhPrompt(ch) {
+  const ns = ch.blocks.filter(b => b.t === "n").map(b => b.text);
+  const known = Object.keys(LS.words).slice(0, 80).join("、");
+  return `Rewrite the narration of a light-novel chapter in simple Mandarin Chinese, for a beginner-to-lower-intermediate learner (HSK 1 to 3) who is reading the story in Chinese. The reader is "you" (你), in second person, present tense.
+Characters (use these Chinese names or how the reader addresses them): ${JSON.stringify((LS.bible.cast || []).map(c => [c.name_hanzi, c.address, c.role]))}. City: ${LS.bible.city || "unknown"}.
+Words the reader already knows from the story (use them where they fit): ${known || "none yet"}.
+Rules:
+- Keep the story, the jokes and the feeling; simplify freely. It doesn't have to be word for word, but nothing may be added or lost that matters to the plot.
+- Short sentences: mostly 6 to 16 characters, never more than 22. Everyday words; at most one harder word per paragraph.
+- Pinyin with tone marks, words spaced as usual (nǐ de fángjiān), proper names capitalised.
+- "e" is a natural English rendering of that one Chinese sentence.
+- The [[汉字|pinyin|English]] tags in the English are words the story is teaching: use those Chinese words.
+Return JSON only: {"blocks": [[{"h": "汉字。", "p": "pīnyīn.", "e": "English."}, ...], ...]} with exactly ${ns.length} arrays, one per narration paragraph below, in order.
+${ns.map((t, i) => `Paragraph ${i + 1}: ${t}`).join("\n")}`;
+}
+const lsZhJobs = {};
+function lsZhFetch(v, c) {
+  const key = lsKey(v, c), ch = lsCh(v, c);
+  if (!ch || ch.zh || !sample) return Promise.resolve();
+  if (lsZhJobs[key]) return lsZhJobs[key];
+  const story = LS, n = ch.blocks.filter(b => b.t === "n").length;
+  return lsZhJobs[key] = (async () => {
+    let err;
+    for (let tries = 0; tries < 2; tries++) {
+      try {
+        const r = await sample.json(lsZhPrompt(ch), { cache: false });
+        const blocks = r && Array.isArray(r.blocks) ? r.blocks.map(a => (Array.isArray(a) ? a : []).filter(x => x && x.h && /[一-鿿]/.test(x.h)).map(x => ({ h: String(x.h), p: String(x.p || ""), e: String(x.e || "") }))) : [];
+        if (blocks.length !== n || blocks.some(a => !a.length)) throw new Error("shape");
+        if (LS !== story) return;
+        ch.zh = blocks; lsSave(); return;
+      } catch (e) { err = e; if (e && (e.code === "not_granted" || e.code === "rate_limited")) break; }
+    }
+    throw err;
+  })().finally(() => { delete lsZhJobs[key]; });
+}
+function lsZhNarr(sents) {
+  const p = el("div", "ls-zh");
+  sents.forEach(x => {
+    const b = el("button", "zs"); b.append(el("span", "zh", x.h)); if (prefs.py && x.p) b.append(el("span", "zp", x.p));
+    b.title = "Tap for the English";
+    b.onclick = () => { const e = b.querySelector(".ze"); if (e) e.remove(); else b.append(el("span", "ze", x.e)); if (canSpeak) speak(x.h); };
+    p.append(b);
+  });
+  return p;
+}
+// Switch the story between English narration and all Chinese, any time; it remembers your choice
+function lsLangSwitch(v, c) {
+  const wrap = el("div", "ls-lang"); wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", "Narration language");
+  [["English", false], ["全中文 All Chinese", true]].forEach(([l, zh]) => {
+    const b = el("button", null, l); b.setAttribute("aria-pressed", !!LS.zh === zh ? "true" : "false");
+    b.onclick = () => { if (!!LS.zh === zh) return; LS.zh = zh; lsSave(); lsRedraw(); };
+    wrap.append(b);
+  });
+  return wrap;
+}
+// Redraw the chapter you're on without losing your place or your answer
+function lsRedraw() {
+  if (mode !== "long" || lsView !== "read" || !lsAt || !lsCh(lsAt.v, lsAt.c)) return;
+  const r = lsReady, y = scrollY; lsRead(lsAt.v, lsAt.c); lsReady = r; renderMove(); window.scrollTo(0, y);
+}
+
 /* the two things Claude writes: the plan for the whole story, and each chapter as you reach it */
 function lsBiblePrompt(n, theme, name) {
   return `You are planning a light novel to be read inside a Mandarin-learning app. The reader is a beginner-to-lower-intermediate learner of Mandarin, and they are the main character ("you", second person): a foreigner who has just arrived in a real city in mainland China${name ? `, whom people call ${name}` : ""}. Give them a believable reason for being there that fits the theme.
@@ -2532,7 +2606,7 @@ function lsFetch(v, c) {
       try {
         const ch = lsCleanChapter(await sample.json(prompt, { cache: false }), last);
         if (LS !== story) return; // a new story was started meanwhile
-        LS.chapters[key] = ch; lsLogOwn(v, c, ch); lsSave(); return;
+        LS.chapters[key] = ch; lsLogOwn(v, c, ch); lsSave(); if (LS.zh) await lsZhFetch(v, c).catch(() => {}); return;
       } catch (e) { err = e; if (e && (e.code === "not_granted" || e.code === "rate_limited")) break; }
     }
     throw err;
@@ -2708,7 +2782,9 @@ function lsRead(v, c) {
   LS.lastAt = Date.now();
   if (ch.fb) { const f = el("div", "ls-fb"); f.append(el("span", "ls-label", "What you said last time"), ch.fb.note); if (ch.fb.fix) f.append(" ", el("span", "han-inline", ch.fb.fix[0]), " ", el("span", "py", ch.fb.fix[1])); log.append(f); }
   const th = el("div", "ls-chap-row"); th.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
-  if (canSpeak) { const lb = el("button", "linkish", "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
+  const zhOn = !!(LS.zh && ch.zh);
+  if (sample || ch.zh) th.append(lsLangSwitch(v, c));
+  if (canSpeak) { const lb = el("button", "linkish", zhOn ? "Listen to the chapter" : "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
   // A chapter that reads badly can be written again, until you've answered it
   if (sample && !ch.said) { const re = el("button", "linkish ls-rewrite", "Rewrite it");
     re.onclick = () => {
@@ -2717,10 +2793,18 @@ function lsRead(v, c) {
       lsUncount(ch); delete LS.chapters[lsKey(v, c)]; lsSave(); lsWrite(v, c);
     }; th.append(re); }
   log.append(th);
-  let last = null;
+  const zh = zhOn;
+  if (LS.zh && !ch.zh) {
+    // Not in Chinese yet: read the English meanwhile, and swap over when it's ready
+    const note = el("p", "ls-zh-note", sample ? "Putting this chapter into Chinese. Read on in English meanwhile; it switches when it's ready." : "This chapter isn't in Chinese yet, and that needs Claude.");
+    log.append(note);
+    if (sample) lsZhFetch(v, c).then(() => { if (lsAt && lsAt.v === v && lsAt.c === c && lsView === "read") lsRedraw(); })
+      .catch(() => { note.textContent = "Couldn't put this chapter into Chinese just now. "; const again = el("button", "linkish", "Try again"); again.onclick = () => lsRedraw(); note.append(again); });
+  }
+  let last = null, ni = 0;
   ch.blocks.forEach(bl => {
     if (bl.t === "n") {
-      log.append(lsNarr(bl.text, ch.pre));
+      log.append(zh ? lsZhNarr(ch.zh[ni] || []) : lsNarr(bl.text, ch.pre)); ni++;
     } else { log.append(lsLine(bl)); last = [bl.h, bl.p, bl.e]; }
   });
   if (ch.said && ch.said.k !== "end") {
@@ -2737,12 +2821,12 @@ function lsRead(v, c) {
 function lsListen(btn) {
   if (!canSpeak) return;
   if (btn.dataset.on) { speechSynthesis.cancel(); return; }
-  const rows = [...document.querySelectorAll("#log .row.npc")]; if (!rows.length) return;
+  const rows = [...document.querySelectorAll(LS.zh ? "#log .row.npc, #log .ls-zh .zs" : "#log .row.npc")]; if (!rows.length) return; // in Chinese, the narration is read too
   speechSynthesis.cancel(); btn.dataset.on = "1"; btn.textContent = "Stop";
   const voice = speechSynthesis.getVoices().find(v => /zh[-_]CN/i.test(v.lang));
-  const stop = () => { delete btn.dataset.on; btn.textContent = "Listen to the conversation"; rows.forEach(r => r.classList.remove("speaking")); };
+  const stop = () => { delete btn.dataset.on; btn.textContent = LS.zh ? "Listen to the chapter" : "Listen to the conversation"; rows.forEach(r => r.classList.remove("speaking")); };
   rows.forEach((r, i) => {
-    const u = new SpeechSynthesisUtterance((r.querySelector(".han") || {}).textContent || ""); u.lang = "zh-CN"; u.rate = 0.9; if (voice) u.voice = voice;
+    const u = new SpeechSynthesisUtterance((r.querySelector(".han, .zh") || {}).textContent || ""); u.lang = "zh-CN"; u.rate = 0.9; if (voice) u.voice = voice;
     u.onstart = () => { rows.forEach(x => x.classList.remove("speaking")); r.classList.add("speaking"); r.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
     if (i === rows.length - 1) { u.onend = stop; u.onerror = stop; }
     speechSynthesis.speak(u);
@@ -3377,7 +3461,7 @@ const HELP = [
 ];
 const helpLevel = () => prefs.listen ? 3 : !prefs.py ? 2 : prefs.hint ? 0 : 1;
 function setHelp(i) { const h = HELP[i]; prefs.py = h.py; prefs.hint = h.hint; prefs.listen = h.listen; store.set("sm-prefs", prefs); applyPrefs(); if (mode === "scene" && !finished) renderMove();
-  if (mode === "long" && lsView === "read" && lsAt && lsCh(lsAt.v, lsAt.c)) { const r = lsReady, y = scrollY; lsRead(lsAt.v, lsAt.c); lsReady = r; renderMove(); window.scrollTo(0, y); } }
+  lsRedraw(); }
 function applyPrefs() {
   document.body.classList.toggle("no-py", !prefs.py);
   document.body.classList.toggle("hint-off", !prefs.hint);
