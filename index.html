@@ -293,6 +293,9 @@ body.hint-off .opt .en-line { display: none; }
 .bank { display: flex; flex-wrap: wrap; gap: 8px; }
 .tile { font-family: var(--f-han); font-weight: 600; font-size: 19px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; }
 .tile:hover { border-color: var(--fg); }
+.tile { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.tile .tp { font-family: var(--f-py); font-weight: 400; font-size: 11px; color: var(--muted); }
+.tile.on .tp { color: inherit; opacity: .75; }
 .tile.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .scn.review .han { color: var(--cinnabar); }
 .ear { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -981,6 +984,29 @@ function judgeOffline(text, good, opt = {}) {
 }
 
 /* ---------- build mode: put the words in order yourself ---------- */
+// Pinyin for each word tile, worked out from the line's own pinyin (skipped when they don't line up)
+const PYV = "aeiouüvāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ";
+const SYL = new RegExp(`(?:zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])?[${PYV}]+(?:ng(?![${PYV}])|n(?![${PYV}]))?(?:r(?![${PYV}]))?`, "gi");
+function tilePinyin(b, p) {
+  const syl = p.replace(/'/g, " ").match(SYL) || [], out = {}; let i = 0;
+  for (const t of b.split("|")) {
+    const ch = [...normHan(t)]; let n = ch.length;
+    if (ch[n - 1] === "儿" && syl[i + n - 2] && /r$/i.test(syl[i + n - 2])) n--;
+    out[t] = syl.slice(i, i + n).join("").toLowerCase(); i += n;
+  }
+  return i === syl.length ? out : {};
+}
+const tilePyCache = {};
+function tilePyFor(scene) {
+  if (!tilePyCache[scene.id]) { const m = {}; scene.turns.concat((scene.curveballs || []).map(c => c.turn)).forEach(t => t.opts.forEach(o => { if (o.b) Object.assign(m, tilePinyin(o.b, o.p)); })); tilePyCache[scene.id] = m; }
+  return tilePyCache[scene.id];
+}
+// A tile shows its pinyin underneath while the help dial is on English or Pinyin
+function tileBtn(w, cls, scene) {
+  const b = el("button", cls), py = helpLevel() <= 1 && scene ? tilePyFor(scene)[w] : "";
+  b.append(el("span", "tw", w)); if (py) b.append(el("span", "tp", py));
+  return b;
+}
 let bState = null; // { key, ans, tiles, chosen }
 function builder(t, good) {
   const key = cur.id + ":" + turn;
@@ -994,13 +1020,13 @@ function builder(t, good) {
   const slots = el("div", "slots"); slots.setAttribute("aria-label", "Your sentence");
   if (!bState.chosen.length) slots.append(el("span", "slots-empty", "Tap the words in order"));
   bState.chosen.forEach(tile => {
-    const b = el("button", "tile on", tile.w); b.disabled = busy;
+    const b = tileBtn(tile.w, "tile on", S.find(x => x.id === cur.id)); b.disabled = busy;
     b.onclick = () => { bState.chosen = bState.chosen.filter(x => x !== tile); renderMove(); };
     slots.append(b);
   });
   const bank = el("div", "bank");
   bState.tiles.filter(x => !bState.chosen.includes(x)).forEach(tile => {
-    const b = el("button", "tile", tile.w); b.disabled = busy;
+    const b = tileBtn(tile.w, "tile", S.find(x => x.id === cur.id)); b.disabled = busy;
     b.onclick = () => { bState.chosen.push(tile); renderMove(); };
     bank.append(b);
   });
@@ -1337,8 +1363,9 @@ function ladderEl(n) {
 function reviewBuilder(n) {
   const st = rTiles, box = el("div", "build"), slots = el("div", "slots"), bank = el("div", "bank");
   if (!st.chosen.length) slots.append(el("span", "slots-empty", "Tap the words in order"));
-  st.chosen.forEach(tile => { const b = el("button", "tile on", tile.w); b.onclick = () => { st.chosen = st.chosen.filter(x => x !== tile); renderReviewMove(); }; slots.append(b); });
-  st.tiles.filter(x => !st.chosen.includes(x)).forEach(tile => { const b = el("button", "tile", tile.w); b.onclick = () => { st.chosen.push(tile); renderReviewMove(); }; bank.append(b); });
+  const sc = S.find(x => x.id === n.sid);
+  st.chosen.forEach(tile => { const b = tileBtn(tile.w, "tile on", sc); b.onclick = () => { st.chosen = st.chosen.filter(x => x !== tile); renderReviewMove(); }; slots.append(b); });
+  st.tiles.filter(x => !st.chosen.includes(x)).forEach(tile => { const b = tileBtn(tile.w, "tile", sc); b.onclick = () => { st.chosen.push(tile); renderReviewMove(); }; bank.append(b); });
   const row = el("div", "endcard"), go = el("button", "btn", "Say it"); go.disabled = !st.chosen.length;
   go.onclick = () => {
     const built = st.chosen.map(x => x.w);
