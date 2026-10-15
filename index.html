@@ -2408,7 +2408,14 @@ function lsLine(b) {
   const c = lsCast(b.who), name = c ? c.name_hanzi : String(b.who || "路人");
   const row = el("div", "row npc");
   const who = el("div", "who", (c && c.address || name).slice(-2)); who.title = c ? `${c.name_hanzi} ${c.name_pinyin}, ${c.role}` : name;
-  const bub = el("div", "bubble"); bub.append(bubbleContent(b.h, b.p, b.e, false));
+  const bub = el("div", "bubble");
+  if (prefs.listen && canSpeak) {
+    // Ears: hear each line before you see it, the same as in Short Story
+    const txt = el("div", "lt"); txt.hidden = true; txt.append(bubbleContent(b.h, b.p, b.e, false));
+    const ear = el("div", "ear"), play = el("button", "btn small", "Play"), slow = el("button", "btn ghost small", "Slower"), show = el("button", "reveal", "Show text");
+    play.onclick = () => speak(b.h); slow.onclick = () => speak(b.h, 0.55); show.onclick = () => { txt.hidden = false; ear.remove(); };
+    ear.append(el("span", "ear-label", "Listen"), play, slow, show); bub.append(ear, txt);
+  } else bub.append(bubbleContent(b.h, b.p, b.e, false));
   row.append(who, bub); return row;
 }
 
@@ -2468,7 +2475,7 @@ function lsChapterPrompt(v, c) {
   const prev = c > 1 ? lsCh(v, c - 1) : v > 1 ? lsCh(v - 1, LS_CH) : null, said = prev && prev.said;
   const known = Object.entries(LS.words).sort((a, b) => b[1].seen - a[1].seen).slice(0, 60).map(([h, w]) => `${h}=${w.e}`).join(", ");
   const r = LS.n > 1 ? (v - 1) / (LS.n - 1) : 1;
-  const density = r < 0.2 ? "Embed 1 or 2 Chinese words per paragraph of narration." : r < 0.5 ? "Embed 2 to 4 Chinese words per paragraph, mostly ones the reader already knows." : r < 0.8 ? "Embed 4 to 6 Chinese words per paragraph, mostly known ones, and now and then a whole short Chinese phrase." : "Embed plenty: most known words appear in Chinese, and one or two whole short sentences of narration are in Chinese.";
+  const density = r < 0.2 ? "Embed 1 or 2 Chinese words per paragraph of narration." : r < 0.5 ? "Embed 2 to 4 Chinese words per paragraph, mostly ones the reader already knows." : r < 0.8 ? "Embed 4 to 6 Chinese words per paragraph, mostly known ones, and now and then a whole short Chinese phrase." : "Embed plenty: most known words appear in Chinese, and one or two whole short sentences of narration are in Chinese, each inside its own tag.";
   const lastLine = said ? `At the end of the last chapter, ${prev.moment ? `the moment was: ${prev.moment.prompt} The reader said: ` : "the reader said: "}"${said.h}"${said.k === "good" ? " (natural, it landed)." : said.k === "own" ? "" : said.k === "okay" ? " (understood, but a bit off: " + (said.note || "") + ")." : said.k === "wrong" ? " (a mistake: " + (said.note || "") + "). Open this chapter by playing out the misunderstanding it causes, lightly and kindly, and let someone help the reader get it right." : " (their own words, not one of the options)."}${said.r ? ` The reader has already seen the reply "${said.r[0]}" (${said.r[2]}), so pick up right after it and don't repeat it.` : ""}` : "";
   return `You are writing chapter ${c} of ${LS_CH} of volume ${v} of ${LS.n} of a light novel inside a Mandarin-learning app. The reader is the main character, "you", a beginner-to-lower-intermediate learner of Mandarin${LS.name ? `, whom people call ${LS.name}` : ""}. ${LS.he === "he" ? "Refer to the reader as 他 when others talk about them." : LS.he === "she" ? "Refer to the reader as 她 when others talk about them." : "Avoid third-person pronouns for the reader in Chinese; people use their name or 你."}
 The story plan (the "answer" is a secret: never reveal it before the last volume, only small hints): ${JSON.stringify({ title: b.title_english, city: b.city, premise: b.premise, question: b.question, answer: b.answer, cast: b.cast })}
@@ -2480,7 +2487,7 @@ ${lastLine}
 ${said && said.k === "own" ? `Also give "feedback" on the reader's own line: would a local follow it, and what would sound natural.` : ""}
 How to write it:
 - Narration: English, second person, present tense; cast members are named in English by how you address them (Auntie Zhang, Boss Liu) or by a tagged Chinese address the first time; a light-novel voice: vivid, warm, funny, specific to the city, short paragraphs. 250 to 400 words of narration in all, in 3 to 6 narration blocks.
-- Chinese inside narration is written as [[汉字|pīnyīn|English]]: one word or short set phrase per tag, no punctuation inside, tags only in narration text (never in dialogue). ${density} Words the reader has already met: ${known || "none yet"}. Reuse them; that is how they learn.
+- Chinese inside narration is written as [[汉字|pīnyīn|English]]: one word or short set phrase per tag (in later volumes, sometimes one short sentence), no "|" or "]" inside, tags only in narration text (never in dialogue), and never any Chinese in narration outside a tag. ${density} Words the reader has already met: ${known || "none yet"}. Reuse them; that is how they learn.
 - Dialogue: 4 to 8 lines from the cast or passers-by, in short natural spoken simplified Chinese a beginner can mostly follow (HSK 1 to 3, with an occasional new word), and an English meaning. Pinyin: tone marks, words joined (xièxie, bù hǎoyìsi), neutral tones unmarked, the tone changes of 一 and 不, room and phone numbers read digit by digit with 1 as yāo. Every dialogue line is 15 Chinese characters or fewer, not counting punctuation, except one line of up to 25. In dialogue, at most one word above HSK 3 per chapter (setting words tagged in narration don't count), and it goes in new_words. A speaker who isn't in the cast is named by a person role (老板, 工作人员, 司机, 路人), never by an institution. Each character keeps their own way of talking, and people address each other as the plan says (the "who" of a line is the speaker's name_hanzi). The reader never speaks in the blocks; their words come only in the moment at the end.
 - ${last ? "This is the last chapter of the whole story: resolve it, and end on a final line the reader says (a goodbye, a thank-you, a promise)." : "End on a cliffhanger moment: someone says something to the reader that needs an answer, as the last dialogue line."}
 - The moment: "prompt" is one English sentence telling the reader what they want to say (for example "Tell her you'll take the small one, and ask how much it is."). Exactly 3 options, each 12 characters or fewer and a direct answer to the last line: one "good" (natural, what a local would say, using words from this chapter or HSK 1 to 2), one "okay" (understood but off: too blunt, a wrong measure word, missing a key word), one "wrong" (a realistic beginner mistake of a different kind that would lead to a funny misunderstanding). Each option: "h" (Chinese), "p" (pinyin), "e" (English), "k" ("good", "okay" or "wrong"), "note" (one coaching sentence naming the key word with its pinyin), "r" (the other person's reaction as [hanzi, pinyin, English]); for okay and wrong also "fix": [hanzi, pinyin] of the good line and "tag": one of ${TAGSET.join(", ")}. The good option also gets "b": its Chinese split into 2 to 5 word tiles with "|" (the tiles joined must equal its Chinese without punctuation).
@@ -2667,7 +2674,7 @@ function lsRead(v, c) {
   let last = null;
   ch.blocks.forEach(bl => {
     if (bl.t === "n") {
-      if (count) (bl.text.match(/\[\[[^\]]+\]\]/g) || []).forEach(m => { const [h, p, e] = m.slice(2, -2).split("|"); lsMeet({ h, p, e }, where); });
+      if (count) (bl.text.match(/\[\[[^\]]+\]\]/g) || []).forEach(m => { const [h, p, e] = m.slice(2, -2).split("|"); if ([...normHan(h)].length <= 6) lsMeet({ h, p, e }, where); }); // words, not whole sentences
       log.append(lsNarr(bl.text));
     } else { log.append(lsLine(bl)); last = [bl.h, bl.p, bl.e]; }
   });
@@ -2691,7 +2698,7 @@ function lsListen(btn) {
   const voice = speechSynthesis.getVoices().find(v => /zh[-_]CN/i.test(v.lang));
   const stop = () => { delete btn.dataset.on; btn.textContent = "Listen to the conversation"; rows.forEach(r => r.classList.remove("speaking")); };
   rows.forEach((r, i) => {
-    const u = new SpeechSynthesisUtterance(r.querySelector(".han").textContent); u.lang = "zh-CN"; u.rate = 0.9; if (voice) u.voice = voice;
+    const u = new SpeechSynthesisUtterance((r.querySelector(".han") || {}).textContent || ""); u.lang = "zh-CN"; u.rate = 0.9; if (voice) u.voice = voice;
     u.onstart = () => { rows.forEach(x => x.classList.remove("speaking")); r.classList.add("speaking"); r.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
     if (i === rows.length - 1) { u.onend = stop; u.onerror = stop; }
     speechSynthesis.speak(u);
