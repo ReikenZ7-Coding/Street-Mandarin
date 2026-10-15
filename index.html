@@ -1072,8 +1072,12 @@ function judgeOffline(text, good, opt = {}) {
 const PYV = "aeiouüvāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ";
 const SYL = new RegExp(`(?:zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])?[${PYV}]+(?:ng(?![${PYV}])|n(?![${PYV}]))?(?:r(?![${PYV}]))?`, "gi");
 function tilePinyin(b, p) {
+  // A tile in Latin letters (Wi-Fi, AA) reads as itself, so it takes no syllables from the pinyin line
+  const latin = b.split("|").filter(t => !/[\u4e00-\u9fff]/.test(t));
+  latin.forEach(t => { p = p.replace(new RegExp(t.replace(/[-]/g, "\\-"), "i"), " "); });
   const syl = p.replace(/'/g, " ").match(SYL) || [], out = {}; let i = 0;
   for (const t of b.split("|")) {
+    if (latin.includes(t)) continue;
     const ch = [...normHan(t)]; let n = ch.length;
     if (ch[n - 1] === "儿" && syl[i + n - 2] && /r$/i.test(syl[i + n - 2])) n--;
     out[t] = syl.slice(i, i + n).join("").toLowerCase(); i += n;
@@ -1082,12 +1086,27 @@ function tilePinyin(b, p) {
 }
 const tilePyCache = {};
 function tilePyFor(scene) {
-  if (!tilePyCache[scene.id]) { const m = {}; scene.turns.concat((scene.curveballs || []).map(c => c.turn)).forEach(t => t.opts.forEach(o => { if (o.b) Object.assign(m, tilePinyin(o.b, o.p)); })); tilePyCache[scene.id] = m; }
+  if (!tilePyCache[scene.id]) { const m = {}; sceneMoments(scene).forEach(t => t.opts.forEach(o => { if (o.b) Object.assign(m, tilePinyin(o.b, o.p)); })); tilePyCache[scene.id] = m; }
   return tilePyCache[scene.id];
+}
+const sceneMoments = s => s.turns.concat((s.curveballs || []).map(c => c.turn));
+// When a line's pinyin can't be lined up with its tiles (a place Claude wrote, say), spell the tile
+// from characters whose reading never changes anywhere in the app
+let charPy = null;
+function tileFallback(w) {
+  if (!charPy) {
+    const seen = {};
+    S.forEach(s => { if (s.custom) return; sceneMoments(s).forEach(t => t.opts.forEach(o => { if (!o.b) return;
+      Object.entries(tilePinyin(o.b, o.p)).forEach(([tw, py]) => { const ch = [...normHan(tw)], sy = py.match(SYL) || [];
+        if (ch.length === sy.length) ch.forEach((c, k) => (seen[c] = seen[c] || new Set()).add(sy[k])); }); })); });
+    charPy = {}; Object.entries(seen).forEach(([c, set]) => { if (set.size === 1) charPy[c] = [...set][0]; });
+  }
+  const ch = [...normHan(w)];
+  return ch.length && ch.every(c => charPy[c]) ? ch.map(c => charPy[c]).join("") : "";
 }
 // A tile shows its pinyin underneath while the help dial is on English or Pinyin
 function tileBtn(w, cls, scene) {
-  const b = el("button", cls), py = helpLevel() <= 1 && scene ? tilePyFor(scene)[w] : "";
+  const b = el("button", cls), py = helpLevel() <= 1 && scene ? tilePyFor(scene)[w] || (/[\u4e00-\u9fff]/.test(w) ? tileFallback(w) : "") : "";
   b.append(el("span", "tw", w)); if (py) b.append(el("span", "tp", py));
   return b;
 }
