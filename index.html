@@ -882,14 +882,44 @@ function listenOnce(inp, mic, done) {
 // One judge for anything typed: the scene, reviews and the real-life logger all use it.
 // Courtesy words don't change what you asked for, so 不要辣 is as good as 不要辣，谢谢
 const isHanText = x => /[一-鿿]/.test(x);
-const coreHan = x => { let h = normHan(x); for (let i = 0; i < 2; i++) h = h.replace(/^(你好|请问|请|麻烦你?)/, "").replace(/(谢谢你?|谢了|麻烦了|麻烦你了)$/, "").replace(/(了|吧|啊|呀|哦|啦)$/, ""); return h; };
+// Same meaning, different spelling: 痛/疼, 您/你, and digits written as numbers
+const DIG = "零一二三四五六七八九";
+// 59 reads 五十九; long runs like a room or phone number are read digit by digit
+const cnNum = n => { if (n.length > 3 || n.length > 1 && n[0] === "0") return [...n].map(d => DIG[d]).join(""); let v = +n, out = "";
+  if (v >= 100) { out += DIG[Math.floor(v / 100)] + "百"; v %= 100; if (v && v < 10) out += "零"; }
+  if (v >= 10) { out += (out || Math.floor(v / 10) > 1 ? DIG[Math.floor(v / 10)] : "") + "十"; v %= 10; }
+  if (v || !out) out += DIG[v]; return out; };
+const canonHan = x => normHan(x).replace(/[0-9]+/g, cnNum).replace(/可是/g, "但是").replace(/〇/g, "零").replace(/痛/g, "疼").replace(/您/g, "你");
+// The facts a line carries: numbers, yes or no, before or after. Getting the words nearly right but a fact wrong is a real mistake
+// Words that only look like numbers or negatives: 二维码 is a QR code, 不好意思 is "sorry"
+const FIXED = /二维码|一下|一点儿?|一起|一样|一会儿?|一直|万一|不好意思|对不起|不客气|不用|没事|没关系|不错|差不多/g;
+// A number's value, however it's written: 59, 五十九, or 一二零三 read digit by digit
+function numVal(t) {
+  if (/^[0-9]+$/.test(t)) return +t;
+  t = t.replace(/两/g, "二");
+  if (!/[十百千万]/.test(t)) return +[...t].map(c => DIG.indexOf(c)).join("");
+  let total = 0, cur = 0;
+  for (const c of t) { const d = DIG.indexOf(c); if (d >= 0) cur = d; else { const u = { 十: 10, 百: 100, 千: 1000, 万: 10000 }[c]; total += (cur || 1) * u; cur = 0; } }
+  return total + cur;
+}
+const factNums = x => (normHan(x).replace(FIXED, "").match(/[0-9]+|[零〇一二两三四五六七八九十百千万]+/g) || []).filter(n => n !== "一").map(n => numVal(n.replace(/〇/g, "零")));
+const factNeg = x => (canonHan(x).replace(FIXED, "").match(/[不没别]/g) || []).length;
+const factDir = x => (canonHan(x).match(/[前后左右东西南北]/g) || []).sort().join("");
+const sameFacts = (a, b) => factNums(a).join() === factNums(b).join() && factNeg(a) === factNeg(b) && factDir(a) === factDir(b);
+// Filler a local wouldn't miss: 好的 at the start, 呢 or 啊 at the end, an extra 我 or 的
+const bareHan = x => canonHan(x).replace(/^(好的|好|嗯|那|对)/, "").replace(/(好的|就行了?|就好)$/, "").replace(/没有?(?=[\u4e00-\u9fff])/g, "不").replace(/[我你呢的吧啊呀了嗯哦来]/g, "");
+const PYFILL = /^(wo|de|ne|a|ya|ba|le|o|en|haode|hao|jiuxing|xiexie)$/;
+const barePy = x => pyWords(x.replace(/mei(you)?(?=\s*[a-z])/gi, "bu ")).filter(w => !PYFILL.test(w)).join("");
+const coreHan = x => { let h = canonHan(x); for (let i = 0; i < 2; i++) h = h.replace(/^(你好|请问|请|麻烦你?)/, "").replace(/(谢谢你?|谢了|麻烦了|麻烦你了)$/, "").replace(/(了|吧|啊|呀|哦|啦)$/, ""); return h; };
 const pyWords = x => x.normalize("NFD").replace(/ü/g, "v").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z]+/).filter(Boolean);
-const corePy = x => { const w = pyWords(x); for (let i = 0; i < 2; i++) { while (/^(nihao|qing|qingwen|mafan)$/.test(w[0])) w.shift(); while (/^(xiexie|xiexienin|le|ba|a|ya|o|la)$/.test(w[w.length - 1])) w.pop(); } return w.join(""); };
+const corePy = x => { const w = pyWords(x); for (let i = 0; i < 2; i++) { while (/^(nihao|ninhao|nin|hao|qing|qingwen|mafan)$/.test(w[0]) && w.length > 1) w.shift(); while (/^(xiexie|xiexienin|le|ba|a|ya|o|la)$/.test(w[w.length - 1])) w.pop(); } return w.join(""); };
 const hasTones = x => /[̀-ͯ]|[1-5]/.test(x.normalize("NFD"));
 function matchTyped(text, t) {
-  const h = normHan(text), py = normPy(text), han = isHanText(text), goods = t.opts.filter(o => o.k === "good");
+  // Your own name counts as the name in the script (马修 in the WeChat scene)
+  if (t.opts.some(o => o.h.includes("马修"))) text = text.replace(/[A-Za-z][A-Za-z ]*[A-Za-z]/g, m => /^(wo|jiao|shi|ni|hao)$/i.test(m) ? m : "马修");
+  const h = canonHan(text), py = normPy(text), han = isHanText(text), goods = t.opts.filter(o => o.k === "good");
   // 1. Exactly a scripted line. Toneless pinyin can fit two lines (冰 bīng and 病 bìng): give the benefit of the doubt
-  const exact = t.opts.filter(o => normHan(o.h) === h || (!han && py && normPy(o.p) === py));
+  const exact = t.opts.filter(o => canonHan(o.h) === h || (!han && py && normPy(o.p) === py));
   if (exact.length) {
     const toned = !han && hasTones(text) && exact.find(o => o.p.normalize("NFD").toLowerCase().replace(/[^a-z̀-ͯ]/g, "") === text.normalize("NFD").toLowerCase().replace(/[^a-z̀-ͯ]/g, ""));
     // Without tone marks, a good line that sounds the same (give or take 谢谢) wins over a slip that only differs by tone
@@ -901,11 +931,17 @@ function matchTyped(text, t) {
   if (core) {
     const g = goods.find(o => coreOf(o) === core), clash = t.opts.some(o => o.k !== "good" && coreOf(o) === core);
     if (g && !clash) return { o: g, how: "core" };
+    // The same once filler is set aside (我的头疼, 好的，一天三次…), as long as no fact changed
+    const bare = han ? bareHan : barePy, bareOf = o => han ? bareHan(o.h) : barePy(o.p), b = bare(text);
+    const g2 = goods.find(o => bareOf(o) === b && (!han || sameFacts(text, o.h))), clash2 = t.opts.some(o => o.k !== "good" && bareOf(o) === b);
+    if (b && g2 && !clash2) return { o: g2, how: "core" };
   }
   // 3. One small slip away from a good line
   const size = o => han ? [...coreHan(o.h)].length : corePy(o.p).length;
   const dist = o => han ? lev(core || h, coreHan(o.h)) : lev(core || py, corePy(o.p));
-  const near = goods.find(o => { const d = dist(o); return d > 0 && d <= Math.max(1, Math.floor(size(o) / 8)); });
+  // A swapped content word (冷水 for 热水, 今天 for 明天) is never "one small slip"
+  const swapped = o => { const g = canonHan(o.h); return [...g].some(c => !h.includes(c) && !"我你的了吧呢啊呀是很".includes(c)) && [...h].some(c => !g.includes(c) && !"我你的了吧呢啊呀是很".includes(c)); };
+  const near = goods.find(o => { const d = dist(o); return d > 0 && d <= Math.max(1, Math.floor(size(o) / 8)) && (!han || (sameFacts(text, o.h) && !swapped(o))); });
   if (near) return { o: near, how: "near" };
   // 4. A near-copy of a slip the script knows, but only if you actually said the thing that makes it a slip
   //    (我要牛肉面 shares a lot with 我是牛肉面, but it has no 是, so it isn't that mistake)
@@ -913,7 +949,7 @@ function matchTyped(text, t) {
   const marks = o => han ? [...new Set(normHan(o.h))].filter(c => !normHan(good.h).includes(c)) : pyWords(o.p).filter(w => !pyWords(good.p).includes(w));
   const said = han ? h : pyWords(text);
   const slip = t.opts.filter(o => o.k !== "good").map(o => [o, dist(o) / Math.max(1, size(o))])
-    .filter(([o, d]) => d <= 0.25 && marks(o).length && marks(o).some(m => said.includes(m))).sort((a, b) => a[1] - b[1])[0];
+    .filter(([o, d]) => d <= 0.25 && dist(o) < dist(good) && marks(o).length && marks(o).every(m => said.includes(m))).sort((a, b) => a[1] - b[1])[0];
   if (slip) return { o: slip[0], how: "slip" };
   return { o: null, how: "none", good };
 }
@@ -950,36 +986,51 @@ const NUMCH = "一二两三四五六七八九十几半这那每";
 const mwAfterNum = x => { const m = x.match(new RegExp(`[${NUMCH}]([${Object.keys(MW).join("")}])`)); return m ? m[1] : null; };
 const numsIn = x => (x.match(/[0-9]+|[零一二两三四五六七八九十百千万点半]+(?=[块元毛分点号岁个位杯碗张瓶斤份串袋件双盒次个人天楼路号线站钟刻]|$)/g) || []).join(",");
 function judgeOffline(text, good, opt = {}) {
-  const h = normHan(text), g = normHan(good.h), notes = [];
+  const h = canonHan(text), g = canonHan(good.h), notes = [];
   let kind = null;
   const hit = (k, n) => { notes.push(n); if (kind !== "wrong") kind = k; };
   if (!/[\u4e00-\u9fff]/.test(text)) {
     if (/\b(the|want|please|where|how|much|is|are|can|thanks|thank|hello|yes|no)\b/i.test(text)) hit("wrong", "That's English, and most people here won't follow it. Have a go in Chinese, even just the key word.");
     else if (!opt.strict) {
       // Pinyin: every word you typed is in the good line, and only some of it is missing
-      const FILL = /^(xiexie|le|ba|a|ya|o|nihao|qing|wo|ni|shi|hen|de|ma)$/;
-      const want = pyWords(good.p).filter(w => !FILL.test(w)), got = pyWords(text);
-      const miss = want.filter(w => !got.includes(w)), extra = got.filter(w => !FILL.test(w) && !pyWords(good.p).includes(w));
+      // Compare on the joined-up sounds, so "mei you" and "méiyǒu" are the same thing
+      const FILL = /^(xiexie|le|ba|a|ya|o|ne|nihao|ninhao|qing|wo|ni|shi|hen|de|ma|hao|haode|haoa|jiuxing|danshi|en|na)$/;
+      const want = pyWords(good.p).filter(w => !FILL.test(w)), gotJ = pyWords(text).join(""), goodJ = pyWords(good.p).join("");
+      const miss = want.filter(w => !gotJ.includes(w)), extra = pyWords(text).filter(w => !FILL.test(w) && !goodJ.includes(w));
       if (!extra.length && miss.length && miss.length < want.length && miss.length <= Math.ceil(want.length / 2))
         hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
     }
     return kind ? { kind, note: notes.join(" ") } : null;
   }
   if (h.includes("不有")) hit("okay", "有 yǒu is the one verb that never takes 不. It's always 没有 méiyǒu.");
-  const two = h.match(new RegExp(`二([${Object.keys(MW).join("")}])`));
+  const two = h.match(new RegExp(`二([${Object.keys(MW).join("")}天片])`));
   if (two) hit("okay", `Before a measure word, 2 is 两 liǎng, not 二 èr: 两${two[1]}.`);
   const mwSaid = mwAfterNum(h), mwWant = mwAfterNum(g);
   if (mwSaid && mwWant && mwSaid !== mwWant) hit("okay", `Measure word: here it's ${mwWant} ${MW[mwWant]}, not ${mwSaid} ${MW[mwSaid]}. ${mwSaid === "个" ? "个 is the catch-all, so they'd understand, but it sounds like a beginner." : "The thing you're counting decides the word."}`);
   if (/是(很|太|非常|有点儿?)?(贵|便宜|好吃|辣|热|冷|饿|累|远|近|大|小|忙|快|慢|多|少)/.test(h) && !/是(很|太|非常|有点儿?)?(贵|便宜|好吃|辣|热|冷|饿|累|远|近|大|小|忙|快|慢|多|少)/.test(g)) hit("okay", "Describing words don't need 是 shì in Chinese: say 很贵 hěn guì, not 是贵.");
   if (/(什么|哪|几|多少|谁|怎么)/.test(h) && /吗$/.test(h)) hit("okay", "A question word like 什么 or 多少 already makes it a question, so drop the 吗 ma at the end.");
-  const nGood = numsIn(g), nSaid = numsIn(h);
-  if (nGood && nSaid && nGood !== nSaid) hit("wrong", "Check the number: it doesn't match what this moment needs. Numbers are where small slips cost real money.");
+  // A number this moment doesn't have is a real mistake; leaving one out is just a shorter answer
+  const nGood = factNums(good.h), nSaid = factNums(text), odd = nSaid.filter(n => !nGood.includes(n));
+  if (odd.length) hit("wrong", `Check the number: ${odd[0]} isn't right here. Numbers are where small slips cost real money.`);
+  // Same words with the yes and no flipped, or before for after, says the opposite
+  const content = [...new Set(g)].filter(c => !"我你他她是很了的吧吗啊呢呀哦嗯个一请谢好".includes(c));
+  const shared = content.filter(c => h.includes(c)).length;
+  if (shared >= Math.max(2, content.length / 3)) {
+    // Only when the very thing being negated is there: 发烧 vs 不发烧, not a shorter answer that leaves it out
+    const negOf = x => (x.replace(FIXED, "").match(/(?:不|没有?)([^我你他她有，。,\s])/g) || []).map(m => m.slice(-1));
+    // Only a clear flip: no negative at all where one is needed, or one where the line has none
+    const near = x => { const y = x.replace(FIXED, ""), out = new Set(); [...y].forEach((c, i) => { if (/[不没别]/.test(c)) [...y.slice(i + 1, i + 4)].forEach(d => out.add(d)); }); return out; };
+    const flipIn = factNeg(h) ? [] : negOf(g).filter(c => h.includes(c)), flipOut = negOf(h).filter(c => g.includes(c) && !near(g).has(c));
+    if (flipIn.length || flipOut.length) hit("wrong", flipOut.length ? "That 不 or 没 turns it into the opposite of what you need here." : "You need a 不 or 没 here: without it you're saying the opposite.");
+    else if (factDir(h) && factDir(g) && factDir(h) !== factDir(g)) hit("wrong", `Check the detail: here it's ${factDir(g)}, not ${factDir(h)}. 前 is before, 后 after; 左 left, 右 right.`);
+  }
   // Key words: the content tiles of the good answer
-  const tiles = (good.b || "").split("|").map(normHan).filter(w => w && !/^[吧呢吗啊了的呀哦嗯我你他她是很]$/.test(w));
+  const tiles = (good.b || "").split("|").map(canonHan).filter(w => w && !/^([吧呢吗啊了的呀哦嗯我你他她是很来那对]|好的?|好啊|就行|你好|但是|可是|谢谢)$/.test(w));
   const miss = tiles.filter(w => !h.includes(w));
   // If you named something the line doesn't have (天安门 instead of 火车站), it's not a clipped version of it
-  const extra = [...new Set(h)].filter(c => !g.includes(c) && !"我你他她是很了的吧吗啊呢呀哦嗯个一请谢".includes(c));
-  if (!kind && !opt.strict && extra.length < 2 && tiles.length >= 2 && miss.length && miss.length <= Math.ceil(tiles.length / 2) && miss.length < tiles.length) hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
+  const extra = [...new Set(h)].filter(c => !g.includes(c) && !"我你他她是很了的吧吗啊呢呀哦嗯个一请谢要给就".includes(c));
+  if (!kind && !opt.strict && !miss.length && tiles.length >= 2 && !extra.length) hit("okay", "All the key words are there, so they'd follow you. Here's the usual way to put it.");
+  if (!kind && !opt.strict && !extra.length && tiles.length >= 2 && miss.length && miss.length <= Math.ceil(tiles.length / 2) && miss.length < tiles.length) hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
   return kind ? { kind, note: notes.join(" ") } : null;
 }
 
@@ -1343,14 +1394,22 @@ function reviewItem() {
 function reviewChoose(o) {
   const n = rq[ri];
   rAnswered = true;
-  addMe(o.h, o.p, o.e, o.k);
-  const right = o.k === "good";
-  if (!right && o.r) addNpc(o.r);
-  markReviewed(n, right, !!rHeld);
+  // A close-enough answer (a scripted 差不多, or yours with one small slip) neither climbs nor falls back
+  // One small slip still counts as right; a partial answer or a scripted 差不多 stays where it was
+  const close = o.k === "okay" || !!o._close, right = o.k === "good" && o._close !== "partial", hold = (close && o._close !== "slip") || !!rHeld;
+  addMe(o.h, o.p, o.e, close ? "okay" : o.k);
+  if (o.k === "wrong" && o.r) addNpc(o.r);
+  markReviewed(n, right || close, hold);
   if (right && rHeld !== "again") { rRight++; if (n.learned) rLearned++; }
-  if (!right) again(n);
-  addFeedback(o.k, right ? (n.learned ? "Third time right. It's learned and leaves your notebook." : rHeld ? `${rHeld === "near" ? "Close: one small slip, so it stays where it was." : rHeld === "again" ? "Got it this time." : "Right, with the choices on screen."} ${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.` : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`) : o.note,
-    o.fix, right ? null : { label: "Still tricky", cost: "Back to the start: it returns tomorrow." });
+  if (o.k === "wrong") again(n);
+  const rung = `${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.`;
+  const msg = o.k === "wrong" ? o.note
+    : o._close === "slip" ? (n.learned ? "Close enough, with one small slip, and that's the third time. It's learned." : `Close enough, with one small slip. ${whenText(n)}${n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`)
+    : close ? `${o._close ? "Most of it, but not the whole line" : o.note + " Close enough"}, so it stays where it was. ${rung}`
+    : n.learned ? "Third time right. It's learned and leaves your notebook."
+    : rHeld ? `${rHeld === "again" ? "Got it this time." : "Right, with the choices on screen."} ${rung}`
+    : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`;
+  addFeedback(close ? "okay" : o.k, msg, close || o.k === "wrong" ? (o.fix || (rGood ? [rGood.h, rGood.p] : null)) : null, o.k === "wrong" ? { label: "Still tricky", cost: "Back to the start: it returns tomorrow." } : close ? { label: "Close enough" } : null);
   renderReviewMove();
 }
 function ladderEl(n) {
@@ -1385,7 +1444,7 @@ function reviewTyper(n) {
     const t = scriptedTurn(S.find(x => x.id === n.sid), n), m = matchTyped(v, t);
     if (m.how === "exact" || m.how === "core" || m.how === "slip") return reviewChoose(Object.assign({}, m.o, { h: v, p: "", e: "" }));
     const judged = m.how === "near" ? null : judgeOffline(v, rGood);
-    if (m.how === "near" || (judged && judged.kind === "okay")) { rHeld = "near"; return reviewChoose(Object.assign({}, rGood, { h: v, p: "", e: "" })); }
+    if (m.how === "near" || (judged && judged.kind === "okay")) return reviewChoose(Object.assign({}, rGood, { h: v, p: "", e: "", _close: m.how === "near" ? "slip" : "partial" }));
     reviewMiss(v, judged ? judged.note : "That isn't the line for this moment.");
   };
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);

@@ -49,6 +49,7 @@ In Your pocket, the traps for each place you're heading to start with your own s
 Everything above works with no AI at all:
 - "Why, exactly?" has a ready-made, proofread explanation for all 333 scripted slips.
 - Typed answers are forgiving where a local would be: tones are optional, courtesies like 谢谢 or a final 了 don't matter, and toneless pinyin that fits the right line gets the benefit of the doubt. A typed answer only counts as a scripted mistake if it contains what makes it one (我要牛肉面 isn't 我是牛肉面).
+- What a line says matters more than its exact words: 59 and 五十九 are the same, 痛 and 疼, 可是 and 但是. A wrong number, a missing or extra 不/没, or 前 for 后 is a real mistake even when everything else matches, and a swapped key word (冷水 for 热水) is never "one small slip". Your own name works where the script uses 马修.
 - Typed answers off the script are checked by the app itself. It finds the closest scripted line and spots common slips: the wrong measure word, 二 for 两, 不有, a wrong number, 是 before an adjective, 吗 after a question word, or missing key words. When it can't tell, it says so and shows the line that works.
 
 When Claude is available, through the claude.ai Artifact runtime (`window.claude`), you also get:
