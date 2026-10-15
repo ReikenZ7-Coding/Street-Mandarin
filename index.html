@@ -231,6 +231,9 @@ body.hint-off .opt .en-line { display: none; }
 .ladder span.on { background: var(--jade); border-color: var(--jade); color: var(--surface); font-weight: 600; }
 .foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 .foot textarea { width: 100%; min-height: 70px; font: 12px/1.4 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 8px; padding: 8px; background: var(--surface); color: var(--fg); }
+.say-back { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; margin-top: 6px; font-size: 13px; }
+.sb-out.ok { color: var(--jade); font-weight: 600; }
+.sb-out.no { color: var(--cinnabar); }
 .first-run { border-left: 3px solid var(--jade); padding: 6px 12px; font-size: 14px; color: var(--fg); background: var(--surface-2); border-radius: 0 8px 8px 0; }
 .rush { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
 .rush i { display: block; height: 100%; width: 100%; background: var(--cinnabar); transform-origin: left; animation: rush linear forwards; }
@@ -511,6 +514,13 @@ function addFeedback(kind, note, fix, extra) {
     const bt = el("div", "better"); bt.append((extra && extra.fixLabel) || "Say instead: ", el("span", "h", fix[0]));
     if (fix[1]) bt.append(" ", el("span", "p", fix[1]));
     body.append(bt);
+    // Don't just read the better line: hear it, then say it back out loud and check it landed
+    if (/[\u4e00-\u9fff]/.test(fix[0]) && (canSpeak || (SR && !micBroken))) {
+      const row = el("div", "say-back"), out = el("span", "sb-out");
+      if (canSpeak) { const h = el("button", "linkish", "Hear it"); h.onclick = () => speak(fix[0]); row.append(h); }
+      if (SR && !micBroken) { const m = el("button", "linkish", "Say it back"); m.onclick = () => sayBack(m, fix[0], out); row.append(m); }
+      row.append(out); body.append(row);
+    }
   }
   if (extra && extra.cost) body.append(el("div", "cost", extra.cost));
   const ctx = { sid: cur && cur.id, place: cur && cur.en, heard: [...transcript].reverse().find(x => x.who === "npc"), said: [...transcript].reverse().find(x => x.who === "me"), note, fix };
@@ -808,6 +818,21 @@ function typer(t) {
   box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to Claude playing " + cur.whoEn + "." : "Checked against what a local would understand."));
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
   return box;
+}
+function sayBack(btn, target, out) {
+  let rec; try { rec = new SR(); } catch { micBroken = true; btn.remove(); return; }
+  rec.lang = "zh-CN"; rec.interimResults = false; rec.maxAlternatives = 3;
+  btn.textContent = "Listening…"; btn.disabled = true; out.textContent = ""; out.className = "sb-out";
+  rec.onresult = e => {
+    // Any of the recogniser's guesses matching counts: it's checking the sound landed, not your handwriting
+    const want = normHan(target), alts = [...e.results[0]].map(a => normHan(a.transcript));
+    const ok = alts.some(a => a === want || (want.length > 3 && lev(a, want) <= Math.max(1, Math.floor(want.length / 6))));
+    out.className = "sb-out " + (ok ? "ok" : "no");
+    out.textContent = ok ? "That landed." : `It heard ${alts[0] || "nothing clear"}. Listen once more and copy the melody.`;
+  };
+  rec.onerror = e => { if (["not-allowed", "service-not-allowed", "audio-capture"].includes(e.error)) { micBroken = true; out.textContent = "The microphone isn't available here."; } };
+  rec.onend = () => { btn.textContent = "Say it back"; btn.disabled = false; };
+  try { rec.start(); } catch { micBroken = true; btn.remove(); }
 }
 function listenOnce(inp, mic, done) {
   let rec;

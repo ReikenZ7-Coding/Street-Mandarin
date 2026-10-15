@@ -24,7 +24,7 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional).
-- Answers are graded good, close enough or wrong. Each gets an in-character reaction and a short note, and "Why, exactly?" goes one level deeper.
+- Answers are graded good, close enough or wrong. Each gets an in-character reaction and a short note, and "Why, exactly?" goes one level deeper. Every "say instead" line can be heard, then said back out loud: the app listens and tells you whether it landed (in browsers with speech recognition).
 - Some wrong answers carry consequences, like paying 20 kuai more for the expressway, and the end card shows what they cost you.
 - No two visits are the same. Every place has three or four surprises, and each run mixes in none, one or two, favouring ones you haven't met.
 - The end card is a four-line scorecard: what it cost you, your slips (with a drill for the kind you made most), surprises, and marks. After a run you can rematch only the moments you missed. Every way to replay sits on one line: normally, at rush hour (people won't wait while you think, and a bar shows how long you have), or live with Claude somewhere similar. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
