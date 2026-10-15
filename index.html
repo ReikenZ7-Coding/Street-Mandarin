@@ -89,6 +89,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .cd-list li.on::before { content: "✓ "; color: var(--jade); }
 .cd-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
 .ls-setup { display: grid; gap: 22px; }
+.ls-setup.busy { opacity: 0.45; pointer-events: none; }
 .ls-field { display: grid; gap: 8px; }
 .ls-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
 .ls-field .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -130,7 +131,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .ls-words .py, .ls-words .lw-n { font-size: 13px; color: var(--muted); }
 .ls-vols { margin-top: 2px; }
 .day-dot:disabled { opacity: 0.5; cursor: default; }
-@media (max-width: 760px) { .ls-themes { grid-template-columns: 1fr; } .ls-words li { grid-template-columns: auto 1fr; } .ls-words .en-line, .ls-words .lw-n { grid-column: 2; } }
+@media (max-width: 760px) { .ls-themes { grid-template-columns: 1fr; } .ls-words li { grid-template-columns: auto 1fr; } .ls-words li { grid-template-columns: 4.5em 1fr; gap: 2px 10px; } .ls-words .han { grid-row: span 2; } .ls-words .lw-n { grid-column: 2; } .ls-words .en-line { grid-column: 2; } }
 .daily { margin-top: 22px; }
 .daily-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
 .daily-title { font-weight: 700; font-size: 16px; }
@@ -392,6 +393,7 @@ body.hint-off .opt .en-line { display: none; }
 .score dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; padding-top: 2px; }
 .score dd { margin: 0; }
 .score ul { margin: 0; padding-left: 18px; font-weight: 600; color: var(--cinnabar); }
+.score ul.ls-said { color: var(--fg); } .score ul.ls-said li.slip { color: var(--cinnabar); } .score ul.ls-said li.ok::marker { color: var(--jade); }
 @media (max-width: 520px) { .score { grid-template-columns: minmax(0, 1fr); gap: 2px; } .score dd { margin-bottom: 6px; } }
 .nb-item .where { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
 .nb-item .when { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
@@ -666,7 +668,13 @@ Return ONLY a JSON object: "why" (2 to 4 plain-English sentences going one level
   }
 }
 function addNarr(t) { $("#log").append(el("div", "narr", t)); scrollLog(); }
-function scrollLog() { const l = $("#log"); l.scrollTop = l.scrollHeight; }
+function scrollLog() {
+  const l = $("#log"); l.scrollTop = l.scrollHeight;
+  // Long Story pages scroll the whole window: bring the newest line up above the sticky answer bar
+  if (mode === "long") requestAnimationFrame(() => { const last = l.lastElementChild; if (!last) return;
+    const bar = $("#move").getBoundingClientRect(), r = last.getBoundingClientRect(), room = Math.min(bar.top, innerHeight) - 12;
+    if (r.bottom > room) window.scrollBy({ top: Math.min(r.bottom - room, r.top - 72), behavior: "smooth" }); });
+}
 function setHead(place, py, en, goalLabel, goal) {
   $("#place").textContent = place; $("#place").closest(".scene-head").classList.toggle("wide", [...place].length > 4); $("#place-py").textContent = py; $("#place-en").textContent = en; $("#tabs").textContent = "";
   const g = $("#goal"); g.textContent = ""; g.append(el("b", null, goalLabel), goal);
@@ -2270,6 +2278,9 @@ function startHome(day) {
     pm.append(lsTonight());
     pm.append(homeCard({ kind: "For real", han: "真的", title: "Anything happen out there for real?", why: "If you're in China, log what you said or heard. It joins today's slips.", go: () => startField(ids[0]) }));
     log.append(pm);
+  } else if (LS) {
+    // A story on the go: tonight's chapter is there even before the day's stops
+    part("Evening", "晚上", "Later"); const pm = el("div", "today"); pm.append(lsTonight()); log.append(pm);
   }
   // Ten days done: the trunk keeps going
   if (homeDay === DAYS.length - 1 && dayDone(homeDay)) {
@@ -2341,7 +2352,7 @@ function lsTonight() {
   const nx = LS && lsNext();
   if (LS && nx && lsLocked(nx.v)) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v} opens tomorrow`, why: "You finished today's volume. Look back over the words it taught you.", go: () => startLong() });
   if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
-  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: "A light novel set in China, written around you by Claude, a volume a day.", go: () => startLong() });
+  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? "A light novel set in China, written around you. It needs Claude, so open the app in Claude to start one." : "A light novel set in China, written around you by Claude, a volume a day.", go: () => startLong() });
 }
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
@@ -2384,16 +2395,29 @@ function lsMeet(w, where) {
   if (!x.p && w.p) x.p = w.p; if (!x.e && w.e) x.e = w.e;
   x.seen++;
 }
+// A chapter counts each of its words once, however often they appear. What you'd met before it decides its glosses
+function lsCount(ch, where) {
+  const found = new Map();
+  ch.blocks.forEach(bl => { if (bl.t === "n") (bl.text.match(/\[\[[^\]]+\]\]/g) || []).forEach(m => { const [h, p, e] = m.slice(2, -2).split("|"); if ([...normHan(h)].length <= 6 && !found.has(h)) found.set(h, { h, p, e }); }); }); // words, not whole sentences
+  (ch.words || []).forEach(w => { if (w && w.h && !found.has(w.h)) found.set(w.h, w); });
+  ch.pre = {}; found.forEach((w, h) => { ch.pre[h] = LS.words[h] ? LS.words[h].seen : 0; });
+  found.forEach(w => lsMeet(w, where));
+  ch.met = [...found.keys()].filter(h => LS.words[h]); ch.counted = true; lsSave();
+}
+// Taking a chapter back (to rewrite it) takes back its words too
+function lsUncount(ch) {
+  (ch.met || []).forEach(h => { const w = LS.words[h]; if (!w) return; if (--w.seen <= 0) delete LS.words[h]; });
+}
 // [[汉字|pīnyīn|English]] in narration: shown in Chinese, glossed until you've met it a few times
-function lsNarr(text) {
+function lsNarr(text, pre) {
   const p = el("p", "ls-narr");
   String(text).split(/(\[\[[^\]]+\]\])/).forEach(part => {
     const m = part.match(/^\[\[([^|\]]+)\|([^|\]]*)\|([^\]]*)\]\]$/);
     if (!m) { if (part) p.append(part); return; }
-    const [, h, py, en] = m, w = LS.words[h] || { seen: 0, tapped: 0 };
-    const fresh = w.seen <= 2 || w.tapped >= 2 || helpLevel() === 0;
+    const [, h, py, en] = m, w = LS.words[h] || { seen: 0, tapped: 0 }, seen = pre && h in pre ? pre[h] : w.seen;
+    const fresh = seen <= 2 || w.tapped >= 2 || helpLevel() === 0;
     const b = el("button", "lw", h); b.title = `${py} · ${en}`;
-    const gloss = el("span", "lw-gloss", fresh ? `${helpLevel() <= 1 ? py + " · " : ""}${en}` : "");
+    const gloss = el("span", "lw-gloss", fresh ? `${prefs.py ? py + " · " : ""}${en}` : "");
     b.onclick = () => {
       if (gloss.dataset.open) { gloss.textContent = fresh ? gloss.dataset.short : ""; delete gloss.dataset.open; return; }
       gloss.dataset.short = gloss.textContent; gloss.textContent = `${py} · ${en}`; gloss.dataset.open = "1";
@@ -2516,7 +2540,16 @@ function lsFetch(v, c) {
 }
 async function lsWrite(v, c) {
   if (!sample) return;
-  lsAt = { v, c }; lsWaiting = lsKey(v, c); lsErr = ""; mode = "long"; renderMove();
+  if (mode !== "long") return lsFetch(v, c).catch(() => {}); // you've gone elsewhere: write it quietly for later
+  lsAt = { v, c }; lsWaiting = lsKey(v, c); lsErr = ""; lsView = "wait"; lsMoment = null;
+  // While it's written: the page says which chapter is coming, and where the last one left off
+  const vol = LS.bible.volumes[v - 1] || {};
+  setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}: `, "being written…");
+  const log = $("#log"); log.textContent = "";
+  const pv = c > 1 ? lsCh(v, c - 1) : v > 1 ? lsCh(v - 1, LS_CH) : null;
+  if (pv && pv.summary) { const f = el("div", "ls-prev"); f.append(el("span", "ls-label", "Previously"), pv.summary); log.append(f); }
+  else if (v === 1 && c === 1) { const f = el("div", "ls-prev"); f.append(el("span", "ls-label", LS.bible.city || "Your story"), LS.bible.premise); log.append(f); }
+  window.scrollTo(0, 0); renderRail(); renderMove();
   try {
     await lsFetch(v, c);
     if (mode === "long" && lsWaiting === lsKey(v, c)) { lsWaiting = null; lsRead(v, c); }
@@ -2524,7 +2557,7 @@ async function lsWrite(v, c) {
     lsWaiting = null;
     lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : e && e.code === "rate_limited" ? "Claude's busy right now. Try again in a moment." : "That chapter didn't come out right. Try again.";
     if (e && e.code === "not_granted") sample = null;
-    if (mode === "long") renderMove();
+    if (mode === "long" && lsView === "wait") { const vol = LS.bible.volumes[v - 1] || {}; setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}: `, "not written yet"); renderMove(); }
   }
 }
 // Your own words that didn't quite land go to Mistakes too, with the moment they answered
@@ -2538,10 +2571,11 @@ function lsLogOwn(v, c, ch) {
     mt: Object.assign({}, prev.moment, { npc: lastL ? [lastL.h, lastL.p, lastL.e] : null }), src: LS.bible.title_english, who: lsLastWho(prev).slice(-2) });
   notebook = notebook.slice(0, 200); saveNotebook();
 }
+let lsPlanning = false;
 async function lsBegin() {
-  if (!sample || busy) return;
+  if (!sample || lsPlanning) return;
   const n = Math.max(7, Math.min(30, lsPick.n | 0)), theme = lsPick.theme === -1 ? lsPick.own.trim() : lsPick.theme >= 0 ? `${LS_THEMES[lsPick.theme][1]}: ${LS_THEMES[lsPick.theme][2]}` : "";
-  busy = true; lsErr = ""; renderMove();
+  lsPlanning = true; lsErr = ""; renderMove(); const form = $(".ls-setup"); if (form) form.classList.add("busy");
   try {
     const r = await sample.json(lsBiblePrompt(n, theme, lsPick.name.trim()), { cache: false });
     if (!r || !r.title_hanzi || !Array.isArray(r.cast) || !r.cast.length || !Array.isArray(r.volumes) || r.volumes.length < n) throw new Error("shape");
@@ -2549,9 +2583,13 @@ async function lsBegin() {
       cast: r.cast.slice(0, 5).filter(x => x && x.name_hanzi).map(x => ({ name_hanzi: String(x.name_hanzi), name_pinyin: String(x.name_pinyin || ""), address: String(x.address || x.name_hanzi), role: String(x.role || ""), voice: String(x.voice || "") })),
       volumes: r.volumes.slice(0, n).map(x => ({ title_english: String((x && x.title_english) || ""), title_hanzi: String((x && x.title_hanzi) || ""), beat: String((x && x.beat) || ""), situations: Array.isArray(x && x.situations) ? x.situations.slice(0, 2).map(String) : [] })) };
     LS = { bible, n, name: lsPick.name.trim(), he: lsPick.he || "", pace: lsPick.pace || "daily", started: Date.now(), chapters: {}, words: {}, doneOn: {} }; lsSave();
-    busy = false; lsWrite(1, 1);
+    lsPlanning = false;
+    if (mode === "long") { startLong(); lsAt = { v: 1, c: 1 }; } // story home, then straight into chapter one
+    lsWrite(1, 1);
   } catch (e) {
-    busy = false; lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : "The plan didn't come out right. Try again."; renderMove();
+    lsPlanning = false; lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : "The plan didn't come out right. Try again.";
+    if (e && e.code === "not_granted") sample = null;
+    if (mode === "long" && !LS) { lsSetup(); renderMove(); }
   }
 }
 
@@ -2596,7 +2634,8 @@ function lsSetup() {
   const he = el("div", "chips"); [["", "Either"], ["he", "他 he"], ["she", "她 she"]].forEach(([k, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", (lsPick.he || "") === k); c.onclick = () => { lsPick.he = k; lsSetup(); }; he.append(c); });
   nm.append(ni, el("span", "ls-label", "How people talk about you"), he);
   box.append(len, th, nm);
-  if (!sample) box.append(el("p", "ls-note", "Long Story is written by Claude as you read, so it needs Claude. Open the app in Claude to start one. Short Story works without it."));
+  if (!sample) box.prepend(el("p", "ls-note", "Long Story is written by Claude as you read, so it needs Claude. Open the app in Claude to start one. Short Story works without it."));
+  if (lsPlanning) box.classList.add("busy");
   log.append(box); log.scrollTop = 0;
 }
 function lsHome() {
@@ -2619,7 +2658,7 @@ function lsHome() {
     const sec = el("section", "ls-toc"); sec.append(el("h4", "pb-title", `Volume ${ov}: ${(b.volumes[ov - 1] || {}).title_english}`));
     for (let c = 1; c <= LS_CH; c++) { const ch = lsCh(ov, c); if (!ch) break;
       const r = el("button", "today-card" + (ch.said ? " done" : " first"));
-      r.append(el("span", "tc-han", ch.title_zh || `第${NUM_HAN[c]}章`), el("span", "tc-kind", `Chapter ${c}`), el("span", "tc-title", ch.title_en), el("span", "tc-why", ch.said ? `You said ${ch.said.h}` : "Waiting for your answer"));
+      r.append(el("span", "tc-han", ch.title_zh || `第${NUM_HAN[c]}章`), el("span", "tc-kind", `Chapter ${c}`), el("span", "tc-title", ch.title_en), el("span", "tc-why", ch.said ? (ch.said.k === "end" ? "The end" : `You said ${ch.said.h}`) : "Waiting for your answer"));
       r.onclick = () => lsRead(ov, c); sec.append(r); }
     log.append(sec);
   }
@@ -2639,7 +2678,7 @@ function lsWordsEl() {
   if (lsWordsOpen && all.length) {
     const ul = el("ul", "ls-words");
     all.forEach(([h, w]) => { const li = el("li"); li.append(el("span", "han", h), el("span", "py", w.p), el("span", "en-line", w.e), el("span", "lw-n", w.seen >= 3 && w.tapped < 2 ? "In Chinese now" : `Met ${w.seen === 1 ? "once" : w.seen + " times"}`)); ul.append(li); });
-    wrap.append(ul, el("p", "cd-note", "A word stays glossed until you've met it three times. Tap it in the story and it stays glossed a bit longer."));
+    wrap.append(ul, el("p", "cd-note", "A word stays glossed until you've met it in three chapters. Tap it in the story and it stays glossed a bit longer."));
   }
   return wrap;
 }
@@ -2663,7 +2702,7 @@ function lsRead(v, c) {
   setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}: `, ch.title_en);
   const log = $("#log"); log.textContent = "";
   // The words in a chapter count as met once, the first time you read it
-  const count = !ch.counted, where = lsKey(v, c);
+  if (!ch.counted) lsCount(ch, lsKey(v, c));
   const pv = c > 1 ? lsCh(v, c - 1) : v > 1 ? lsCh(v - 1, LS_CH) : null;
   if (pv && pv.summary && !ch.said && Date.now() - (LS.lastAt || 0) > 4 * 36e5) { const f = el("div", "ls-prev"); f.append(el("span", "ls-label", "Previously"), pv.summary); log.append(f); }
   LS.lastAt = Date.now();
@@ -2671,17 +2710,20 @@ function lsRead(v, c) {
   const th = el("div", "ls-chap-row"); th.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
   if (canSpeak) { const lb = el("button", "linkish", "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
   // A chapter that reads badly can be written again, until you've answered it
-  if (sample && !ch.said) { const re = el("button", "linkish", "Rewrite it"); re.onclick = () => { delete LS.chapters[lsKey(v, c)]; lsSave(); lsWrite(v, c); }; th.append(re); }
+  if (sample && !ch.said) { const re = el("button", "linkish ls-rewrite", "Rewrite it");
+    re.onclick = () => {
+      if (ch.said) return re.remove();
+      if (!re.dataset.sure) { re.dataset.sure = "1"; re.textContent = "Yes, write this chapter again"; return; }
+      lsUncount(ch); delete LS.chapters[lsKey(v, c)]; lsSave(); lsWrite(v, c);
+    }; th.append(re); }
   log.append(th);
   let last = null;
   ch.blocks.forEach(bl => {
     if (bl.t === "n") {
-      if (count) (bl.text.match(/\[\[[^\]]+\]\]/g) || []).forEach(m => { const [h, p, e] = m.slice(2, -2).split("|"); if ([...normHan(h)].length <= 6) lsMeet({ h, p, e }, where); }); // words, not whole sentences
-      log.append(lsNarr(bl.text));
+      log.append(lsNarr(bl.text, ch.pre));
     } else { log.append(lsLine(bl)); last = [bl.h, bl.p, bl.e]; }
   });
-  if (count) { ch.words.forEach(w => lsMeet(w, where)); ch.counted = true; lsSave(); }
-  if (ch.said) {
+  if (ch.said && ch.said.k !== "end") {
     // Read again: what you said, and how it went
     const row = el("div", "row me" + (ch.said.k === "good" || ch.said.k === "own" ? "" : " " + ch.said.k)); const bub = el("div", "bubble"); bub.append(bubbleContent(ch.said.h, ch.said.p || "", ch.said.e || "", true)); row.append(bub); log.append(row);
     if (ch.said.r) log.append(lsLine({ who: lsLastWho(ch), h: ch.said.r[0], p: ch.said.r[1], e: ch.said.r[2] }));
@@ -2711,6 +2753,7 @@ const lsLastWho = ch => { const l = [...ch.blocks].reverse().find(b => b.t === "
 function lsSay(o, how) {
   const { v, c } = lsAt, ch = lsCh(v, c); if (!ch || ch.said) return;
   ch.said = { h: o.h, p: o.p || "", e: o.e || "", k: how || o.k, note: o.note || "", r: o.r || null };
+  const re = $(".ls-rewrite"); if (re) re.remove();
   if (c === LS_CH) (LS.doneOn = LS.doneOn || {})[v] = dayKey();
   lsSave();
   // Start writing what comes next straight away
@@ -2725,14 +2768,14 @@ function longChoose(o) {
   if (o.r) addNpc(o.r);
   addFeedback(o.k, o.note, o.k === "good" ? null : o.fix || [lsMoment.opts.find(x => x.k === "good").h, lsMoment.opts.find(x => x.k === "good").p]);
   if (o.k !== "good") logMistake({ sid: "long", turn: null, cb: null, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note, tag: o.tag });
-  lsSay(o); lsMoment = null; renderRail(); renderMove();
+  lsSay(o); lsMoment = null; renderRail(); renderMove(); scrollLog();
 }
 // Your own words: the next chapter is written around them, and Claude says how they'd land
 function longFree(text) {
   if (busy || !lsMoment) return;
   addMe(text, "", "", "good");
   addNarr("Your own words. The next chapter picks up from what you said, with a note on how it landed.");
-  lsSay({ h: text }, "own"); lsMoment = null; renderMove();
+  lsSay({ h: text }, "own"); lsMoment = null; renderMove(); scrollLog();
 }
 function lsAfter() {
   // After you've answered: on to the next chapter, or the end of the volume
@@ -2748,19 +2791,19 @@ function lsRecap(v) {
   const res = el("dl", "score"), line = (k, ...x) => { const dd = el("dd"); dd.append(...x); res.append(el("dt", null, k), dd); };
   const words = chs.flatMap(ch => ch.words).filter((w, i, a) => a.findIndex(x => x.h === w.h) === i);
   if (words.length) { const span = el("span"); words.forEach((w, i) => { if (i) span.append(" · "); span.append(el("span", "han-inline", w.h), ` ${w.e}`); }); line("New words", span); }
-  const ul = el("ul"); chs.forEach(ch => { if (!ch.said) return; const li = el("li"); li.append(el("span", "han-inline", ch.said.h), ch.said.k === "good" ? " · landed" : ch.said.k === "own" ? " · in your own words" : ch.said.k === "okay" ? " · understood, but off" : " · a slip"); ul.append(li); });
+  const ul = el("ul", "ls-said"); chs.forEach(ch => { if (!ch.said || ch.said.k === "end") return; const li = el("li", ch.said.k === "okay" || ch.said.k === "wrong" ? "slip" : "ok"); li.append(el("span", "han-inline", ch.said.h), ch.said.k === "good" ? " · landed" : ch.said.k === "own" ? " · in your own words" : ch.said.k === "okay" ? " · understood, but off" : " · a slip"); ul.append(li); });
   line("What you said", ul);
   const slips = chs.filter(ch => ch.said && (ch.said.k === "okay" || ch.said.k === "wrong")).length;
   line("Slips", slips ? `${plural(slips, "slip")}, now in Mistakes. They come back for review.` : "None. Everything you said landed.");
   log.append(res);
   if (v === LS.n && lsVolDone(v)) {
     // The end: the whole story in a few lines, and what it was about all along
-    const all = Object.values(LS.chapters).filter(ch => ch.said), slipsAll = all.filter(ch => ch.said.k === "okay" || ch.said.k === "wrong").length;
+    const all = Object.values(LS.chapters).filter(ch => ch.said), lines = all.filter(ch => ch.said.k !== "end").length, slipsAll = all.filter(ch => ch.said.k === "okay" || ch.said.k === "wrong").length;
     const end = el("dl", "score"), l2 = (k, x) => end.append(el("dt", null, k), el("dd", null, x));
     log.append(el("div", "day-part"));
     log.lastChild.append(el("span", "dp-zh", "完"), el("span", "dp-en", "The whole story"));
     if (LS.bible.answer) l2("What it was about", LS.bible.answer);
-    l2("You read", `${plural(all.length, "chapter")} over ${plural(LS.n, "volume")}, and said ${plural(all.length, "line")} of your own.`);
+    l2("You read", `${plural(all.length, "chapter")} over ${plural(LS.n, "volume")}, and said ${plural(lines, "line")} of your own.`);
     l2("Chinese", `${plural(Object.keys(LS.words).length, "word")} met, ${Object.values(LS.words).filter(w => w.seen >= 3 && w.tapped < 2).length} of them you now read without English.`);
     l2("Slips", slipsAll ? `${plural(slipsAll, "slip")} along the way, all in Mistakes.` : "None. Every line landed.");
     log.append(end);
@@ -2772,7 +2815,8 @@ function renderLongMove() {
   const m = $("#move"); m.textContent = "";
   const row = el("div", "endcard");
   if (lsErr) m.append(el("p", "ls-err", lsErr));
-  if (busy || lsWaiting) {
+  if (lsErr && LS && lsAt && !lsWaiting && !lsCh(lsAt.v, lsAt.c) && sample) { const again = el("button", "btn", "Try again"); again.onclick = () => lsWrite(lsAt.v, lsAt.c); row.append(again); }
+  if (lsPlanning || lsWaiting) {
     m.append(el("div", "thinking", !LS ? "Claude is planning your story: the city, the people, and all the days…" : `Claude is writing volume ${lsAt.v}, chapter ${lsAt.c}…`));
     // Meanwhile: the words the story has taught you most recently
     const recent = LS ? Object.entries(LS.words).slice(-6) : [];
@@ -2782,7 +2826,8 @@ function renderLongMove() {
   }
   if (!LS) {
     const go = el("button", "btn", `Begin: ${lsPick.n} volumes`); go.disabled = !sample; go.onclick = () => lsBegin();
-    row.append(go); m.append(row); return;
+    row.append(go); if (!sample) row.append(el("span", "ls-prompt", "Needs Claude: open the app in Claude to start one."));
+    m.append(row); return;
   }
   if (lsView === "read" && lsMoment && !lsReady) {
     // Read first: the answer waits until you've reached the end of the chapter
@@ -2811,11 +2856,13 @@ function renderLongMove() {
       const end = v === LS.n && c === LS_CH;
       const go = el("button", "btn", end ? "The end" : c < LS_CH ? `Chapter ${c + 1}` : `End of volume ${v}`);
       go.onclick = () => end ? lsRecap(v) : lsAfter(); row.append(go);
-    } else if (ch && !ch.moment) { const go = el("button", "btn", "The end"); go.onclick = () => { lsSay({ h: "…" }, "good"); lsRecap(v); }; row.append(go); }
+    } else if (ch && !ch.moment) { const go = el("button", "btn", "The end"); go.onclick = () => { lsSay({ h: "" }, "end"); lsRecap(v); }; row.append(go); }
   }
   if (lsView === "recap") {
     const v = lsAt ? lsAt.v : 1;
-    if (v === LS.n) { const go = el("button", "btn", "Start another story"); go.onclick = () => { LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); }; row.append(go); }
+    if (v === LS.n) { const go = el("button", "btn", lsNew ? "Yes, start another story" : "Start another story");
+      go.onclick = () => { if (!lsNew) { lsNew = true; renderMove(); return; } lsNew = false; LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); }; row.append(go);
+      if (lsNew) m.append(el("p", "ls-err", "This story will be gone, though its slips stay in Mistakes. Story home keeps it to reread.")); }
     else if (v < LS.n && lsLocked(v + 1)) row.append(el("span", "ls-prompt", `Volume ${v + 1} opens tomorrow. Come back for it, like the next episode.`));
     else if (v < LS.n) { const go = el("button", "btn", `Volume ${v + 1}: ${(LS.bible.volumes[v] || {}).title_english}`); go.onclick = () => lsCh(v + 1, 1) ? lsRead(v + 1, 1) : (lsAt = { v: v + 1, c: 1 }, lsWrite(v + 1, 1)); row.append(go); }
   }
@@ -3329,7 +3376,8 @@ const HELP = [
   { id: "ears", label: "Ears", desc: "Hear each line first. The text shows after you answer.", py: true, hint: false, listen: true }
 ];
 const helpLevel = () => prefs.listen ? 3 : !prefs.py ? 2 : prefs.hint ? 0 : 1;
-function setHelp(i) { const h = HELP[i]; prefs.py = h.py; prefs.hint = h.hint; prefs.listen = h.listen; store.set("sm-prefs", prefs); applyPrefs(); if (mode === "scene" && !finished) renderMove(); }
+function setHelp(i) { const h = HELP[i]; prefs.py = h.py; prefs.hint = h.hint; prefs.listen = h.listen; store.set("sm-prefs", prefs); applyPrefs(); if (mode === "scene" && !finished) renderMove();
+  if (mode === "long" && lsView === "read" && lsAt && lsCh(lsAt.v, lsAt.c)) { const r = lsReady, y = scrollY; lsRead(lsAt.v, lsAt.c); lsReady = r; renderMove(); window.scrollTo(0, y); } }
 function applyPrefs() {
   document.body.classList.toggle("no-py", !prefs.py);
   document.body.classList.toggle("hint-off", !prefs.hint);
