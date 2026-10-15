@@ -266,6 +266,7 @@ body.hint-off .opt .en-line { display: none; }
 .pb.hard .pb-title { color: var(--cinnabar); }
 .trip-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
 .pb-heard.mine .han:first-child { color: var(--cinnabar); }
+.pb-heard .han.alt { font-weight: 400; font-size: 15px; color: var(--muted); }
 .trip-goal { margin: 0; font-size: 14px; color: var(--muted); }
 .trip-pick { display: flex; flex-wrap: wrap; gap: 6px; }
 .pb-hear { border-top: 1px dashed var(--line); padding-top: 6px; font-size: 14px; }
@@ -358,6 +359,7 @@ body.hint-off .opt .en-line { display: none; }
 
 <script src="scenes.js"></script>
 <script src="why.js"></script>
+<script src="voices.js"></script>
 <script>
 const S = window.SCENES;
 // Places you made from your own wanders live alongside the built-in ones
@@ -707,7 +709,7 @@ function start(id, opt = {}) {
   const base = S.find(s => s.id === id);
   turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
   // Each run gets its own copy of the turns, with surprises slipped in: real life never goes the same way twice
-  const turns = base.turns.map((t, i) => Object.assign({}, t, { _orig: i }));
+  const turns = base.turns.map((t, i) => Object.assign({}, t, { _orig: i, npc: voiceFor(id, i, t.npc) }));
   const pool = (base.curveballs || []).map((cb, i) => ({ cb, key: i })).concat(twistPool(id).map(cb => ({ cb, key: cb.id })))
     .filter(x => x.cb.after >= 0 && x.cb.after < base.turns.length);
   if (pool.length) {
@@ -736,6 +738,28 @@ function start(id, opt = {}) {
 }
 
 const moveKey = t => t._cb != null ? "c" + t._cb : "t" + t._orig;
+// Other ways people say the same line (voices.js). Your first visit uses the usual words;
+// after that, any of them, and never the same one twice in a row
+const VOICES = window.VOICES || {};
+let heardAs = store.get("sm-heard", {});
+function voiceFor(id, i, line) {
+  const v = (VOICES[id] || {})[i];
+  if (!line || !v || !v.length || !done[id]) return line;
+  const all = [line].concat(v), k = id + "|" + i;
+  let pick = Math.floor(Math.random() * all.length);
+  if (pick === heardAs[k]) pick = (pick + 1) % all.length;
+  heardAs[k] = pick; store.set("sm-heard", heardAs);
+  return all[pick];
+}
+// "What you'll hear" in the pocket: each line, plus the other ways you might hear it
+function heardRows(s, box) {
+  s.turns.forEach((t, ti) => {
+    if (!t.npc) return;
+    const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]));
+    ((VOICES[s.id] || {})[ti] || []).forEach(v => r.append(el("span", "han alt", "or " + v[0])));
+    r.append(el("span", "en-line", t.npc[2])); box.append(r);
+  });
+}
 function beginTurn() {
   const t = cur.turns[turn];
   const alt = t.npcAlt && Object.keys(t.npcAlt).find(f => flags[f]);
@@ -1226,7 +1250,7 @@ function reviewItem() {
     ]);
   } else if (t) {
     addNarr(n.real ? `${s.en}, the one that happened for real. ${t.prompt}` : `${s.en}, again. ${t.prompt}`);
-    if (t.npc) addNpc(t.npc);
+    if (t.npc) addNpc(n.turn != null ? voiceFor(s.id, n.turn, t.npc) : t.npc);
     order = shuffle(t.opts);
     rGood = t.opts.find(o => o.k === "good" && o.b) || null;
     rHow = rGood ? LADDER[Math.min(n.step || 0, 2)][0] : "pick";
@@ -1850,7 +1874,7 @@ function renderTrip() {
       sec.append(tw);
     }
     const hear = el("details", "pb-hear"); hear.append(el("summary", null, "What you'll hear"));
-    s.turns.filter(t => t.npc).forEach(t => { const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]), el("span", "en-line", t.npc[2])); hear.append(r); });
+    heardRows(s, hear);
     sec.append(hear);
     log.append(sec);
   });
@@ -1937,7 +1961,7 @@ function renderHomeMove() {
   const row = el("div", "endcard"); row.append(all); m.append(row);
 }
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open"];
+const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
@@ -2125,7 +2149,7 @@ function renderPhrases() {
       // The other half of the conversation: what people there say to you
       const hear = el("details", "pb-hear");
       hear.append(el("summary", null, "What you'll hear there"));
-      s.turns.filter(t => t.npc).forEach(t => { const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]), el("span", "en-line", t.npc[2])); hear.append(r); });
+      heardRows(s, hear);
       sec.append(hear);
     }
     shown += rows.length; log.append(sec);

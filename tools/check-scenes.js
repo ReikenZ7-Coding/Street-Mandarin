@@ -38,5 +38,21 @@ for (const s of S) {
   s.turns.forEach((t, i) => Object.keys(t.npcAlt || {}).forEach(f => { if (!flags.has(f)) problems.push(`${where} turn ${i + 1}: npcAlt "${f}" is never set by any option`); }));
   Object.keys(s.endAlt || {}).forEach(f => { if (!flags.has(f)) problems.push(`${where}: endAlt "${f}" is never set by any option`); });
 }
+// voices.js: other ways a local says a turn's line. Each must point at a real turn that has a line,
+// and keep its numbers, since the answers depend on them
+try { require("../voices.js"); } catch {}
+let nVoices = 0; const warnings = [];
+// Number words in a line, ignoring a lone 一 ("a", "once") and how often each one is repeated
+const nums = h => new Set((h.match(/[0-9零一二两三四五六七八九十百千万幺]+/g) || []).filter(x => x !== "一" && !/^[一两]$/.test(x) || x === "两"));
+Object.entries(window.VOICES || {}).forEach(([id, turns]) => {
+  const s = S.find(x => x.id === id); if (!s) return problems.push(`voices.js: no place called ${id}`);
+  Object.entries(turns).forEach(([i, list]) => {
+    const t = s.turns[i]; if (!t || !t.npc) return problems.push(`voices.js ${id} turn ${+i + 1}: that turn has no line to vary`);
+    list.forEach((v, k) => { line(v, `voices.js ${id} turn ${+i + 1} variant ${k + 1}`); nVoices++;
+      const have = nums(v[0]), miss = [...nums(t.npc[0])].filter(x => !have.has(x));
+      if (miss.length) warnings.push(`voices.js ${id} turn ${+i + 1} variant ${k + 1}: missing ${miss.join(", ")} from "${t.npc[0]}"`); });
+  });
+});
+if (warnings.length) console.log("Worth a look (numbers written differently is fine, different numbers is not):\n" + warnings.join("\n"));
 if (problems.length) { console.log(problems.join("\n")); process.exit(1); }
-console.log(`${S.length} places look fine.`);
+console.log(`${S.length} places look fine${nVoices ? `, with ${nVoices} other ways of saying their lines` : ""}.`);

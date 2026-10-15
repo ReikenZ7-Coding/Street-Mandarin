@@ -12,7 +12,7 @@ Open `index.html` in a browser. There's no build step.
 
 Scenes live in `scenes.js`. The comment at the top explains each field. Copy an existing scene, change the lines, and give one good answer per moment a `b` field with its word tiles split by `|`. Optional `curveballs` are things that can go off-script at that place: `after` is the index of the moment it follows. Each run picks none, one or two of them at random, preferring ones you haven't met.
 
-After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
+After editing `scenes.js` or `voices.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
 
 After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the ready-made explanations in `why.js` in step with the scenes and lists any slip that still needs one.
 
@@ -26,7 +26,7 @@ In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional).
 - Answers are graded good, close enough or wrong. Each gets an in-character reaction and a short note, and "Why, exactly?" goes one level deeper. Every "say instead" line can be heard, then said back out loud: the app listens and tells you whether it landed (in browsers with speech recognition).
 - Some wrong answers carry consequences, like paying 20 kuai more for the expressway, and the end card shows what they cost you.
-- No two visits are the same. Every place has three or four surprises, and each run mixes in none, one or two, favouring ones you haven't met.
+- No two visits are the same. Every place has three or four surprises, and each run mixes in none, one or two, favouring ones you haven't met. After your first visit, people also word things differently each time (`voices.js` holds two other natural ways of saying each line), and your pocket lists them under "What you'll hear".
 - The end card is a four-line scorecard: what it cost you, your slips (with a drill for the kind you made most), surprises, and marks. After a run you can rematch only the moments you missed. Every way to replay sits on one line: normally, at rush hour (people won't wait while you think, and a bar shows how long you have), or live with Claude somewhere similar. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
 
 **How much help** is one dial instead of three switches: English (pinyin and English on answers), Pinyin, Characters, then Ears (hear it first, read it after). After a clean run the end card suggests stepping down a level.
