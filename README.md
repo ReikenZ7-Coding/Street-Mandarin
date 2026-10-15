@@ -18,7 +18,7 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 
 ## How it's organised
 
-**Today**: when you come back, the app opens on one short page that says where to start: mistakes due back, the next place, one thing to go deeper on (your most common kind of slip, a place you only scraped through, surprises you haven't met, or rush hour), and your pocket if you're heading out. Tap the title to get back to it. A first visit goes straight into the noodle shop.
+**Today**: when you come back, the app opens on one short page that says where to start: mistakes due back, the next place, one thing to go deeper on (your most common kind of slip, a place you only scraped through, surprises you haven't met, or rush hour), and your pocket if you're heading out. Tap the title to get back to it. Below that sit **Today's three**: one word, one bit of slang and one phrase from everyday life in China (`daily.js`), the same all day and new tomorrow, each with a note on when you'd use it, Hear it, Say it back, and a link to the place where it comes up. A first visit goes straight into the noodle shop.
 
 **Places** (28 of them) live in five folders in the side list: Eat and drink, Get around, Shop, Sort things out, and Meet people. One folder is open at a time, places run from day-one essentials to harder ones, and a Next up tag shows where to go. Each place stands for a kind of place, so the noodle shop teaches you any counter where you order food. One find box above the folders searches places and phrases together ("toilet", "多少", "duoshao").
 

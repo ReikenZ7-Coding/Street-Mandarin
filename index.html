@@ -61,6 +61,19 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .today-card .tc-han { grid-row: span 3; white-space: nowrap; font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
 .today-card .tc-title { font-weight: 700; font-size: 16px; }
 .today-card .tc-why { font-size: 14px; color: var(--muted); }
+.daily { margin-top: 22px; }
+.daily-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
+.daily-title { font-weight: 700; font-size: 16px; }
+.daily-sub { font-size: 14px; color: var(--muted); flex: 1; }
+.daily-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.daily-card { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); }
+.daily-card .dc-kind { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.daily-card .dc-han { font-family: var(--f-han); font-weight: 900; font-size: 24px; color: var(--jade); margin-top: 4px; }
+.daily-card .dc-py { font-size: 14px; color: var(--muted); }
+.daily-card .dc-en { font-weight: 700; font-size: 15px; }
+.daily-card .dc-use { font-size: 14px; color: var(--muted); margin: 6px 0 0; flex: 1; }
+.daily-card .say-back { margin-top: 8px; flex-wrap: wrap; }
+@media (max-width: 760px) { .daily-grid { grid-template-columns: 1fr; } .daily-title { flex: 1; } .daily-sub { order: 3; flex-basis: 100%; } }
 .today-card .tc-kind { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; grid-column: 2; order: -1; }
 .brand h1 { margin: 0; font-family: var(--f-han); font-weight: 900; font-size: 30px; letter-spacing: 0.02em; }
 .brand .en { font-weight: 700; font-size: 18px; }
@@ -368,6 +381,7 @@ body.hint-off .opt .en-line { display: none; }
 <script src="scenes.js"></script>
 <script src="why.js"></script>
 <script src="voices.js"></script>
+<script src="daily.js"></script>
 <script>
 const S = window.SCENES;
 // Places you made from your own wanders live alongside the built-in ones
@@ -2103,8 +2117,37 @@ function startHome() {
     b.append(el("span", "tc-han", p.han), el("span", "tc-kind", p.kind), el("span", "tc-title", p.title), el("span", "tc-why", p.why));
     b.onclick = p.go; box.append(b);
   });
-  log.append(box); log.scrollTop = 0;
+  log.append(box, dailyThree()); log.scrollTop = 0;
   renderRail(); renderMove();
+}
+/* Today's three: a word, a bit of slang and a phrase from everyday life, the same all day, new tomorrow */
+let dailyShift = 0;
+const DAILY_KINDS = [["word", "Word", "词"], ["slang", "Slang", "俚语"], ["phrase", "Phrase", "一句话"]];
+function dailyPick(kind, shift) {
+  const pool = (window.DAILY || {})[kind] || []; if (!pool.length) return null;
+  const d = Math.floor(Date.parse(dayKey()) / 864e5) || 0; // days since 1970, so each day steps through the pool
+  const step = { word: 7, slang: 11, phrase: 13 }[kind]; // different strides so the three don't repeat as a set
+  return pool[((d + shift) * step % pool.length + pool.length) % pool.length];
+}
+function dailyThree() {
+  const wrap = el("section", "daily"); wrap.setAttribute("aria-label", "Today's three");
+  const head = el("div", "daily-head"); head.append(el("span", "daily-title", "Today's three"), el("span", "daily-sub", "From everyday life in China. New ones tomorrow."));
+  const again = el("button", "linkish", "Another three"); again.onclick = () => { dailyShift++; wrap.replaceWith(dailyThree()); };
+  head.append(again); wrap.append(head);
+  const grid = el("div", "daily-grid");
+  DAILY_KINDS.forEach(([k, en, zh]) => {
+    const x = dailyPick(k, dailyShift); if (!x) return;
+    const c = el("div", "daily-card");
+    c.append(el("span", "dc-kind", `${en} ${zh}`), el("span", "dc-han", x.h), el("span", "dc-py", x.p), el("span", "dc-en", x.e), el("p", "dc-use", x.use));
+    const row = el("div", "say-back"), out = el("span", "sb-out");
+    if (canSpeak) { const h = el("button", "linkish", "Hear it"); h.onclick = () => speak(x.h.replace(/^AA$/, "AA制")); row.append(h); }
+    if (SR && !micBroken && /[\u4e00-\u9fff]/.test(x.h)) { const m = el("button", "linkish", "Say it back"); m.onclick = () => sayBack(m, x.h, out); row.append(m); }
+    const s = x.at && S.find(z => z.id === x.at);
+    if (s) { const g = el("button", "linkish", `Try it: ${s.en}`); g.onclick = () => start(s.id); row.append(g); }
+    row.append(out); c.append(row); grid.append(c);
+  });
+  wrap.append(grid);
+  return wrap;
 }
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
