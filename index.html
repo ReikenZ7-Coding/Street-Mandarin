@@ -260,6 +260,7 @@ body.hint-off .opt .en-line { display: none; }
 .pb-tools { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
 .pb.hard .pb-title { color: var(--cinnabar); }
 .trip-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
+.pb-heard.mine .han:first-child { color: var(--cinnabar); }
 .trip-goal { margin: 0; font-size: 14px; color: var(--muted); }
 .trip-pick { display: flex; flex-wrap: wrap; gap: 6px; }
 .pb-hear { border-top: 1px dashed var(--line); padding-top: 6px; font-size: 14px; }
@@ -754,7 +755,9 @@ function renderMove() {
     fill.style.animationDuration = left + "ms"; bar.append(fill); bar.setAttribute("aria-hidden", "true"); m.append(bar);
   }
   const head = el("div", "move-head");
-  head.append(el("h3", null, `Your move · ${turn + 1} of ${cur.turns.length}`), el("span", "prompt", t.prompt));
+  // Count only the place's usual moments, so a surprise isn't given away by the total
+  const usual = cur.turns.filter(x => x._cb == null), at = cur.turns.slice(0, turn + 1).filter(x => x._cb == null).length;
+  head.append(el("h3", null, t._cb != null ? "Your move · off-script" : `Your move · ${at} of ${usual.length}`), el("span", "prompt", t.prompt));
   const good = t.opts.find(o => o.k === "good" && o.b);
   const modes = el("div", "modes"); modes.setAttribute("role", "group"); modes.setAttribute("aria-label", "How to answer");
   [["Pick it", "pick"], ["Build it", "build"], [SR ? "Type or say it" : "Type it", "type"]].forEach(([label, v]) => {
@@ -1808,9 +1811,13 @@ function renderTrip() {
     sec.append(el("p", "trip-goal", s.goal));
     s.turns.forEach((t, ti) => { const g = t.opts.find(o => o.k === "good"); if (g) sec.append(phraseRow(g, replyAfter(s, ti))); });
     // The trap most worth knowing here: the first wrong option of each moment, by kind
-    const traps = []; s.turns.forEach(t => { const w = t.opts.find(o => o.k === "wrong"); if (w) traps.push(w); });
-    if (traps.length) {
-      const tw = el("details", "pb-hear"); tw.append(el("summary", null, "Traps here"));
+    // Your own slips here come first and stay open: they're the ones most likely to happen again today
+    const mine = notebook.filter(n => n.sid === s.id && !n.learned && n.fix);
+    const traps = []; s.turns.forEach((t, ti) => { const w = t.opts.find(o => o.k === "wrong"); if (w && !mine.some(n => n.turn === ti)) traps.push(w); });
+    if (mine.length || traps.length) {
+      const tw = el("details", "pb-hear"); tw.open = mine.length > 0;
+      tw.append(el("summary", null, mine.length ? `Traps here, ${mine.length === 1 ? "one" : mine.length} of them yours` : "Traps here"));
+      mine.forEach(n => { const r = el("div", "pb-heard mine"); r.append(el("span", "han", "✗ " + n.said), el("span", "han", "→ " + n.fix), el("span", "en-line", "You said this before. " + n.why)); tw.append(r); });
       traps.forEach(w => { const r = el("div", "pb-heard"); r.append(el("span", "han", "✗ " + w.h), el("span", "en-line", w.note)); tw.append(r); });
       sec.append(tw);
     }
