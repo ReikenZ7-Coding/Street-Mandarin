@@ -903,7 +903,7 @@ const curDay = () => { const i = DAYS.findIndex((d, k) => !dayDone(k)); return i
 const canDo = id => !!(mastery[id] || {}).clean;
 const lcFirst = x => x.replace(/^./, c => c.toLowerCase()); // "Get a SIM card" → "get a SIM card"
 const GROUPS = DAYS.map((d, i) => ({ key: "d" + i, name: `Day ${i + 1} · ${d.title}`, ids: d.stops.map(x => x.id) }))
-  .concat([{ key: "mine", name: "Your places, from wandering", get ids() { return S.filter(s => s.custom).map(s => s.id); } }]);
+  .concat([{ key: "mine", name: "Your own places", get ids() { return S.filter(s => s.custom).map(s => s.id); } }]);
 const groupOf = id => (GROUPS.find(g => g.ids.includes(id)) || { key: "more" }).key;
 let railOpen = (() => { try { return localStorage.getItem("sm-rail-open"); } catch { return null; } })();
 function setRailOpen(k) { railOpen = k; try { localStorage.setItem("sm-rail-open", k || ""); } catch {} }
@@ -1665,7 +1665,7 @@ function nbItem(n) {
   const s = sceneFor(n);
   const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
   const top = el("div", "where");
-  top.append((s ? s.en : n.sid === "chat" ? `Unscripted: ${(personOf(n.who) || {}).han || "a chat"}` : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.real ? " · for real" : n.kind === "okay" ? " · close enough" : ""));
+  top.append((s ? s.en : n.sid === "chat" ? `Unscripted: ${(personOf(n.who) || {}).han || "a chat"}` : n.sid === "wander" ? "Live" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.real ? " · for real" : n.kind === "okay" ? " · close enough" : ""));
   const st = el("span", "when", whenText(n) === "Due now" ? "" : whenText(n)); // the "Due now" heading already says it
   const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
   GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
@@ -1767,7 +1767,7 @@ function reviewItem() {
     }
   } else {
     if (n.sid === "chat") { const pp = personOf(n.who); addNarr(`From your chat with ${pp ? pp.han + " " + pp.en : "someone"}.${n.heard ? "" : ` You wrote: ${n.said}`}`); if (n.heard && pp) { cur = { who: pp.av, whoEn: pp.en }; addNpc([n.heard, n.heardP || "", n.heardE || ""]); addNarr(`You wrote: ${n.said}`); } }
-    else addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : n.sid === "ears" ? "A sound-alike" : "Off-script"}. You said: ${n.said}`);
+    else addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a live scene" : n.sid === "ears" ? "A sound-alike" : "Off-script"}. You said: ${n.said}`);
     order = [];
   }
   renderReviewMove();
@@ -3455,6 +3455,24 @@ async function chatSend(text, retry) {
   if (mode === "chat" && chatWho === id) { chatDraw(); renderMove(); }
   renderRail();
 }
+// Real people get in touch first: once a day, someone you've been chatting with who's gone quiet messages you
+let chatNudging = false;
+async function chatNudge() {
+  if (!sample || chatNudging) return;
+  const last = store.get("sm-chat-nudge", 0); if (Date.now() - last < 20 * 36e5) return;
+  const quiet = PEOPLE.filter(p => { const m = (CHATS[p.id] || {}).msgs || []; return m.some(x => x.me) && m.length && Date.now() - m[m.length - 1].t > 18 * 36e5 && !chatPending.has(p.id); });
+  if (!quiet.length) return;
+  const p = quiet[Math.floor(Math.random() * quiet.length)], c = chatOf(p.id);
+  chatNudging = true; store.set("sm-chat-nudge", Date.now());
+  const prompt = chatPrompt(p, c, "").replace(/They just sent: ""[^\n]*\n/, "").replace("Reply as yourself, the way you'd really text:", `It's been ${Math.round((Date.now() - c.msgs[c.msgs.length - 1].t) / 36e5)} hours since the last message. Message them first, the way you'd really text an acquaintance out of the blue (pick up something from before, share news, or invite them to something):`).replace(/Then, separately[\s\S]*?(Pinyin everywhere[^\n]*\n)Return JSON only:/, "$1Return JSON only:").replace(/,\n "you": [\s\S]*$/, "}");
+  try {
+    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
+    const msgs = (r && Array.isArray(r.messages) ? r.messages : []).filter(x => x && x.h && isHanText(String(x.h))).slice(0, 2);
+    msgs.forEach(x => c.msgs.push({ h: String(x.h), p: String(x.p || ""), e: String(x.e || ""), voice: !!(x.voice && p.voice), t: Date.now() }));
+    if (msgs.length) { saveChats(); renderRail(); if (mode === "chat" && !chatWho) startChats(); else if (mode === "chat" && chatWho === p.id) { c.msgs.forEach(m => { if (!m.me) m.seen = true; }); saveChats(); chatDraw(); } }
+  } catch {}
+  chatNudging = false;
+}
 function chatRetry(i) { const c = chatOf(chatWho), m = c.msgs[i]; if (!m || chatPending.has(chatWho)) return; c.msgs.splice(i, 1); c.msgs.push(m); m.t = Date.now(); chatSend(m.h, m); }
 
 /* ---------- Notes: your own notebook, open beside whatever you're doing ---------- */
@@ -3735,7 +3753,7 @@ function renderPhrases() {
   const wl = store.get("sm-wander-lines", []).filter(o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q));
   if (wl.length) {
     const sec = el("section", "pb");
-    sec.append(el("h4", "pb-title", "Your own lines that worked, from wandering"));
+    sec.append(el("h4", "pb-title", "Your own lines that worked, live"));
     wl.slice(0, 10).forEach(o => sec.append(phraseRow(o, null)));
     log.append(sec);
   }
@@ -3888,7 +3906,7 @@ Return ONLY a JSON object:
     if (kind === "good" && /[\u4e00-\u9fff]/.test(text)) {
       // Lines you came up with yourself that worked go to the phrasebook
       const wl = store.get("sm-wander-lines", []).filter(x => x.h !== text);
-      wl.unshift({ h: text, p: "", e: cur.en || "Wander" }); store.set("sm-wander-lines", wl.slice(0, 30));
+      wl.unshift({ h: text, p: "", e: cur.en || "Live" }); store.set("sm-wander-lines", wl.slice(0, 30));
     }
     if (kind !== "good") logMistake({ sid: "wander", turn: null, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: (cur.en ? cur.en + ": " : "") + (r.note || "") });
     if (r.goal_reached === true) { wDone = wGoal = true; addNarr(outcomes.length ? "Goal reached, though it cost you: " + outcomes.join("; ") + "." : "Goal reached. Clean run."); }
@@ -4075,7 +4093,7 @@ document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !ev.isCo
 if (said) startHome(); else start(lastScene());
 
 (async () => {
-  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); if (mode === "chat" && !chatWho) startChats(); else renderMove(); } } } catch {}
+  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); if (mode === "chat" && !chatWho) startChats(); else renderMove(); chatNudge(); } } } catch {}
 })();
 </script>
 </body>
