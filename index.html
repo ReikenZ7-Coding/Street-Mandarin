@@ -52,7 +52,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--jade); outl
 .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
 
 header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 20px; }
-.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.brand:hover .en, .brand:focus-visible .en { text-decoration: underline; text-decoration-color: var(--jade); text-underline-offset: 4px; }
+.today { display: grid; gap: 10px; }
+.today-card { display: grid; grid-template-columns: 76px 1fr; gap: 2px 14px; align-items: baseline; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+.today-card:hover, .today-card:focus-visible { border-color: var(--jade); }
+.today-card.first { border-left: 4px solid var(--jade); }
+.today-card .tc-han { grid-row: span 3; white-space: nowrap; font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
+.today-card .tc-title { font-weight: 700; font-size: 16px; }
+.today-card .tc-why { font-size: 14px; color: var(--muted); }
+.today-card .tc-kind { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; grid-column: 2; order: -1; }
 .brand h1 { margin: 0; font-family: var(--f-han); font-weight: 900; font-size: 30px; letter-spacing: 0.02em; }
 .brand .en { font-weight: 700; font-size: 18px; }
 .tagline { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
@@ -297,7 +306,7 @@ body.hint-off .opt .en-line { display: none; }
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="brand"><h1>街头中文</h1><span class="en">Street Mandarin</span></div>
+      <button class="brand" id="home-btn" title="Today: where to start"><h1>街头中文</h1><span class="en">Street Mandarin</span></button>
       <p class="tagline">No lessons. Walk into a real situation, say something, get it wrong, and learn from how people react.</p>
       <p class="streak" id="streak" aria-live="polite"></p>
     </div>
@@ -382,7 +391,7 @@ let prefs = Object.assign({ py: true, hint: false, listen: false, how: "pick" },
 if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 
 /* ---------- state ---------- */
-let mode = "scene"; // "scene" | "review" | "drill" | "phrases"
+let mode = "scene"; // "home" | "scene" | "notebook" | "review" | "drill" | "ears" | "pattern" | "trip" | "phrases" | "field" | "wander" …
 let cur = null, turn = 0, order = [], busy = false, finished = false;
 let flags = {}, outcomes = [], curveball = null, surprises = [], runMisses = [], lastGained = [], runMissTags = [];
 let ghost = store.get("sm-ghost", {});
@@ -645,7 +654,7 @@ function renderRail() {
   const mb = $("#menu-btn"), open = $(".layout").classList.contains("menu-open"), on = rail.querySelector('.scn[aria-current="true"]');
   mb.textContent = ""; mb.setAttribute("aria-expanded", open ? "true" : "false");
   if (open) mb.append(el("span", "mb-name", "Places and practice"), el("span", "mb-act", "Close"));
-  else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
+  else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : mode === "home" ? "今天" : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : mode === "home" ? "Today" : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
   rail.querySelectorAll(".scn.tool").forEach(b => b.addEventListener("click", () => setMenu(false)));
 }
 
@@ -727,6 +736,7 @@ function renderMove() {
   if (mode === "reader") return renderReaderMove();
   if (mode === "trip") return renderTripMove();
   if (mode === "field") return renderFieldMove();
+  if (mode === "home") return renderHomeMove();
   const m = $("#move"); m.textContent = "";
   if (finished) { clearRush(); return renderEnd(); }
   const t = cur.turns[turn];
@@ -1778,6 +1788,53 @@ function startTripWarmup() {
 function backBtn() { const s = S.find(x => x.id === lastScene()) || S[0], b = el("button", "btn ghost", `Back to ${s.place} ${s.en}`); b.onclick = () => start(s.id); return b; }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
+/* ---------- today: one page that reads everything the app knows and says where to start ---------- */
+// Nothing new is tracked here. It ranks what's already there: mistakes due back, the next place,
+// the one thing most worth going deeper on, and whether you're heading out.
+function todayPicks() {
+  const picks = [], due = dueItems().length, ord = railOrder();
+  if (due) picks.push({ kind: "Due back", han: "复习", title: due === 1 ? "One mistake is back" : `${due} mistakes are back`, why: "Getting them right today is what makes them stick.", go: () => startReview() });
+  // Go deeper: your most common kind of slip first, then a place you've only scraped through, then surprises, then rush hour
+  const c = patternCounts(), top = PATTERNS.filter(p => c[p.id] && c[p.id].open >= 2).sort((a, b) => c[b.id].open - c[a.id].open)[0];
+  const scraped = ord.find(s => done[s.id] && !(mastery[s.id] || {}).clean);
+  const unmet = ord.find(s => done[s.id] && (mastery[s.id] || {}).clean && (seenCb[s.id] || []).length < poolSize(s.id));
+  const calm = ord.filter(s => (mastery[s.id] || {}).clean);
+  let deep = null;
+  if (top) deep = { kind: "Your pattern", han: top.zh, title: `Drill: ${top.en.toLowerCase()}`, why: `${plural(c[top.id].open, "open mistake")} of this kind. ${top.tip}`, go: () => startPattern(top.id) };
+  else if (scraped) { const miss = notebook.filter(n => n.sid === scraped.id && !n.learned).length;
+    deep = { kind: "Go back", han: scraped.place, title: `A clean run at the ${scraped.en.toLowerCase()}`, why: miss ? `You got through, with ${plural(miss, "mistake")} still open there.` : "You got through. Now do it without a slip.", go: () => start(scraped.id) }; }
+  else if (unmet) { const left = poolSize(unmet.id) - (seenCb[unmet.id] || []).length;
+    deep = { kind: "Something new", han: unmet.place, title: `The ${unmet.en.toLowerCase()} has more to throw at you`, why: `${left === 1 ? "One surprise" : `${left} surprises`} there you haven't met yet.`, go: () => start(unmet.id) }; }
+  else if (calm.length) { const s = calm[dayKey().split("-").reduce((a, b) => a + +b, 0) % calm.length]; // a different one each day
+    deep = { kind: "Rush hour", han: s.place, title: `The ${s.en.toLowerCase()}, with nobody waiting`, why: "You've done it cleanly. Now answer before they lose patience.", go: () => start(s.id, { rush: true }) }; }
+  const next = ord.find(s => !done[s.id]);
+  if (next) picks.push({ kind: "Next up", han: next.place, title: next.en, why: next.goal, go: () => start(next.id) });
+  if (deep) picks.push(deep);
+  const ready = trip.day === dayKey() && trip.ids.length;
+  picks.push(ready
+    ? { kind: "Your pocket", han: "口袋", title: `Ready for ${tripPlaces().map(s => s.en.toLowerCase()).join(", ")}`, why: "Your cheat sheet for today, or log what happened if you're back.", go: () => startTrip() }
+    : { kind: "Your pocket", han: "口袋", title: "Heading out today?", why: "Pick where you're going and get the lines for just those places.", go: () => { tripEditing = true; startTrip(); } });
+  return picks;
+}
+function startHome() {
+  mode = "home"; busy = false; finished = false; clearRush(); cur = { who: "今天", whoEn: "today" };
+  setHead("今天", "jīntiān", "Today", "", said ? "Picked from how you've been doing: what's due, what's next, and where to go deeper." : "Here's where to start.");
+  const log = $("#log"); log.textContent = "";
+  const box = el("div", "today");
+  todayPicks().forEach((p, i) => {
+    const b = el("button", "today-card" + (i ? "" : " first"));
+    b.append(el("span", "tc-han", p.han), el("span", "tc-kind", p.kind), el("span", "tc-title", p.title), el("span", "tc-why", p.why));
+    b.onclick = p.go; box.append(b);
+  });
+  log.append(box); log.scrollTop = 0;
+  renderRail(); renderMove();
+}
+function renderHomeMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  head.append(el("h3", null, "Or anywhere"), el("span", "prompt", "Every place and practice space is in the list."));
+  m.append(head);
+}
 /* ---------- it happened for real: bring a real-life slip back into the app ---------- */
 // You tell it what you said or heard out there. It finds the matching moment in that place,
 // explains it with what the app already knows, and files it so it comes back for review.
@@ -2249,8 +2306,9 @@ document.addEventListener("keydown", ev => {
   }
 });
 applyPrefs(); renderNotebook(); renderStreak();
-let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
-start(S.some(s => s.id === last) ? last : S[0].id);
+$("#home-btn").onclick = () => { startHome(); setMenu(false); };
+// Coming back: start from a short "today" page. The very first visit goes straight into the noodle shop.
+if (said) startHome(); else start(lastScene());
 
 (async () => {
   try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); renderMove(); } } } catch {}
