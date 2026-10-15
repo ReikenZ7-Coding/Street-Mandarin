@@ -413,6 +413,85 @@ body.hint-off .opt .en-line { display: none; }
 .dots i.on { background: var(--jade); }
 .nb-item.learned { opacity: 0.55; }
 .nb-item.learned .said { text-decoration-color: var(--jade); }
+
+/* Unscripted: WeChat with the people from your days */
+.chat-list { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.chat-row { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 10px 14px; }
+.chat-row:last-child { border-bottom: 0; }
+.chat-row:hover, .chat-row:focus-visible { background: var(--jade-soft); }
+.av { width: 46px; height: 46px; border-radius: 10px; display: grid; place-items: center; background: var(--jade); color: var(--surface); font-family: var(--f-han); font-weight: 900; font-size: 22px; }
+.cr-mid { display: flex; flex-direction: column; min-width: 0; }
+.cr-name { display: flex; gap: 8px; align-items: baseline; }
+.cr-han { font-family: var(--f-han); font-weight: 600; font-size: 17px; }
+.cr-en { font-size: 13px; color: var(--muted); }
+.cr-prev { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cr-side { font-size: 12px; color: var(--muted); align-self: start; padding-top: 4px; }
+.cr-dot { position: absolute; left: 50px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--cinnabar); border: 2px solid var(--surface); }
+.scene.chatting .log { max-height: min(68vh, 720px); background: var(--surface-2); }
+.chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+.chat-sw { display: flex; gap: 6px; }
+.chat-reset { margin-left: auto; color: var(--muted); }
+.chat-warn { flex-basis: 100%; font-size: 13px; color: var(--cinnabar); }
+.row.chat .who { border-radius: 8px; background: var(--jade); color: var(--surface); font-size: 17px; font-weight: 900; }
+.row.chat .bubble { cursor: pointer; }
+.row.chat.me .bubble { background: var(--jade); color: #fff; border-bottom-right-radius: 4px; }
+.row.chat .han { font-size: 19px; }
+body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py { display: block; }
+.row.chat .vtag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
+.voice { display: flex; align-items: center; gap: 14px; }
+.vplay { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 4px 18px 4px 0; font-weight: 600; color: inherit; min-width: 90px; }
+.vplay svg { width: 20px; height: 20px; }
+.chat-time { align-self: center; font-size: 12px; color: var(--muted); }
+.chat-typing { font-size: 13px; color: var(--muted); font-style: italic; }
+.chat-me-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.chat-me-wrap > .row { width: 100%; }
+.chat-fb { max-width: min(78%, 520px); font-size: 13px; border-radius: 10px; padding: 6px 10px; display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; background: var(--surface); border: 1px dashed var(--line); }
+.chat-fb .cf-k { font-weight: 700; }
+.chat-fb.wrong .cf-k { color: var(--cinnabar); } .chat-fb.okay .cf-k { color: var(--ochre); } .chat-fb.english .cf-k { color: var(--jade); }
+.chat-fb .han-inline { font-family: var(--f-han); font-weight: 600; font-size: 16px; }
+.chat-fb .py { font-size: 13px; }
+.chat-fb .cf-note { flex-basis: 100%; color: var(--muted); }
+.chat-fail { align-self: center; width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--cinnabar); color: #fff; font-weight: 700; font-size: 13px; line-height: 1; padding: 0; }
+.chat-starters { display: flex; flex-wrap: wrap; gap: 8px; }
+.chat-starters .chip, .how-opt .chip { display: inline-flex; flex-direction: column; align-items: flex-start; border-radius: 12px; text-align: left; }
+.chat-starters .han, .how-opt .han { font-size: 16px; }
+.chat-starters .py, .how-opt .py { font-size: 12px; }
+.chat-starters .en-line { font-size: 12px; color: var(--muted); margin: 0; }
+.chat-how { display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface-2); }
+.how-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.how-note { font-size: 13px; color: var(--muted); flex: 1 1 200px; }
+
+/* Notes: a drawer beside whatever you're doing (a sheet on phones) */
+.notes-btn { align-self: center; display: inline-flex; align-items: baseline; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; font-weight: 600; font-size: 14px; }
+.notes-btn .han { font-size: 16px; color: var(--jade); }
+.notes-btn[aria-expanded="true"] { border-color: var(--jade); background: var(--jade-soft); }
+.notes { position: fixed; z-index: 40; top: 12px; right: 12px; bottom: 12px; width: min(400px, calc(100vw - 24px)); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 40px -18px rgba(0,0,0,.45); }
+.nt-head { display: flex; align-items: baseline; gap: 10px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+.nt-han { font-family: var(--f-han); font-weight: 900; font-size: 22px; color: var(--jade); }
+.nt-en { font-weight: 600; }
+.nt-close { margin-left: auto; }
+.nt-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 16px; overflow-y: auto; }
+.nt-top { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.nt-search { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); color: var(--fg); font: inherit; }
+.nt-list { display: grid; gap: 8px; }
+.nt-item { display: grid; gap: 2px; text-align: left; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
+.nt-item:hover, .nt-item:focus-visible { border-color: var(--jade); }
+.nt-title { font-weight: 700; }
+.nt-prev { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--f-py); }
+.nt-when { font-size: 12px; color: var(--muted); }
+.nt-empty, .nt-hint { font-size: 13px; color: var(--muted); margin: 0; }
+.nt-text { flex: 1; min-height: 240px; resize: none; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--bg); color: var(--fg); font-family: var(--f-py); font-size: 16px; line-height: 1.7; }
+.nt-text:focus-visible { outline: 2px solid var(--jade); outline-offset: 1px; }
+.nt-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.nt-del { margin-left: auto; color: var(--cinnabar); }
+.btn.small { padding: 6px 12px; font-size: 13px; }
+.toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: opacity .4s; }
+.toast.out { opacity: 0; }
+@media (max-width: 760px) {
+  .notes { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 78vh; border-radius: 16px 16px 0 0; }
+  .chat-row { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 10px 12px; } .av { width: 42px; height: 42px; font-size: 20px; } .cr-dot { left: 44px; }
+  .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: 62vh; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -425,6 +504,7 @@ body.hint-off .opt .en-line { display: none; }
       <p class="tagline">No lessons. Walk into a real situation, say something, get it wrong, and learn from how people react.</p>
       <p class="streak" id="streak" aria-live="polite"></p>
     </div>
+    <button class="notes-btn" id="notes-btn" aria-expanded="false" aria-controls="notes" title="Your notes, beside whatever you're doing"><span class="han">笔记</span> Notes</button>
     <div class="help" role="group" aria-labelledby="help-label">
       <span class="help-label" id="help-label">How much help</span>
       <div class="seg" id="help-seg"></div>
@@ -463,6 +543,10 @@ body.hint-off .opt .en-line { display: none; }
     </aside>
   </div>
   <footer class="foot" id="foot"></footer>
+  <aside class="notes" id="notes" aria-label="Your notes" hidden>
+    <div class="nt-head"><span class="nt-han">笔记</span><span class="nt-en">Your notes</span><button class="linkish nt-close" id="notes-close">Close</button></div>
+    <div class="nt-body"></div>
+  </aside>
 </div>
 
 <script src="scenes.js"></script>
@@ -470,6 +554,7 @@ body.hint-off .opt .en-line { display: none; }
 <script src="voices.js"></script>
 <script src="daily.js"></script>
 <script src="journey.js"></script>
+<script src="people.js"></script>
 <script>
 const S = window.SCENES;
 // Places you made from your own wanders live alongside the built-in ones
@@ -753,9 +838,15 @@ function renderRail() {
   rail.append(el("h2", "rail-sub", "Long Story"));
   const lt = tool("长篇", LS ? LS.bible.title_english || "Long Story" : "Long Story", LS ? (lnx ? `Volume ${lnx.v} of ${LS.n}, chapter ${lnx.c}` : "Finished. Start another?") : "A novel Claude writes around you", mode === "long", () => startLong());
   lt.id = "tool-long"; rail.append(lt);
+  // Unscripted: the people from your days, on WeChat, for as long as you like to chat
+  const unread = chatUnread(), nChats = PEOPLE.filter(x => ((CHATS[x.id] || {}).msgs || []).some(m => m.me)).length;
+  rail.append(el("h2", "rail-sub", "Unscripted"));
+  const ut = tool("随便聊", "Unscripted", unread ? `${plural(unread, "new message")}` : nChats ? `${plural(nChats, "chat")} going` : `Chat with ${PEOPLE.length} people you meet`, mode === "chat", () => startChats());
+  ut.id = "tool-chat"; rail.append(ut);
   $(".layout").classList.toggle("nb-view", mode === "notebook");
   // Pages you read (not conversations) get the full height instead of a scroll box
-  $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field", "long"].includes(mode));
+  $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field", "long"].includes(mode) || mode === "chat" && !chatWho);
+  $("#scene").classList.toggle("chatting", mode === "chat" && !!chatWho);
   const nDone = S.filter(s => done[s.id]).length;
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
   const nCan = S.filter(s => canDo(s.id)).length;
@@ -916,6 +1007,7 @@ function renderMove() {
   if (mode === "field") return renderFieldMove();
   if (mode === "home") return renderHomeMove();
   if (mode === "long") return renderLongMove();
+  if (mode === "chat") return renderChatMove();
   const m = $("#move"); m.textContent = "";
   if (finished) { clearRush(); return renderEnd(); }
   const t = cur.turns[turn];
@@ -1384,6 +1476,9 @@ function renderEnd() {
     line("Help", "Clean with " + HELP[helpLevel()].label.toLowerCase() + " on. Ready for less? ", up);
   }
   if (twistNote) { line("New here", twistNote.replace(/^Something new can now happen here: /, "")); twistNote = ""; }
+  // The person you just met adds you on WeChat: the conversation can carry on in Unscripted
+  const pal = PEOPLE.find(x => x.met === cur.id);
+  if (pal && !((CHATS[pal.id] || {}).msgs || []).some(m => m.me)) { const hi = el("button", "linkish", `Say hi to ${pal.en}`); hi.onclick = () => startChat(pal.id); line("WeChat", `${pal.han} added you. `, hi); }
   // One clear next step, the rest as quieter options
   const row = el("div", "endcard");
   const di = dayOf(cur.id), stops = di < 0 ? [] : DAYS[di].stops, si = stops.findIndex(x => x.id === cur.id);
@@ -1458,7 +1553,7 @@ function nbItem(n) {
   const s = sceneFor(n);
   const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
   const top = el("div", "where");
-  top.append((s ? s.en : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.real ? " · for real" : n.kind === "okay" ? " · close enough" : ""));
+  top.append((s ? s.en : n.sid === "chat" ? `Unscripted: ${(personOf(n.who) || {}).han || "a chat"}` : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.real ? " · for real" : n.kind === "okay" ? " · close enough" : ""));
   const st = el("span", "when", whenText(n) === "Due now" ? "" : whenText(n)); // the "Due now" heading already says it
   const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
   GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
@@ -1558,7 +1653,8 @@ function reviewItem() {
       rTiles = { ans, tiles: shuffle(ans.concat(shuffle(pool).slice(0, 2))).map((w, i) => ({ w, i })), chosen: [] };
     }
   } else {
-    addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : n.sid === "ears" ? "A sound-alike" : "Off-script"}. You said: ${n.said}`);
+    if (n.sid === "chat") { const pp = personOf(n.who); addNarr(`From your chat with ${pp ? pp.han + " " + pp.en : "someone"}.${n.heard ? "" : ` You wrote: ${n.said}`}`); if (n.heard && pp) { cur = { who: pp.av, whoEn: pp.en }; addNpc([n.heard, n.heardP || "", n.heardE || ""]); addNarr(`You wrote: ${n.said}`); } }
+    else addNarr(`${s ? s.en + ", off-script" : n.sid === "wander" ? "From a wander" : n.sid === "ears" ? "A sound-alike" : "Off-script"}. You said: ${n.said}`);
     order = [];
   }
   renderReviewMove();
@@ -2287,6 +2383,10 @@ function startHome(day) {
     else pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: `${plural(slips.length, "slip")} from today`, why: "They're in your notebook, and they come back tomorrow morning.", go: () => openNotebook() }));
     if (pat) pm.append(homeCard({ kind: "Tonight's drill", han: pat.zh, title: `Mostly ${pat.en.toLowerCase()}`, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
     pm.append(lsTonight());
+    // Someone you met today can carry on the conversation in Unscripted
+    const pal = PEOPLE.find(x => ids.includes(x.met) && done[x.met]);
+    if (pal) { const pm2 = ((CHATS[pal.id] || {}).msgs || []), mine = pm2.some(m => m.me), last = pm2[pm2.length - 1];
+      pm.append(homeCard({ kind: "Keep in touch", han: "随便聊", title: mine ? `Chat with ${pal.en}` : `${pal.han} ${pal.en} added you on WeChat`, why: mine && last ? (last.me ? `You: ${last.h}` : last.voice ? "Sent you a voice message." : last.h) : "Say hi. The chat carries on as long as you like, and they remember you.", go: () => startChat(pal.id) })); }
     pm.append(homeCard({ kind: "For real", han: "真的", title: "Anything happen out there for real?", why: "If you're in China, log what you said or heard. It joins today's slips.", go: () => startField(ids[0]) }));
     log.append(pm);
   } else if (LS) {
@@ -2966,8 +3066,361 @@ function renderLongMove() {
 }
 let lsNew = false;
 
+/* ---------- Unscripted: keep in touch on WeChat with the people from your days (people.js) ---------- */
+// Short Story gets you through a situation; Unscripted is what comes after: the noodle boss, your classmate,
+// your landlady, texting you like anyone in China would. Endless, it remembers you, and whatever you write
+// that wouldn't land gets a quiet note under your message and comes back in Mistakes.
+const PEOPLE = window.PEOPLE || [];
+let CHATS = store.get("sm-chats", {}), chatPrefs = Object.assign({ py: true, en: false }, store.get("sm-chat-prefs", {}));
+let chatWho = null, chatBusy = false, chatErr = "", chatReset = false, chatHow = null, chatDraft = "";
+const personOf = id => PEOPLE.find(p => p.id === id);
+const chatOf = id => CHATS[id] || (CHATS[id] = { msgs: [], about: "" });
+const saveChats = () => { try { localStorage.setItem("sm-chats", JSON.stringify(CHATS)); } catch { chatErr = "Your browser's storage is full, so new messages won't be kept."; } };
+const chatUnread = () => PEOPLE.filter(p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length && !m[m.length - 1].me && !m[m.length - 1].seen; }).length;
+// Someone you met at a place you've been: they've added you, and their first message is waiting
+function chatSeed(p) {
+  const c = chatOf(p.id);
+  if (!c.msgs.length) { c.msgs.push({ h: p.hi.h, p: p.hi.p, e: p.hi.e, t: Date.now() }); saveChats(); }
+  return c;
+}
+const chatMet = p => p.met && done[p.met];
+function chatWhere(p) {
+  if (!p.met) return p.role.replace(/^./, c => c.toUpperCase());
+  const s = S.find(x => x.id === p.met), d = dayOf(p.met);
+  return `${s ? s.en : ""}${d >= 0 ? ` · Short Story day ${d + 1}` : ""}`;
+}
+function ago(t) {
+  const m = Math.round((Date.now() - t) / 6e4);
+  if (m < 1) return "now"; if (m < 60) return `${m} min`; const h = Math.round(m / 60); if (h < 24) return `${h} h`;
+  const d = Math.round(h / 24); return d === 1 ? "yesterday" : `${d} days`;
+}
+function startChats() {
+  mode = "chat"; chatWho = null; busy = false; finished = false; clearRush(); chatReset = false; chatHow = null;
+  cur = { id: "chat", who: "聊", whoEn: "them", en: "Unscripted", turns: [] };
+  setHead("随便聊", "suíbiàn liáo", "Unscripted", "How it works: ", "Keep in touch with the people you meet, for as long as you like, the way everyone in China does: on WeChat. They remember you. Write in characters, pinyin or English; anything that wouldn't land gets a note, and comes back in Mistakes.");
+  const log = $("#log"); log.textContent = "";
+  const yours = PEOPLE.filter(p => ((CHATS[p.id] || {}).msgs || []).some(m => m.me)).sort((a, b) => chatLast(b) - chatLast(a));
+  const rest = PEOPLE.filter(p => !yours.includes(p)).sort((a, b) => (chatMet(b) ? 1 : 0) - (chatMet(a) ? 1 : 0));
+  if (yours.length) { log.append(el("h4", "pb-title", "Your chats")); const l = el("div", "chat-list"); yours.forEach(p => l.append(chatRow(p))); log.append(l); }
+  log.append(el("h4", "pb-title", yours.length ? "Everyone else" : "Pick someone to chat with"));
+  const l2 = el("div", "chat-list"); rest.forEach(p => l2.append(chatRow(p))); log.append(l2);
+  if (!sample) log.append(el("p", "ls-note", "Chatting needs Claude, since every reply is written as you go. Open the app in Claude to chat. You can still read who everyone is."));
+  window.scrollTo(0, 0); renderRail(); renderMove();
+}
+const chatLast = p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length ? m[m.length - 1].t : 0; };
+function chatRow(p) {
+  const c = CHATS[p.id] || { msgs: [] }, last = c.msgs[c.msgs.length - 1] || null, b = el("button", "chat-row");
+  const unread = last ? !last.me && !last.seen : chatMet(p);
+  b.append(el("span", "av", p.av));
+  const mid = el("span", "cr-mid");
+  const nm = el("span", "cr-name"); nm.append(el("span", "cr-han", p.han), el("span", "cr-en", p.en));
+  mid.append(nm, el("span", "cr-prev", last ? (last.me ? "You: " : "") + (last.voice ? "[语音] Voice message" : last.h) : chatMet(p) ? `Added you after the ${(S.find(x => x.id === p.met) || {}).en || ""}`.toLowerCase().replace(/^a/, "A") : chatWhere(p)));
+  b.append(mid, el("span", "cr-side", last ? ago(last.t) : ""));
+  if (unread) b.append(el("span", "cr-dot", ""));
+  b.setAttribute("aria-label", `${p.han} ${p.en}${unread ? ", new message" : ""}`);
+  b.onclick = () => startChat(p.id);
+  return b;
+}
+function startChat(id) {
+  const p = personOf(id); if (!p) return startChats();
+  mode = "chat"; chatWho = id; busy = false; finished = false; clearRush(); chatReset = false; chatHow = null; chatErr = "";
+  cur = { id: "chat", who: p.av, whoEn: p.en, en: "Unscripted", turns: [] };
+  const c = chatSeed(p);
+  c.msgs.forEach(m => { if (!m.me) m.seen = true; }); saveChats();
+  setHead(p.han, p.py, p.en, "", p.met ? `${p.role.replace(/^./, x => x.toUpperCase())}.` : `${p.role.replace(/^./, x => x.toUpperCase())}.`);
+  setTabs(chatBar());
+  chatDraw(); renderRail(); renderMove();
+}
+// The two switches, plus a way back and a fresh start
+function chatBar() {
+  const bar = el("div", "chat-bar");
+  const back = el("button", "linkish", "‹ All chats"); back.onclick = () => startChats();
+  const sw = el("div", "chat-sw"); sw.setAttribute("role", "group"); sw.setAttribute("aria-label", "What to show under each message");
+  [["拼音 Pinyin", "py"], ["English", "en"]].forEach(([l, k]) => {
+    const b = el("button", "chip", l); b.setAttribute("aria-pressed", chatPrefs[k] ? "true" : "false");
+    b.onclick = () => { chatPrefs[k] = !chatPrefs[k]; store.set("sm-chat-prefs", chatPrefs); b.setAttribute("aria-pressed", chatPrefs[k] ? "true" : "false"); chatDraw(true); };
+    sw.append(b);
+  });
+  const reset = el("button", "linkish chat-reset", chatReset ? "Yes, clear it" : "Reset chat");
+  reset.onclick = () => {
+    if (!chatReset) { chatReset = true; setTabs(chatBar()); return; }
+    chatReset = false; CHATS[chatWho] = { msgs: [], about: "" }; saveChats(); startChat(chatWho);
+  };
+  bar.append(back, sw, reset);
+  if (chatReset) bar.append(el("span", "chat-warn", "This clears the messages and everything they remember about you. Slips stay in Mistakes."));
+  return bar;
+}
+function chatDraw(keep) {
+  const log = $("#log"), y = log.scrollTop, c = chatOf(chatWho), p = personOf(chatWho); log.textContent = "";
+  let lastT = 0;
+  c.msgs.forEach((m, i) => {
+    if (m.t - lastT > 30 * 6e4) log.append(el("div", "chat-time", new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })));
+    lastT = m.t;
+    log.append(chatMsg(m, p, i));
+  });
+  if (chatBusy) log.append(el("div", "chat-typing", `${p.han}正在输入… typing`));
+  if (keep) log.scrollTop = y; else log.scrollTop = log.scrollHeight;
+}
+function chatMsg(m, p, i) {
+  const row = el("div", "row chat " + (m.me ? "me" : "npc"));
+  if (!m.me) row.append(el("div", "who", p.av));
+  const bub = el("div", "bubble");
+  const showPy = chatPrefs.py || m.open, showEn = chatPrefs.en || m.open;
+  if (m.voice && !m.shown && canSpeak) {
+    // A voice message, like the real thing: listen first; 转文字 shows the words
+    const v = el("div", "voice"), play = el("button", "vplay"), secs = Math.max(2, Math.round([...m.h].length / 3.5));
+    play.innerHTML = SPEAK_SVG; play.append(` ${secs}″`); play.setAttribute("aria-label", `Play voice message, ${secs} seconds`);
+    play.onclick = () => { if (canSpeak) speak(m.h, 0.9); };
+    const txt = el("button", "reveal", "转文字 Show text"); txt.onclick = () => { m.shown = true; saveChats(); chatDraw(true); };
+    v.append(play, txt); bub.append(v);
+  } else {
+    if (m.voice) bub.append(el("div", "vtag", "语音 · voice message"));
+    bub.append(el("div", "han", m.h));
+    if (showPy && m.p) bub.append(el("div", "py", m.p));
+    if (showEn && m.e) bub.append(el("div", "en-line", m.e));
+    bub.onclick = ev => { if (ev.target.closest("button")) return; m.open = !m.open; chatDraw(true); };
+    bub.title = "Tap for pinyin, English and more";
+    if (m.open) {
+      const tools = el("div", "b-tools");
+      if (canSpeak) { const s = el("button", "say"); s.innerHTML = SPEAK_SVG; s.setAttribute("aria-label", "Listen"); s.onclick = () => speak(m.h, 0.85); tools.append(s); }
+      const nb = el("button", "linkish", "Save to notes"); nb.onclick = () => { noteAdd(`${m.h}${m.p ? "  " + m.p : ""}${m.e ? "  " + m.e : ""}`, `${p.han}, Unscripted`); nb.textContent = "Saved"; nb.disabled = true; };
+      tools.append(nb); bub.append(tools);
+    }
+  }
+  if (m.me && m.fail) { const r = el("button", "chat-fail", "!"); r.title = "Not sent. Tap to send again"; r.setAttribute("aria-label", "Not sent. Send again"); r.onclick = () => chatRetry(i); row.append(r); }
+  row.append(bub);
+  if (!m.me || !m.fb) return row;
+  // How your message landed: a quiet note under it, not a lecture in the chat
+  const wrap = el("div", "chat-me-wrap"); wrap.append(row);
+  const fb = el("div", "chat-fb " + m.fb.kind);
+  fb.append(el("span", "cf-k", m.fb.kind === "english" ? "In Chinese" : m.fb.kind === "wrong" ? "错 Didn't land" : "差不多 Close"));
+  if (m.fb.fix) fb.append(" ", el("span", "han-inline", m.fb.fix[0]), " ", el("span", "py", m.fb.fix[1] || ""));
+  if (m.fb.note) fb.append(el("span", "cf-note", m.fb.note));
+  wrap.append(fb);
+  return wrap;
+}
+// Everything you need to text back: a box that takes characters, pinyin or English, your voice, and a way to ask how
+function renderChatMove() {
+  const m = $("#move"); m.textContent = "";
+  if (!chatWho) return;
+  const p = personOf(chatWho), c = chatOf(chatWho);
+  if (chatErr) m.append(el("p", "ls-err", chatErr));
+  if (!sample) { m.append(el("p", "ls-note", "Chatting needs Claude, since every reply is written as you go. Open the app in Claude to chat.")); return; }
+  // A beginner can start from a line that works, and edit it before sending
+  if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
+    const st = el("div", "chat-starters");
+    p.starters.forEach(s => { const b = el("button", "chip"); b.append(el("span", "han", s.h)); if (chatPrefs.py) b.append(el("span", "py", s.p)); if (chatPrefs.en) b.append(el("span", "en-line", s.e)); b.onclick = () => { const i = $("#chat-input"); i.value = s.h; i.focus(); }; st.append(b); });
+    m.append(st);
+  }
+  if (chatHow) m.append(chatHowEl(p));
+  const form = el("form", "free chat-form");
+  const inp = el("input"); inp.id = "chat-input"; inp.type = "text"; inp.autocomplete = "off"; inp.lang = "zh-CN"; inp.maxLength = 200; inp.value = chatDraft;
+  inp.placeholder = `Message ${p.han}: characters, pinyin or English`; inp.setAttribute("aria-label", `Message ${p.en}`);
+  inp.oninput = () => { chatDraft = inp.value; };
+  const send = el("button", "btn", "Send"); send.type = "submit";
+  form.append(inp, send);
+  if (SR && !micBroken) { const mic = el("button", "btn ghost", "Speak"); mic.type = "button"; mic.onclick = () => listenOnce(inp, mic, () => { chatDraft = inp.value; }); form.append(mic); }
+  form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v && !chatBusy) { chatDraft = ""; chatSend(v); } };
+  m.append(form);
+  if (!chatHow) { const how = el("button", "linkish", "How do I say…?"); how.onclick = () => { chatHow = { q: "", opts: null }; renderMove(); const i = $("#how-input"); if (i) i.focus(); }; m.append(how); }
+}
+function chatHowEl(p) {
+  const box = el("div", "chat-how");
+  const form = el("form", "free");
+  const inp = el("input"); inp.id = "how-input"; inp.type = "text"; inp.autocomplete = "off"; inp.maxLength = 160; inp.value = chatHow.q;
+  inp.placeholder = "In English: what do you want to say?"; inp.setAttribute("aria-label", "What you want to say, in English");
+  const go = el("button", "btn ghost", chatHow.busy ? "…" : "Show me"); go.type = "submit"; go.disabled = !!chatHow.busy;
+  const x = el("button", "linkish", "Close"); x.type = "button"; x.onclick = () => { chatHow = null; renderMove(); };
+  form.append(inp, go, x);
+  form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) chatAsk(v); };
+  box.append(form);
+  if (chatHow.err) box.append(el("p", "ls-err", chatHow.err));
+  (chatHow.opts || []).forEach(o => {
+    const b = el("div", "how-opt"), use = el("button", "chip"); use.append(el("span", "han", o.h), el("span", "py", o.p));
+    use.title = "Put it in the message box"; use.onclick = () => { chatDraft = o.h; chatHow = null; renderMove(); const i = $("#chat-input"); if (i) i.focus(); };
+    b.append(use, el("span", "how-note", `${o.e}${o.note ? ". " + o.note : ""}`));
+    const sv = el("button", "linkish", "Save to notes"); sv.onclick = () => { noteAdd(`${o.h}  ${o.p}  ${o.e}`, `How to say "${chatHow.q}"`); sv.textContent = "Saved"; sv.disabled = true; };
+    if (canSpeak) { const s = el("button", "linkish", "Hear it"); s.onclick = () => speak(o.h); b.append(s); }
+    b.append(sv); box.append(b);
+  });
+  return box;
+}
+async function chatAsk(q) {
+  const p = personOf(chatWho); chatHow = { q, opts: null, busy: true }; renderMove();
+  const prompt = `A beginner learner of Mandarin wants to text this to ${p.han} (${p.en}, ${p.role}) on WeChat: "${q.slice(0, 160)}".
+Give 2 natural ways to say it, short and easy, the way a local would text it to this person (the first one the simplest). Simplified characters.
+Return JSON only: {"options": [{"h": "Chinese", "p": "pinyin with tone marks", "e": "what it says, in English", "note": "one short sentence on a key word, or when to use it"}]}`;
+  try {
+    const r = await sample.json(prompt, { cache: true, modelTier: "quick" });
+    const opts = (r && Array.isArray(r.options) ? r.options : []).filter(o => o && o.h && isHanText(String(o.h))).slice(0, 3).map(o => ({ h: String(o.h), p: String(o.p || ""), e: String(o.e || ""), note: String(o.note || "") }));
+    if (!opts.length) throw new Error("shape");
+    if (chatHow && chatHow.q === q) chatHow = { q, opts };
+  } catch (e) { if (chatHow) chatHow = { q, opts: null, err: e && e.code === "rate_limited" ? "Busy right now. Try again in a moment." : "Couldn't find a way to say that. Try again?" }; }
+  if (mode === "chat") renderMove();
+}
+const CHAT_LEVEL = {
+  easy: "Very short messages with only the most common words (HSK 1 to 2), one idea each.",
+  simple: "Short, everyday sentences (HSK 2 to 3). No rare words.",
+  natural: "Natural casual texting with your own slang and particles, but kept short: a beginner reading the pinyin should be able to follow."
+};
+function chatPrompt(p, c, text) {
+  const hist = c.msgs.slice(-24).map(m => `${m.me ? "Them" : "You"}: ${m.h}`).join("\n");
+  const met = p.met ? (done[p.met] ? `You met them at your ${(S.find(x => x.id === p.met) || {}).en.toLowerCase()}, where they were a customer. ` : `You met them briefly at your ${(S.find(x => x.id === p.met) || {}).en.toLowerCase()}. `) : "";
+  const now = new Date(), part = now.getHours() < 5 ? "late at night" : now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening";
+  return `You are ${p.han} (${p.en}), ${p.role}, in Shanghai. You're texting on WeChat with a foreigner who recently arrived and is learning Mandarin (beginner to lower-intermediate). ${met}
+How you text: ${p.style}
+How hard your Chinese is: ${CHAT_LEVEL[p.level] || CHAT_LEVEL.simple}
+What you know about them so far: ${c.about || "nothing yet beyond how you met."}
+It's ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][now.getDay()]} ${part} for both of you.
+The chat so far, oldest first ("You" is you, ${p.han}):
+${hist}
+They just sent: "${text}" (they may write characters, pinyin with or without tones, or English when stuck).
+
+Reply as yourself, the way you'd really text: 1 to 3 short messages, most often 1 or 2, each at most 25 characters. Keep the conversation going: react to what they actually said (if it was confusing, react the way a real person would, kindly), share something from your own life and plans, and often, not always, end with a question. Make plans and invitations that fit you. Stay in character: never mention that they're learning, never teach unless you are a teacher, and never write English in your messages (if they wrote English, answer in simple Chinese as if you understood).
+${p.voice ? "You sometimes send a voice message instead of typing: set \"voice\": true on it. A voice message is spoken, so it's a little chattier (up to 35 characters). At most one per reply, and not every time." : "You never send voice messages."}
+Then, separately and out of character, judge their last message for their coach.
+Return JSON only:
+{"messages": [{"h": "Chinese", "p": "pinyin with tone marks", "e": "natural English", "voice": false}],
+ "you": {"h": "their message in characters (if they wrote pinyin or English, the Chinese they meant)", "p": "its pinyin with tone marks", "e": "what it means in English, as a local would read it"},
+ "verdict": "good" (a local follows it naturally; small typos are fine) or "okay" (understood, but odd or unnatural) or "wrong" (a local would misunderstand) or "english" (they wrote only English),
+ "note": "for okay, wrong or english: one plain-English sentence naming the key word with pinyin; else empty",
+ "better_h": "for okay, wrong or english: a natural way to say what they meant; else empty", "better_p": "its pinyin",
+ "tag": "for okay or wrong, one of ${TAGSET.join(", ")}",
+ "about": "only if you learned something new about them: the updated facts you know (name, where they're from, work, plans, likes, what you've done together), under 60 words, in English; else empty"}`;
+}
+async function chatSend(text, retry) {
+  const id = chatWho, p = personOf(id), c = chatOf(id);
+  let me = retry;
+  if (!me) { me = { me: true, h: text, t: Date.now() }; c.msgs.push(me); }
+  delete me.fail; chatBusy = true; chatErr = ""; saveChats(); practised(); chatDraw(); renderMove();
+  try {
+    const r = await sample.json(chatPrompt(p, c, text), { cache: false, modelTier: "quick" });
+    const msgs = (r && Array.isArray(r.messages) ? r.messages : []).filter(x => x && x.h && isHanText(String(x.h))).slice(0, 3);
+    if (!msgs.length) throw new Error("shape");
+    if (r.you) { if (r.you.p) me.p = String(r.you.p); if (r.you.e) me.e = String(r.you.e); if (!isHanText(text) && r.you.h) me.zh = String(r.you.h); }
+    const kind = ["okay", "wrong", "english"].includes(r.verdict) ? r.verdict : "good";
+    if (kind !== "good" && (r.note || r.better_h)) {
+      me.fb = { kind, note: String(r.note || ""), fix: r.better_h ? [String(r.better_h), String(r.better_p || "")] : null };
+      const heard = [...c.msgs].reverse().find(x => !x.me);
+      if (kind !== "english") logMistake({ sid: "chat", turn: null, cb: null, kind, said: text, fix: me.fb.fix ? me.fb.fix[0] : "", fixPy: me.fb.fix ? me.fb.fix[1] : "", why: me.fb.note, tag: TAGSET.includes(r.tag) ? r.tag : "words", who: p.id, heard: heard ? heard.h : "", heardP: heard ? heard.p : "", heardE: heard ? heard.e : "" });
+    }
+    if (r.about && String(r.about).trim()) c.about = String(r.about).slice(0, 500);
+    // Their messages arrive one at a time, like real typing
+    for (let i = 0; i < msgs.length; i++) {
+      if (i) await new Promise(res => setTimeout(res, 700));
+      const x = msgs[i];
+      c.msgs.push({ h: String(x.h), p: String(x.p || ""), e: String(x.e || ""), voice: !!(x.voice && p.voice), t: Date.now(), seen: mode === "chat" && chatWho === id });
+      if (i === msgs.length - 1) chatBusy = false;
+      saveChats(); if (mode === "chat" && chatWho === id) chatDraw();
+    }
+    c.msgs = c.msgs.slice(-300);
+  } catch (e) {
+    me.fail = true;
+    chatErr = e && e.code === "not_granted" ? "Chatting needs permission to use Claude." : e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then tap the ! to send again." : "That message didn't go through. Tap the ! to send it again.";
+    if (e && e.code === "not_granted") sample = null;
+  }
+  chatBusy = false; saveChats();
+  if (mode === "chat" && chatWho === id) { chatDraw(); renderMove(); }
+  renderRail();
+}
+function chatRetry(i) { const c = chatOf(chatWho), m = c.msgs[i]; if (!m || chatBusy) return; c.msgs.splice(i, 1); c.msgs.push(m); m.t = Date.now(); chatSend(m.h, m); }
+
+/* ---------- Notes: your own notebook, open beside whatever you're doing ---------- */
+// Free text, the way you'd keep a paper notebook: words, explanations, anything. It opens over any page,
+// so you can write while you read a chapter or chat, and any line in the app can be saved into it.
+let NOTES = store.get("sm-notes", []), noteOpen = null, noteQuery = "", noteDel = false, noteBusy = false, noteMsg = "";
+const saveNotes = () => { try { localStorage.setItem("sm-notes", JSON.stringify(NOTES)); } catch { noteMsg = "Your browser's storage is full, so this note can't be saved."; } };
+const noteTitle = n => (n.body.split("\n").find(l => l.trim()) || "Empty note").trim().slice(0, 60);
+function noteNew(body) { const n = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), body: body || "", t: Date.now() }; NOTES.unshift(n); saveNotes(); return n; }
+// "Save to notes" from anywhere: into the note you have open, or a running "Saved lines" note
+function noteAdd(text, from) {
+  let n = noteOpen && NOTES.find(x => x.id === noteOpen);
+  if (!n) n = NOTES.find(x => x.saved) || Object.assign(noteNew("Saved lines\n"), { saved: true });
+  n.body = n.body.replace(/\s*$/, "") + `\n${text}${from ? `   (${from})` : ""}\n`; n.t = Date.now(); saveNotes();
+  toast(`Saved to “${noteTitle(n)}”`);
+  if (notesShown()) drawNotes();
+  renderRail();
+}
+function toast(t) {
+  const old = $(".toast"); if (old) old.remove();
+  const d = el("div", "toast", t); d.setAttribute("role", "status"); document.body.append(d);
+  setTimeout(() => d.classList.add("out"), 2200); setTimeout(() => d.remove(), 2700);
+}
+const notesShown = () => !$("#notes").hidden;
+function openNotes(id) {
+  const d = $("#notes"); d.hidden = false; $("#notes-btn").setAttribute("aria-expanded", "true");
+  if (id !== undefined) noteOpen = id;
+  noteDel = false; noteMsg = ""; drawNotes();
+  setTimeout(() => { const f = d.querySelector(noteOpen ? "textarea" : "input"); if (f) f.focus({ preventScroll: true }); }, 0);
+}
+function closeNotes() { $("#notes").hidden = true; $("#notes-btn").setAttribute("aria-expanded", "false"); $("#notes-btn").focus(); }
+function drawNotes() {
+  const d = $("#notes .nt-body"); d.textContent = "";
+  const n = noteOpen && NOTES.find(x => x.id === noteOpen);
+  if (!n) {
+    noteOpen = null;
+    const top = el("div", "nt-top");
+    const q = el("input", "nt-search"); q.type = "search"; q.placeholder = "Search your notes"; q.value = noteQuery; q.setAttribute("aria-label", "Search your notes");
+    q.oninput = () => { noteQuery = q.value; drawList(); };
+    const nw = el("button", "btn small", "New note"); nw.onclick = () => { noteOpen = noteNew("").id; drawNotes(); const t = $("#notes textarea"); if (t) t.focus(); };
+    top.append(q, nw); d.append(top);
+    const list = el("div", "nt-list"); d.append(list);
+    const drawList = () => {
+      list.textContent = "";
+      const ql = noteQuery.trim().toLowerCase();
+      const all = NOTES.filter(x => !ql || x.body.toLowerCase().includes(ql)).sort((a, b) => (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || b.t - a.t);
+      if (!NOTES.length) list.append(el("p", "nt-empty", "Nothing here yet. Write down words, explanations, anything you want to keep. Or tap “Save to notes” on any line in the app."));
+      else if (!all.length) list.append(el("p", "nt-empty", `No note has “${noteQuery}”.`));
+      all.forEach(x => {
+        const b = el("button", "nt-item" + (x.pin ? " pin" : ""));
+        const rest = x.body.split("\n").filter(l => l.trim()).slice(1, 3).join(" · ");
+        b.append(el("span", "nt-title", (x.pin ? "📌 " : "") + noteTitle(x)), el("span", "nt-prev", rest || " "), el("span", "nt-when", ago(x.t)));
+        b.onclick = () => { noteOpen = x.id; noteDel = false; drawNotes(); };
+        list.append(b);
+      });
+    };
+    drawList(); return;
+  }
+  const top = el("div", "nt-top");
+  const back = el("button", "linkish", "‹ All notes"); back.onclick = () => { if (!n.body.trim()) { NOTES = NOTES.filter(x => x !== n); saveNotes(); } noteOpen = null; drawNotes(); };
+  const pin = el("button", "linkish", n.pin ? "Unpin" : "Pin to top"); pin.onclick = () => { n.pin = !n.pin; saveNotes(); drawNotes(); };
+  top.append(back, pin); d.append(top);
+  const ta = el("textarea", "nt-text"); ta.value = n.body; ta.spellcheck = false; ta.setAttribute("aria-label", "Your note. The first line is its title.");
+  ta.placeholder = "First line is the title.\n\n饺子 jiǎozi dumplings\n了 le: a change, or something done…";
+  ta.oninput = () => { n.body = ta.value; n.t = Date.now(); saveNotes(); const g = $("#notes .nt-gloss"); if (g) g.disabled = noteBusy || !isHanText(n.body); };
+  d.append(ta);
+  const tools = el("div", "nt-tools");
+  if (canSpeak) { const r = el("button", "btn ghost small", "Read the Chinese aloud"); r.onclick = () => { const zh = (n.body.match(/[一-鿿，。！？、]+/g) || []).join("。"); if (zh) speak(zh, 0.8); }; tools.append(r); }
+  if (sample) { const g = el("button", "btn ghost small nt-gloss", noteBusy ? "Adding…" : "Add pinyin and meanings"); g.disabled = noteBusy || !isHanText(n.body); g.title = "Adds a list of the Chinese in this note with pinyin and English, under your own words"; g.onclick = () => noteGloss(n); tools.append(g); }
+  const del = el("button", "linkish nt-del", noteDel ? "Yes, delete this note" : "Delete"); del.onclick = () => { if (!noteDel) { noteDel = true; drawNotes(); return; } NOTES = NOTES.filter(x => x !== n); saveNotes(); noteOpen = null; noteDel = false; drawNotes(); renderRail(); };
+  tools.append(del); d.append(tools);
+  if (noteMsg) d.append(el("p", "ls-err", noteMsg));
+  d.append(el("p", "nt-hint", "Saves as you type. “Save to notes” anywhere in the app adds to this note while it's open."));
+}
+// The Chinese you wrote, with pinyin and meanings added underneath: your own words stay as they are
+const NOTE_GLOSS = "\n—— 拼音 pinyin and meanings ——\n";
+async function noteGloss(n) {
+  const mine = n.body.split(NOTE_GLOSS)[0];
+  if (!isHanText(mine)) return;
+  noteBusy = true; noteMsg = ""; drawNotes();
+  const prompt = `A learner of Mandarin wrote this note for themselves:
+"""
+${mine.slice(0, 3000)}
+"""
+List the Chinese words and phrases in it (in the order they appear, no repeats, at most 40), each with pinyin with tone marks and a short English meaning. Keep a set phrase or short sentence together rather than splitting it into single characters.
+Return JSON only: {"items": [{"h": "汉字", "p": "pīnyīn", "e": "meaning"}]}`;
+  try {
+    const r = await sample.json(prompt, { cache: true, modelTier: "quick" });
+    const items = (r && Array.isArray(r.items) ? r.items : []).filter(x => x && x.h && isHanText(String(x.h))).slice(0, 40);
+    if (!items.length) throw new Error("shape");
+    n.body = mine.replace(/\s*$/, "") + "\n" + NOTE_GLOSS + items.map(x => `${x.h}  ${x.p || ""}  ${x.e || ""}`.trim()).join("\n") + "\n";
+    n.t = Date.now(); saveNotes();
+  } catch (e) { noteMsg = e && e.code === "rate_limited" ? "Busy right now. Try again in a moment." : "Couldn't add them just now. Try again?"; }
+  noteBusy = false; if (notesShown() && noteOpen === n.id) drawNotes();
+}
+
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
+const KEYS = ["sm-notes", "sm-chats", "sm-chat-prefs", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
@@ -3206,7 +3659,7 @@ function renderPhrasesMove() {
   m.append(head, form);
 }
 
-/* ---------- wander: Claude makes up a fresh everyday situation and plays it out ---------- */
+/* ---------- live: a Short Story place, unscripted, somewhere like it (Claude plays it) ---------- */
 let wTranscript = [], wDone = false, wGoal = false;
 async function startLive(id) {
   // The same place, unscripted: Claude plays it and throws in its own surprise
@@ -3234,35 +3687,6 @@ Return ONLY JSON: "place_hanzi" (2 to 4 characters), "place_pinyin", "place_engl
   }
   busy = false; renderRail(); renderMove();
 }
-async function startWander(theme) {
-  if (!sample) return;
-  mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = [];
-  setHead("随便逛", "suíbiàn guàng", "Wander", "How it works: ", "Claude invents an everyday situation you haven't practised. Say whatever you'd say; there are no options.");
-  $("#log").textContent = ""; addNarr("Setting the scene…");
-  renderRail(); renderMove();
-  const known = S.map(s => s.en).join(", ");
-  const prompt = `Invent one short, realistic everyday situation a foreign visitor might face in mainland China, for a beginner Mandarin learner to role-play. ${theme ? `The learner asked for this situation: "${String(theme).slice(0, 120)}". Build the scene around it if it's a reasonable everyday situation.` : `Avoid these, which they've already practised: ${known}.`} Good ideas: returning a wrong item, asking a neighbour to keep the noise down, a courier delivering a package, buying fruit by the jin, a pharmacy for mosquito bites, asking to charge your phone, a photo request from strangers, a delayed train announcement.
-Return ONLY a JSON object with keys:
-"place_hanzi" (2 to 4 characters), "place_pinyin", "place_english" (2 to 4 words),
-"who_hanzi" (role, 2 to 3 characters), "who_english" (e.g. "the courier"),
-"goal" (one plain-English sentence: what the learner must achieve),
-"intro" (one or two plain-English sentences setting the scene),
-"opening_hanzi" (what the other person says first, short spoken simplified Chinese a beginner can follow), "opening_pinyin" (tone marks), "opening_english".`;
-  try {
-    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
-    cur = { id: "wander", place: r.place_hanzi, placePy: r.place_pinyin, en: r.place_english, who: String(r.who_hanzi || "路人").slice(0, 2), whoEn: r.who_english || "the local", goal: r.goal, intro: r.intro, turns: [] };
-    setHead(cur.place, cur.placePy, cur.en, "Your goal: ", cur.goal);
-    $("#log").textContent = ""; addNarr(cur.intro);
-    addNpc([r.opening_hanzi, r.opening_pinyin, r.opening_english]);
-    wTranscript.push({ who: "npc", text: r.opening_hanzi });
-  } catch (e) {
-    $("#log").textContent = "";
-    addNarr(e && e.code === "not_granted" ? "Wander needs permission to use Claude. The places on the left still work without it." : "Couldn't set the scene that time. Try Wander again in a moment.");
-    if (e && e.code === "not_granted") sample = null;
-    wDone = true;
-  }
-  busy = false; renderRail(); renderMove();
-}
 function renderWanderMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
@@ -3270,19 +3694,8 @@ function renderWanderMove() {
     head.append(el("h3", null, wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
     const row = el("div", "endcard");
     if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
-    else if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
-    if (sample && wTranscript.length >= 4 && !cur.saved && !cur.live) { const keep = el("button", "btn ghost", "Turn this into a practice place"); keep.onclick = () => saveWander(keep); row.append(keep); }
     const back = backBtn();
     row.append(back); m.append(head, row);
-    if (sample) {
-      const form = el("form", "free");
-      const inp = el("input"); inp.type = "text"; inp.autocomplete = "off"; inp.maxLength = 120;
-      inp.placeholder = "Or name a situation: buying shoes, a noisy neighbour…"; inp.setAttribute("aria-label", "A situation to practise");
-      const go = el("button", "btn ghost", "Go there"); go.type = "submit";
-      form.append(inp, go);
-      form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) startWander(v); };
-      m.append(form);
-    }
     return;
   }
   head.append(el("h3", null, "Your move"), el("span", "prompt", "No options here. Say what you'd really say."));
@@ -3302,35 +3715,6 @@ function renderWanderMove() {
   const row = el("div", "endcard"); row.append(end);
   m.append(head, form, row);
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
-}
-async function saveWander(btn) {
-  btn.disabled = true; btn.textContent = "Writing it up…";
-  const convo = wTranscript.map(x => (x.who === "npc" ? cur.who + ": " : "Learner: ") + x.text).join("\n");
-  const prompt = `Turn this role-play into a short scripted practice scene for a beginner Mandarin learner, in the exact JSON shape below. Keep the same place, person and goal, and build the moments around what actually happened, especially where the learner went wrong.
-Place: ${cur.en} (${cur.place}). Person: ${cur.whoEn} (${cur.who}). Goal: ${cur.goal}
-Conversation:
-${convo}
-
-Return ONLY JSON:
-{"place": hanzi 2-4 chars, "placePy": pinyin, "en": English name 2-4 words, "who": hanzi 2-3 chars, "whoPy", "whoEn": e.g. "the clerk", "goal": one sentence, "intro": one or two sentences,
- "turns": [3 items, each {"npc": [hanzi, pinyin, English] or null for the first if the learner speaks first, "prompt": what the learner must do, in English,
-   "opts": exactly 3 options, each {"h": hanzi, "p": pinyin with tone marks, "e": English, "k": "good"|"okay"|"wrong", "note": one or two coaching sentences naming the key word with pinyin,
-     and for okay/wrong also "r": [hanzi, pinyin, English] the person's in-character reaction, "fix": [hanzi, pinyin], "tag": one of ${TAGSET.join(", ")}}.
-   Exactly one good option per turn; for that good option add "b": its hanzi split into 2 to 5 word tiles with "|" (tiles joined must equal h without punctuation)}],
- "end": [hanzi, pinyin, English] the person's closing line, "endNote": one sentence takeaway}
-Use natural spoken simplified Chinese a beginner can follow, with realistic mistakes.`;
-  try {
-    const r = await sample.json(prompt, { cache: false, modelTier: "quick" });
-    const sc = Object.assign({}, r, { id: "my-" + Date.now().toString(36), custom: true });
-    (sc.turns || []).forEach(t => (t.opts || []).forEach(o => { if (o.b && o.b.split("|").join("") !== normHan(o.h)) delete o.b; if (o.k !== "good" && !TAGSET.includes(o.tag)) o.tag = "words"; }));
-    if (!validScene(sc)) throw new Error("shape");
-    const list = store.get("sm-custom", []); list.push(sc); store.set("sm-custom", list.slice(-12));
-    S.push(sc); cur.saved = true;
-    addNarr(`Saved as a place: ${sc.en}. It's in your list under "Your places", ready to replay like any other.`);
-    renderRail(); renderMove();
-  } catch (e) {
-    btn.disabled = false; btn.textContent = e && e.code === "rate_limited" ? "Busy, try again in a moment" : "Couldn't write it up. Try again?";
-  }
 }
 async function wanderSay(text) {
   if (busy) return;
@@ -3489,11 +3873,14 @@ document.addEventListener("keydown", ev => {
 });
 applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
+$("#notes-btn").onclick = () => notesShown() ? closeNotes() : openNotes();
+$("#notes-close").onclick = () => closeNotes();
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && notesShown()) closeNotes(); });
 // Coming back: start from a short "today" page. The very first visit goes straight into the noodle shop.
 if (said) startHome(); else start(lastScene());
 
 (async () => {
-  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); renderMove(); } } } catch {}
+  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); if (mode === "chat" && !chatWho) startChats(); else renderMove(); } } } catch {}
 })();
 </script>
 </body>
