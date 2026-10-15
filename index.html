@@ -61,6 +61,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .today-card .tc-han { grid-row: span 3; white-space: nowrap; font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
 .today-card .tc-title { font-weight: 700; font-size: 16px; }
 .today-card .tc-why { font-size: 14px; color: var(--muted); }
+.free-open { display: block; margin-top: 14px; font-size: 14px; }
 .daily { margin-top: 22px; }
 .daily-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
 .daily-title { font-weight: 700; font-size: 16px; }
@@ -1114,7 +1115,7 @@ function builder(t, good) {
     bank.append(b);
   });
   const row = el("div", "endcard");
-  const check = el("button", "btn", "Say it"); check.disabled = busy || !bState.chosen.length;
+  const check = el("button", "btn", "Send it"); check.disabled = busy || !bState.chosen.length;
   check.onclick = () => checkBuild(good);
   const clear = el("button", "btn ghost", "Start over"); clear.disabled = !bState.chosen.length;
   clear.onclick = () => { bState.chosen = []; renderMove(); };
@@ -1457,7 +1458,7 @@ function reviewBuilder(n) {
   const sc = S.find(x => x.id === n.sid);
   st.chosen.forEach(tile => { const b = tileBtn(tile.w, "tile on", sc); b.onclick = () => { st.chosen = st.chosen.filter(x => x !== tile); renderReviewMove(); }; slots.append(b); });
   st.tiles.filter(x => !st.chosen.includes(x)).forEach(tile => { const b = tileBtn(tile.w, "tile", sc); b.onclick = () => { st.chosen.push(tile); renderReviewMove(); }; bank.append(b); });
-  const row = el("div", "endcard"), go = el("button", "btn", "Say it"); go.disabled = !st.chosen.length;
+  const row = el("div", "endcard"), go = el("button", "btn", "Send it"); go.disabled = !st.chosen.length;
   go.onclick = () => {
     const built = st.chosen.map(x => x.w);
     if (built.join("|") === st.ans.join("|")) return reviewChoose(rGood);
@@ -2571,8 +2572,16 @@ Return ONLY a JSON object:
 
 /* ---------- off-script with Claude ---------- */
 let sample = null;
+let freeOpen = false;
 function renderFree(m) {
   if (!sample || mode !== "scene") return;
+  // While you're picking or building, your own words stay one tap away, so their Send button
+  // can't be mistaken for the one that sends your answer
+  if (!finished && !freeOpen) {
+    const open = el("button", "linkish free-open", "Or say it your own way");
+    open.onclick = () => { freeOpen = true; renderMove(); const i = $("#free-input"); if (i) i.focus(); };
+    return m.append(open);
+  }
   const form = el("form", "free");
   const inp = el("input"); inp.id = "free-input"; inp.type = "text"; inp.autocomplete = "off";
   inp.placeholder = finished ? "Keep chatting with " + cur.whoEn + "…" : "Or say it your own way: hanzi, pinyin, even English";
