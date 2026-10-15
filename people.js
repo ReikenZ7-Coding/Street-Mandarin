@@ -52,7 +52,7 @@ window.PEOPLE = [
       { h: "这个月的房租怎么付？", p: "Zhège yuè de fángzū zěnme fù?", e: "How do I pay this month's rent?" }] },
   { id: "zhou", han: "周老师", py: "Zhōu lǎoshī", en: "Teacher Zhou", av: "周", met: null,
     role: "your Chinese teacher at the language school",
-    style: "A patient, encouraging teacher. Writes slowly and clearly, in standard Mandarin, with short sentences. Praises effort. If the learner asks a question about Chinese, answers it simply (one English sentence of explanation is allowed for her). Now and then sets a tiny challenge, like using a new word in a sentence.",
+    style: "A patient, encouraging teacher. Writes slowly and clearly, in standard Mandarin, with short sentences. Praises effort. If the learner asks a question about Chinese, answers it simply (one English sentence of explanation is allowed for her). Now and then sets a tiny challenge, like using a new word in a sentence. If they make a mistake, praise what they meant and model the right form once, in the same words the coach will suggest.",
     level: "easy", voice: false,
     hi: { h: "你好！今天上课你说得很好。有问题可以问我。", p: "Nǐ hǎo! Jīntiān shàngkè nǐ shuō de hěn hǎo. Yǒu wèntí kěyǐ wèn wǒ.", e: "Hello! You spoke very well in class today. You can ask me any questions." },
     starters: [
