@@ -49,7 +49,7 @@ body { margin: 0; }
 body { background: var(--bg); color: var(--fg); font-family: var(--f-ui); font-size: 15px; line-height: 1.5; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--jade); outline-offset: 2px; }
-.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
 
 header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 20px; }
 .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -62,8 +62,11 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
-.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
-@media (max-width: 1150px) { .layout { grid-template-columns: 230px minmax(0, 1fr); } .notebook { grid-column: 1 / -1; } }
+.layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 1150px) { .layout { grid-template-columns: 230px minmax(0, 1fr); } }
+/* The scene and the notebook share the middle column: one or the other */
+.layout:not(.nb-view) .notebook { display: none; }
+.layout.nb-view .scene { display: none; }
 @media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
 /* Scenario rail */
@@ -80,12 +83,15 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .marks i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--jade); }
 .marks i.on { background: var(--jade); }
 .outcome .gain { color: var(--jade); font-weight: 600; }
+/* Phone: the side list folds away behind one button that always says where you are */
+.menu-btn { display: none; }
 @media (max-width: 760px) {
-  .rail { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
-  .rail h2, .rail .rail-group { display: none; }
-  .scn { flex: 0 0 auto; min-width: 150px; }
-  .folder { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); padding: 8px 12px; align-items: center; }
-  .folder .f-next { display: none; }
+  .menu-btn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; }
+  .menu-btn .mb-han { font-family: var(--f-han); font-weight: 900; font-size: 22px; }
+  .menu-btn .mb-name { font-weight: 600; flex: 1; min-width: 0; }
+  .menu-btn .mb-act { font-size: 13px; color: var(--muted); }
+  .layout:not(.menu-open) .rail { display: none; }
+  .layout.menu-open .scene, .layout.menu-open .notebook { display: none; }
 }
 
 /* Scene */
@@ -172,7 +178,17 @@ body.hint-off .opt .en-line { display: none; }
 .nb-title { font-family: var(--f-han); font-weight: 900; font-size: 22px; }
 .nb-sub { font-size: 13px; color: var(--muted); margin: 0; }
 .nb-count { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--cinnabar); }
-.nb-list { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; }
+.nb-list { display: flex; flex-direction: column; gap: 8px; }
+.notebook { padding: 20px 22px; }
+.nb-title { font-size: 34px; }
+.nb-sum { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; }
+.nb-sum b { font-variant-numeric: tabular-nums; }
+.nb-sum .due b { color: var(--cinnabar); }
+.nb-sec { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; margin: 10px 0 0; }
+.nb-learned summary { cursor: pointer; font-size: 13px; color: var(--muted); padding: 6px 0; }
+.nb-clear { border-top: 1px solid var(--line); padding-top: 10px; }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.03); box-shadow: 0 0 0 3px color-mix(in srgb, var(--cinnabar) 25%, transparent); } 100% { transform: scale(1); } }
+.scn.bump { animation: bump .6s ease; }
 .nb-item { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 14px; }
 .nb-item .where { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .nb-item .said { font-family: var(--f-han); text-decoration: line-through; text-decoration-color: var(--cinnabar); }
@@ -194,6 +210,7 @@ body.hint-off .opt .en-line { display: none; }
 .pt-hint { font-size: 12px; color: var(--muted); }
 .small { font-size: 13px; padding: 6px 10px; }
 .scn.review { border-style: dashed; }
+.trip-group { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; }
 /* Practice tools: compact, so places stay the main thing */
 .scn.tool { padding: 7px 10px; gap: 0 10px; }
 .scn.tool .han { font-size: 18px; }
@@ -274,6 +291,7 @@ body.hint-off .opt .en-line { display: none; }
   </header>
 
   <div class="layout">
+    <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="rail"></button>
     <nav class="rail" id="rail" aria-label="Situations"><h2>Practice</h2></nav>
 
     <main class="scene" id="scene">
@@ -289,15 +307,18 @@ body.hint-off .opt .en-line { display: none; }
 
     <aside class="notebook" aria-label="Mistake notebook">
       <div class="nb-head"><span class="nb-title">错题本</span><span class="nb-count" id="nb-count">0</span></div>
-      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you got wrong lands here, then comes back to test you after 1, 3 and 7 days.</p>
+      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you get wrong lands here, then comes back to test you after 1, 3 and 7 days. Get it right three times and it's learned.</p>
+      <div class="nb-sum" id="nb-sum"></div>
+      <div class="nb-actions" id="nb-actions"></div>
       <div id="nb-patterns"></div>
       <div class="nb-list" id="nb-list"></div>
-      <div class="nb-actions" id="nb-actions"></div>
+      <div class="nb-actions nb-clear" id="nb-clear"></div>
     </aside>
   </div>
 </div>
 
 <script src="scenes.js"></script>
+<script src="why.js"></script>
 <script>
 const S = window.SCENES;
 // Places you made from your own wanders live alongside the built-in ones
@@ -454,16 +475,31 @@ function addFeedback(kind, note, fix, extra) {
     body.append(bt);
   }
   if (extra && extra.cost) body.append(el("div", "cost", extra.cost));
-  if (sample && kind !== "good" && note) {
-    // A curious learner can ask for the deeper why, from Claude, in plain English
-    const ctx = { place: cur && cur.en, heard: [...transcript].reverse().find(x => x.who === "npc"), said: [...transcript].reverse().find(x => x.who === "me"), note, fix };
+  const ctx = { sid: cur && cur.id, place: cur && cur.en, heard: [...transcript].reverse().find(x => x.who === "npc"), said: [...transcript].reverse().find(x => x.who === "me"), note, fix };
+  if (kind !== "good" && note && !(extra && extra.seal === "?") && canExplain(ctx)) {
+    // A curious learner can ask for the deeper why: ready-made for scripted slips, from Claude for anything else
     const ask = el("button", "why-btn", "Why, exactly?");
     ask.onclick = () => explainWhy(ask, ctx);
     body.append(ask);
   }
   box.append(seal, body); $("#log").append(box); scrollLog();
 }
+// Ready-made explanations for every scripted slip (why.js), so "Why, exactly?" needs no AI for those
+const WHY = window.WHY || {};
+function whyFor(c) {
+  if (!c || !c.sid || !c.said) return null;
+  const h = c.said.text;
+  return WHY[c.sid + "|" + h] || WHY[c.sid + "|" + h + "|" + String(c.note || "").slice(0, 16)] || null;
+}
+const canExplain = c => !!(whyFor(c) || sample);
 async function explainWhy(btn, c) {
+  const ready = whyFor(c);
+  if (ready) {
+    const out = el("div", "why-out");
+    out.append(el("p", null, ready.why));
+    if (ready.tip) out.append(el("p", "why-tip", "Trick: " + ready.tip));
+    btn.replaceWith(out); scrollLog(); return;
+  }
   btn.disabled = true; btn.textContent = "Asking…";
   const prompt = `A beginner learning Mandarin through role-play made a mistake. Explain it to them like a patient, warm friend who speaks Chinese.
 Situation: ${c.place || "everyday China"}.
@@ -501,39 +537,35 @@ const GROUPS = [
 const groupOf = id => (GROUPS.find(g => g.ids.includes(id)) || { key: "more" }).key;
 let railOpen = (() => { try { return localStorage.getItem("sm-rail-open"); } catch { return null; } })();
 function setRailOpen(k) { railOpen = k; try { localStorage.setItem("sm-rail-open", k || ""); } catch {} }
+function setMenu(open) {
+  const l = $(".layout"); if (l.classList.contains("menu-open") === open) return;
+  l.classList.toggle("menu-open", open); renderRail();
+  if (!open) try { $("#menu-btn").scrollIntoView({ block: "start" }); } catch {}
+}
 function railOrder() {
   const ids = GROUPS.flatMap(g => g.ids);
   return ids.map(id => S.find(s => s.id === id)).filter(Boolean).concat(S.filter(s => !ids.includes(s.id)));
 }
 function renderRail() {
   const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub, .rail-group, .folder").forEach(n => n.remove());
+  // Three practice spaces, each with one job: your mistakes, your ear, and the lines in your pocket
   const due = dueItems().length, active = activeItems().length;
-  const rv = el("button", "scn review tool"); rv.setAttribute("aria-current", mode === "review" ? "true" : "false");
-  rv.append(el("span", "han", "复习"), el("span", "name", "Mistakes that came back"));
-  rv.append(el("span", "meta", due ? `${due} due now` : active ? "Nothing due yet" : "No mistakes yet"));
-  rv.onclick = () => startReview();
-  const dr = el("button", "scn review tool"); dr.setAttribute("aria-current", mode === "drill" || mode === "reader" ? "true" : "false");
-  dr.append(el("span", "han", "数字"), el("span", "name", "Numbers by ear"), el("span", "meta", "Prices, phone numbers, times"));
-  dr.onclick = () => startDrill();
-  const pb = el("button", "scn review tool"); pb.setAttribute("aria-current", mode === "phrases" ? "true" : "false");
-  const nDone = S.filter(s => done[s.id]).length;
-  pb.append(el("span", "han", "短语"), el("span", "name", "Your phrasebook"), el("span", "meta", nDone ? `Lines from ${plural(nDone, "place")}` : "Fills up as you survive places"));
-  pb.onclick = () => startPhrasebook();
-  const ea = el("button", "scn review tool"); ea.setAttribute("aria-current", mode === "ears" ? "true" : "false");
-  ea.append(el("span", "han", "听错"), el("span", "name", "Sound-alikes"), el("span", "meta", "One tone off, a different word"));
-  ea.onclick = () => startEars();
-  const tr = el("button", "scn review tool"); tr.setAttribute("aria-current", mode === "trip" ? "true" : "false");
+  const tool = (han, name, meta, on, go) => {
+    const b = el("button", "scn review tool"); b.setAttribute("aria-current", on ? "true" : "false");
+    b.append(el("span", "han", han), el("span", "name", name), el("span", "meta", meta)); b.onclick = go; return b;
+  };
+  const rv = tool("错题本", "Mistakes", due ? `${due} due now · ${active} open` : active ? `${active} open, none due yet` : "Everything you get wrong lands here",
+    mode === "notebook" || mode === "review" || (mode === "pattern" && pPat), openNotebook);
+  rv.id = "tool-nb";
+  if (active > lastActive && lastActive >= 0) rv.classList.add("bump");
+  lastActive = active;
+  const ear = tool("耳朵", "Train your ear", "Prices, phone numbers, times, sound-alikes", ["drill", "reader", "ears"].includes(mode), () => startDrill());
   const today = trip.day === dayKey() && trip.ids.length;
-  tr.append(el("span", "han", "出门"), el("span", "name", "Heading out"), el("span", "meta", today ? `Ready for ${plural(trip.ids.length, "place")} today` : "Prep where you're going today"));
-  tr.onclick = () => startTrip();
-  // In the order you'd use them on a real day: before you go, after a slip, sharpening up, keeping what you learn
-  rail.append(tr, rv, dr, ea, pb);
-  if (sample) {
-    const wd = el("button", "scn review tool"); wd.setAttribute("aria-current", mode === "wander" ? "true" : "false");
-    wd.append(el("span", "han", "随便逛"), el("span", "name", "Wander"), el("span", "meta", "Claude makes up a new situation"));
-    wd.onclick = () => startWander();
-    rail.append(wd);
-  }
+  const pk = tool("口袋", "Your pocket", today ? `Ready for ${plural(trip.ids.length, "place")} today` : "Lines that work, ready for today", mode === "trip" || mode === "phrases" || (mode === "pattern" && !pPat), () => startTrip());
+  rail.append(rv, ear, pk);
+  if (sample) rail.append(tool("随便逛", "Wander", "Claude makes up a new situation", mode === "wander" && !(cur && cur.live), () => startWander()));
+  $(".layout").classList.toggle("nb-view", mode === "notebook");
+  const nDone = S.filter(s => done[s.id]).length;
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
   rail.append(el("h2", "rail-sub", nDone ? `Places · ${nDone} of ${S.length} survived${nMast ? ` · ${nMast} mastered` : ""}` : "Places"));
   const placeBtn = (s, next) => {
@@ -563,9 +595,12 @@ function renderRail() {
     rail.append(h);
     if (open) f.list.forEach(s => rail.append(placeBtn(s, s === next)));
   });
-  // On a phone the rail is a sideways strip: keep the current place in view without moving the page
-  const on = rail.querySelector('.scn[aria-current="true"]');
-  if (on && rail.scrollWidth > rail.clientWidth) rail.scrollLeft = Math.max(0, on.offsetLeft - rail.offsetLeft - 16);
+  // On a phone the list folds away: the button names where you are, and picking anything folds it again
+  const mb = $("#menu-btn"), open = $(".layout").classList.contains("menu-open"), on = rail.querySelector('.scn[aria-current="true"]');
+  mb.textContent = ""; mb.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open) mb.append(el("span", "mb-name", "Places and practice"), el("span", "mb-act", "Close"));
+  else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
+  rail.querySelectorAll(".scn").forEach(b => b.addEventListener("click", () => setMenu(false)));
 }
 
 /* ---------- scenes ---------- */
@@ -696,16 +731,59 @@ function submitTyped(text, t) {
     return d > 0 && d <= Math.max(1, Math.floor((/[\u4e00-\u9fff]/.test(text) ? normHan(o.h).length : normPy(o.p).length) / 8));
   });
   if (near) {
+    // Name the slip when the app can spot it; otherwise just say it was close
+    const named = judgeOffline(text, near), why = named ? named.note : "Almost. One small slip, but they'd get what you mean.";
     addMe(text, "", "", "okay");
-    addFeedback("okay", "Almost. One small slip, but they'd get what you mean.", [near.h, near.p]);
-    logMistake({ sid: cur.id, ...turnRef(), kind: "okay", said: text, fix: near.h, fixPy: near.p, why: "Typed answer was one small slip away." });
+    addFeedback("okay", why, [near.h, near.p]);
+    logMistake({ sid: cur.id, ...turnRef(), kind: "okay", said: text, fix: near.h, fixPy: near.p, why: named ? why : "Typed answer was one small slip away." });
     return choose(Object.assign({}, near, { quiet: true }));
   }
+  // Off the script. First, what the app can judge by itself, with no AI at all
+  const isHan = /[\u4e00-\u9fff]/.test(text);
+  const gap = o => isHan ? lev(h, normHan(o.h)) / Math.max(1, [...normHan(o.h)].length) : lev(py, normPy(o.p)) / Math.max(1, normPy(o.p).length);
+  const slip = t.opts.filter(o => o.k !== "good").map(o => [o, gap(o)]).sort((a, b) => a[1] - b[1])[0];
+  if (slip && slip[1] <= 0.25) return choose(slip[0]); // a near-copy of a slip the script already knows
+  const judged = judgeOffline(text, good);
+  if (judged) {
+    addMe(text, "", "", judged.kind);
+    addFeedback(judged.kind, judged.note, [good.h, good.p]);
+    logMistake({ sid: cur.id, ...turnRef(), kind: judged.kind, said: text, fix: good.h, fixPy: good.p, why: judged.note });
+    if (judged.kind === "okay") return choose(Object.assign({}, good, { quiet: true }));
+    return renderMove();
+  }
   if (sample) return offScript(text);
-  addMe(text, "", "", "wrong");
-  addFeedback("wrong", "That isn't something a local would follow here. Here's one way to say it. Try typing it yourself.", [good.h, good.p]);
-  logMistake({ sid: cur.id, ...turnRef(), kind: "wrong", said: text, fix: good.h, fixPy: good.p, why: "Typed answer didn't fit this moment." });
+  // Honest about the limits: no guessing, just the line that works here
+  addMe(text, "", "", "okay");
+  addFeedback("okay", "That one's beyond what the app can check by itself, so it can't say whether a local would follow it. Here's what reliably works at this moment. Try typing it.", [good.h, good.p], { seal: "?", label: "Not sure" });
   renderMove();
+}
+// Common beginner slips the app can spot in any sentence, scripted or not
+const MW = { 个: "ge", 碗: "wǎn", 杯: "bēi", 张: "zhāng", 瓶: "píng", 位: "wèi", 斤: "jīn", 份: "fèn", 串: "chuàn", 袋: "dài", 件: "jiàn", 双: "shuāng", 盒: "hé", 包: "bāo", 支: "zhī", 条: "tiáo", 把: "bǎ", 间: "jiān", 台: "tái", 辆: "liàng", 次: "cì", 笼: "lóng", 锅: "guō", 盘: "pán", 只: "zhī" };
+const NUMCH = "一二两三四五六七八九十几半这那每";
+const mwAfterNum = x => { const m = x.match(new RegExp(`[${NUMCH}]([${Object.keys(MW).join("")}])`)); return m ? m[1] : null; };
+const numsIn = x => (x.match(/[0-9]+|[零一二两三四五六七八九十百千万点半]+(?=[块元毛分点号岁个位杯碗张瓶斤份串袋件双盒次个人天楼路号线站钟刻]|$)/g) || []).join(",");
+function judgeOffline(text, good) {
+  const h = normHan(text), g = normHan(good.h), notes = [];
+  let kind = null;
+  const hit = (k, n) => { notes.push(n); if (kind !== "wrong") kind = k; };
+  if (!/[\u4e00-\u9fff]/.test(text)) {
+    if (/\b(the|want|please|where|how|much|is|are|can|thanks|thank|hello|yes|no)\b/i.test(text)) hit("wrong", "That's English, and most people here won't follow it. Have a go in Chinese, even just the key word.");
+    return kind ? { kind, note: notes.join(" ") } : null;
+  }
+  if (h.includes("不有")) hit("okay", "有 yǒu is the one verb that never takes 不. It's always 没有 méiyǒu.");
+  const two = h.match(new RegExp(`二([${Object.keys(MW).join("")}])`));
+  if (two) hit("okay", `Before a measure word, 2 is 两 liǎng, not 二 èr: 两${two[1]}.`);
+  const mwSaid = mwAfterNum(h), mwWant = mwAfterNum(g);
+  if (mwSaid && mwWant && mwSaid !== mwWant) hit("okay", `Measure word: here it's ${mwWant} ${MW[mwWant]}, not ${mwSaid} ${MW[mwSaid]}. ${mwSaid === "个" ? "个 is the catch-all, so they'd understand, but it sounds like a beginner." : "The thing you're counting decides the word."}`);
+  if (/是(很|太|非常|有点儿?)?(贵|便宜|好吃|辣|热|冷|饿|累|远|近|大|小|忙|快|慢|多|少)/.test(h) && !/是(很|太|非常|有点儿?)?(贵|便宜|好吃|辣|热|冷|饿|累|远|近|大|小|忙|快|慢|多|少)/.test(g)) hit("okay", "Describing words don't need 是 shì in Chinese: say 很贵 hěn guì, not 是贵.");
+  if (/(什么|哪|几|多少|谁|怎么)/.test(h) && /吗$/.test(h)) hit("okay", "A question word like 什么 or 多少 already makes it a question, so drop the 吗 ma at the end.");
+  const nGood = numsIn(g), nSaid = numsIn(h);
+  if (nGood && nSaid && nGood !== nSaid) hit("wrong", "Check the number: it doesn't match what this moment needs. Numbers are where small slips cost real money.");
+  // Key words: the content tiles of the good answer
+  const tiles = (good.b || "").split("|").map(normHan).filter(w => w && !/^[吧呢吗啊了的呀哦嗯我你他她是很]$/.test(w));
+  const miss = tiles.filter(w => !h.includes(w));
+  if (!kind && tiles.length >= 2 && miss.length && miss.length <= Math.ceil(tiles.length / 2) && miss.length < tiles.length) hit("okay", `They'd probably get it. The full line also has ${miss.slice(0, 2).join(" and ")}, which makes it sound natural rather than clipped.`);
+  return kind ? { kind, note: notes.join(" ") } : null;
 }
 
 /* ---------- build mode: put the words in order yourself ---------- */
@@ -918,43 +996,60 @@ function whenText(n) {
   const d = Math.ceil(((n.due || 0) - Date.now()) / DAY);
   return d <= 0 ? "Due now" : d === 1 ? "Comes back tomorrow" : `Comes back in ${d} days`;
 }
-let confirmClear = false;
+let confirmClear = false, lastActive = -1;
+function nbItem(n) {
+  const s = S.find(x => x.id === n.sid);
+  const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
+  const top = el("div", "where");
+  top.append((s ? s.en : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
+  const st = el("span", "when", whenText(n));
+  const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
+  GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
+  top.append(st, dots);
+  it.append(top);
+  it.append(el("div", "said" + (n.kind === "okay" ? " okay" : ""), n.said));
+  if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
+  it.append(el("div", "why", n.why));
+  if (!n.learned) {
+    const sc = S.find(x => x.id === n.sid), t = scriptedTurn(sc, n);
+    const ctx = { sid: n.sid, place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null };
+    if (canExplain(ctx)) { const ask = el("button", "why-btn", "Why, exactly?"); ask.onclick = () => explainWhy(ask, ctx); it.append(ask); }
+  }
+  return it;
+}
+function openNotebook() {
+  mode = "notebook"; busy = false;
+  renderNotebook(); renderRail();
+  try { $(".notebook").scrollIntoView({ block: "nearest" }); } catch {}
+}
 function renderNotebook() {
-  $("#nb-count").textContent = activeItems().length;
-  const list = $("#nb-list"); list.textContent = "";
-  const pbox = $("#nb-patterns"); pbox.textContent = ""; renderPatterns(pbox);
-  if (!notebook.length) list.append(el("div", "nb-empty", "Empty for now. Pick a wrong answer on purpose if you're curious what happens; that's the point."));
-  notebook.forEach(n => {
-    const s = S.find(x => x.id === n.sid);
-    const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
-    const top = el("div", "where");
-    top.append((s ? s.en : n.sid === "wander" ? "Wander" : n.sid === "ears" ? "Sound-alikes" : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
-    const st = el("span", "when", whenText(n));
-    const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
-    GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
-    top.append(st, dots);
-    it.append(top);
-    it.append(el("div", "said" + (n.kind === "okay" ? " okay" : ""), n.said));
-    if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
-    it.append(el("div", "why", n.why));
-    if (sample && !n.learned) {
-      const sc = S.find(x => x.id === n.sid), t = scriptedTurn(sc, n);
-      const ask = el("button", "why-btn", "Why, exactly?");
-      ask.onclick = () => explainWhy(ask, { place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null });
-      it.append(ask);
-    }
-    list.append(it);
-  });
+  const active = activeItems(), due = dueItems(), learned = notebook.filter(n => n.learned);
+  $("#nb-count").textContent = active.length;
+  const sum = $("#nb-sum"); sum.textContent = "";
+  if (notebook.length) {
+    const part = (n, l, c) => { const x = el("span", c || ""); x.append(el("b", null, String(n)), " " + l); return x; };
+    sum.append(part(due.length, "due now", "due"), part(active.length - due.length, "coming back later"), part(learned.length, "learned"));
+  }
   const a = $("#nb-actions"); a.textContent = "";
-  const due = dueItems().length, active = activeItems().length;
-  if (active) {
-    const r = el("button", "btn small", due ? `Review ${due} now` : "Practise them anyway");
+  if (active.length) {
+    const r = el("button", "btn", due.length ? `Review ${due.length} now` : "Practise them anyway");
     r.onclick = () => startReview(); a.append(r);
   }
+  const pbox = $("#nb-patterns"); pbox.textContent = ""; renderPatterns(pbox);
+  const list = $("#nb-list"); list.textContent = "";
+  if (!notebook.length) list.append(el("div", "nb-empty", "Empty for now. Go into a place and pick a wrong answer on purpose if you're curious what happens; that's the point."));
+  const later = active.filter(n => !due.includes(n));
+  if (due.length) { list.append(el("h3", "nb-sec", "Due now")); due.forEach(n => list.append(nbItem(n))); }
+  if (later.length) { list.append(el("h3", "nb-sec", "Coming back later")); later.forEach(n => list.append(nbItem(n))); }
+  if (learned.length) {
+    const d = el("details", "nb-learned"); d.append(el("summary", null, `Learned (${learned.length})`));
+    learned.forEach(n => d.append(nbItem(n))); list.append(d);
+  }
+  const c = $("#nb-clear"); c.textContent = "";
   if (notebook.length) {
-    const c = el("button", "btn ghost small", confirmClear ? "Tap again to clear everything" : "Clear notebook");
-    c.onclick = () => { if (confirmClear) { notebook = []; store.set("sm-notebook", notebook); confirmClear = false; renderRail(); } else confirmClear = true; renderNotebook(); };
-    a.append(c);
+    const b = el("button", "btn ghost small", confirmClear ? "Tap again to clear everything" : "Clear notebook");
+    b.onclick = () => { if (confirmClear) { notebook = []; store.set("sm-notebook", notebook); confirmClear = false; renderRail(); } else confirmClear = true; renderNotebook(); };
+    c.append(b);
   }
 }
 
@@ -1151,6 +1246,14 @@ function drillCheck(raw) {
   const w = priceWords(v);
   return { ok: got === v, shown: String(got), note: got === v ? `Right: ${w.zh} is ${v}.` : `${w.zh} ${w.py} is ${v}. ${priceTip(v, got)}` };
 }
+// Tabs inside a practice space, so related drills live together instead of as separate tools
+function tabRow(label, tabs, on) {
+  const row = el("div", "modes"); row.setAttribute("role", "group"); row.setAttribute("aria-label", label);
+  tabs.forEach(([l, v, go]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", v === on ? "true" : "false"); c.onclick = go; row.append(c); });
+  return row;
+}
+const earTabs = on => tabRow("What to listen for", [["Prices", "price", () => startDrill("price")], ["Phone numbers", "phone", () => startDrill("phone")], ["Times", "time", () => startDrill("time")], ["Sound-alikes", "ears", () => startEars()]], on);
+const pocketTabs = on => tabRow("Your pocket", [["Today", "today", () => startTrip()], ["Every line", "all", () => startPhrasebook()]], on);
 function renderDrillMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
@@ -1164,9 +1267,7 @@ function renderDrillMove() {
   }
   const rdb = el("button", "linkish", "Number reader"); rdb.onclick = () => startReader();
   if (di === 0 && !dAnswered) {
-    const kinds = el("div", "modes"); kinds.setAttribute("role", "group"); kinds.setAttribute("aria-label", "What to listen for");
-    [["Prices", "price"], ["Phone numbers", "phone"], ["Times", "time"]].forEach(([l, v]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", dKind === v ? "true" : "false"); c.onclick = () => startDrill(v); kinds.append(c); });
-    m.append(kinds);
+    m.append(earTabs(dKind));
   }
   head.append(el("h3", null, `${dKind === "phone" ? "Number" : dKind === "time" ? "Time" : "Total"} ${di + 1} of ${dq.length}`), el("span", "prompt", dKind === "phone" ? "What's their number?" : dKind === "time" ? "When are you meeting?" : "How much do you pay?"), rdb);
   m.append(head);
@@ -1251,6 +1352,7 @@ function renderEarsMove() {
     row.append(again, back); m.append(head, row); return;
   }
   head.append(el("h3", null, `Line ${ei + 1} of ${eq.length}`), el("span", "prompt", eq[ei].mine ? "One of your own slips. What did they say?" : "What did they say?"));
+  if (ei === 0 && !eAnswered) m.append(earTabs("ears"));
   m.append(head);
   if (eAnswered) {
     const nx = el("button", "btn", ei + 1 < eq.length ? "Next line" : "See how you did");
@@ -1515,7 +1617,7 @@ let trip = store.get("sm-trip", { ids: [], day: "" }), tripEditing = false;
 function startTrip() {
   mode = "trip"; busy = false; cur = { who: "出门", whoEn: "you" };
   if (trip.day !== dayKey()) tripEditing = true; // a new day, a new plan
-  setHead("出门", "chūmén", "Heading out", "What it's for: ", "Pick where you're actually going today. You get a cheat sheet for just those places and a quick warm-up, even for places you haven't played.");
+  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Tell it where you're going today and you get a cheat sheet for just those places, a warm-up, and big text to show people. Every line is the full phrasebook.");
   renderTrip(); renderRail(); renderMove();
 }
 function tripPlaces() { return trip.ids.map(id => S.find(s => s.id === id)).filter(Boolean); }
@@ -1545,13 +1647,18 @@ function renderTrip() {
 function renderTripMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
+  m.append(pocketTabs("today"));
   if (tripEditing || !trip.ids.length) {
     head.append(el("h3", null, "Where to today?"), el("span", "prompt", `${trip.ids.length} picked`));
     const grid = el("div", "trip-pick");
-    railOrder().forEach(s => {
-      const c = el("button", "chip", `${s.place} ${s.en}`); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false");
-      c.onclick = () => { trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); renderMove(); };
-      grid.append(c);
+    GROUPS.forEach(g => {
+      const list = g.ids.map(id => S.find(s => s.id === id)).filter(Boolean); if (!list.length) return;
+      grid.append(el("div", "trip-group", g.name));
+      list.forEach(s => {
+        const c = el("button", "chip", `${s.place} ${s.en}`); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false");
+        c.onclick = () => { trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); renderMove(); };
+        grid.append(c);
+      });
     });
     const go = el("button", "btn", "Get me ready"); go.disabled = !trip.ids.length;
     go.onclick = () => { trip.day = dayKey(); store.set("sm-trip", trip); tripEditing = false; renderTrip(); renderRail(); renderMove(); };
@@ -1593,7 +1700,7 @@ function phraseRow(o, reply) {
 function replyAfter(s, ti) { const n = s.turns[ti + 1]; return n && n.npc ? n.npc : s.end; }
 function startPhrasebook() {
   mode = "phrases"; busy = false;
-  setHead("短语", "duǎnyǔ", "Your phrasebook", "What's here: ", "Lines that worked, from every place you've survived. Search it, hear it, or tap Show to hand your phone to someone.");
+  setHead("口袋", "kǒudai", "Your pocket", "Every line: ", "Lines that worked, from every place you've survived. Search it, hear it, or tap Show to hand your phone to someone.");
   renderPhrases();
   renderRail(); renderMove();
 }
@@ -1664,6 +1771,7 @@ function renderPhrasesMove() {
   const m = $("#move"); m.textContent = "";
   const n = S.filter(s => done[s.id]).reduce((a, s) => a + s.turns.reduce((b, t) => b + t.opts.filter(o => o.k === "good").length, 0), 0);
   const head = el("div", "move-head");
+  m.append(pocketTabs("all"));
   head.append(el("h3", null, plural(n, "phrase")), el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
   const form = el("form", "free");
   const inp = el("input"); inp.type = "search"; inp.autocomplete = "off"; inp.value = pbQuery;
@@ -1922,6 +2030,7 @@ function applyPrefs() {
   $("#tg-listen").hidden = !canSpeak;
 }
 $("#tg-py").onclick = () => { prefs.py = !prefs.py; store.set("sm-prefs", prefs); applyPrefs(); };
+$("#menu-btn").onclick = () => setMenu(!$(".layout").classList.contains("menu-open"));
 $("#tg-hint").onclick = () => { prefs.hint = !prefs.hint; store.set("sm-prefs", prefs); applyPrefs(); };
 $("#tg-listen").onclick = () => { prefs.listen = !prefs.listen; store.set("sm-prefs", prefs); applyPrefs(); };
 

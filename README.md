@@ -14,33 +14,38 @@ Scenes live in `scenes.js`. The comment at the top explains each field. Copy an 
 
 After editing `scenes.js`, run `node tools/check-scenes.js`. It catches missing fields, build tiles that don't spell their line, and flags nothing sets.
 
-## What's in it
+After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the ready-made explanations in `why.js` in step with the scenes and lists any slip that still needs one.
 
-- Twenty-eight places, grouped by theme: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill, bubble tea, haircut, SIM card, lost phone, finding a toilet, fruit stall, food delivery call, train station, returning a shirt, café and wifi, bike share, hospital registration, dumpling house, no hot water (calling the landlord), swapping WeChat, hotpot, asking for a photo, parcel pickup
-- Sound-alikes: hear a line and tell it from its tonal twin (买 vs 卖, 问 vs 吻, 十四 vs 四十). Your own sound-alike slips from the places join the round
-- Mistake patterns: every scripted slip is tagged by kind (tones and sound-alikes, numbers, saying yes by accident, missing what they asked, sentence building, places, wrong word, too blunt). The notebook shows what keeps tripping you up, and one tap drills that kind of moment across every place
-- Rematch: after a run, replay only the moments you missed. Next time you reach a moment you got wrong, it reminds you what you said last time
-- Three marks per place: survived, a clean run, and a clean run through a surprise
-- Heading out: pick the places you're going today for a cheat sheet (what to say, what you'll hear, the traps) and a warm-up on every moment
-- Number reader: type any price, phone number, time or count and see and hear it the way people say it (一百五, 幺 in phone numbers, 两点半), with the traps pointed out
-- Phrasebook search, a full-screen Show mode to hand your phone to someone (with the reply you'll probably get), and the lines you learned the hard way
-- A practice streak and a count of lines answered
-- "Why, exactly?" on any mistake: Claude explains the grammar or sound behind it, with a memory trick
-- Number keys 1–9 pick answers; Enter moves on
-- Wander: Claude invents a situation you haven't practised (or one you name, like "buying shoes") and plays the other person, with no options to pick from
-- Three ways to answer each moment: pick from three answers, build the sentence from word tiles, or type it (characters or pinyin, tones optional). In browsers with Chinese speech recognition, such as Chrome, you can also say it out loud.
-- Numbers by ear: prices (十八 vs 八十, 一百五 vs 一百零五, 块五), phone numbers read with 幺, and meeting times (两点半, 一刻, 下午), with the exact digit you misheard pointed out
-- No two visits the same: every place has a pool of surprises (sold out, a chatty driver, a deposit, a stranger who isn't local, a broken card machine…). Each run mixes in none, one or two, favouring ones you haven't met, and the end card counts how many you've met so far
-- Claude keeps the pool growing: after each run it quietly invents one more realistic surprise for that place, stored on your device, which can turn up next time
-- Play it live: from any place's end card, play it again with no script at all, somewhere of the same kind (the noodle shop might become a baozi stall or a jianbing cart). Claude plays the other person, picks a hidden twist and springs it on you early
-- A calm side list: Practice tools sit in the order you'd use them on a real day, and places live in folders (Eat and drink, Get around, Shop, Sort things out, Meet people), one open at a time, easiest first, with a Next up marker. Each place stands for a kind of place, so the list can grow without getting busy
-- A phrasebook of every line that worked, from the places you've survived
-- Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note
-- Pinyin toggle, tap-to-translate, and spoken audio through the browser's Chinese voice when it has one
-- A mistake notebook saved in the browser. Mistakes come back in review rounds after 1, 3 and 7 days, and leave once you get them right three times.
-- Consequences that carry: some wrong answers move the story on, like paying 20 kuai more for the expressway, and the end card shows what they cost you
-- Listening mode: hear each line first (with a slower replay) and see the text only after you answer
+## How it's organised
 
-The "say it your own way" free-typing mode, Wander, Play it live, invented surprises and "Why, exactly?" use Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, those are hidden and the scripted scenarios still work.
+**Places** (28 of them) live in five folders in the side list: Eat and drink, Get around, Shop, Sort things out, and Meet people. One folder is open at a time, places run from day-one essentials to harder ones, and a Next up tag shows where to go. Each place stands for a kind of place, so the noodle shop teaches you any counter where you order food.
+
+In a place:
+- Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional).
+- Answers are graded good, close enough or wrong. Each gets an in-character reaction and a short note, and "Why, exactly?" goes one level deeper.
+- Some wrong answers carry consequences, like paying 20 kuai more for the expressway, and the end card shows what they cost you.
+- No two visits are the same. Every place has three or four surprises, and each run mixes in none, one or two, favouring ones you haven't met.
+- After a run you can rematch only the moments you missed. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
+
+**Three practice spaces**, each with one job:
+- 错题本 **Mistakes**: everything you got wrong, which comes back after 1, 3 and 7 days and leaves once you get it right three times. It also shows the kinds of slip you keep making (numbers, saying yes by accident, measure words…), with a drill for each across every place.
+- 耳朵 **Train your ear**: prices (十八 vs 八十, 一百五 vs 一百零五), phone numbers read with 幺, meeting times, and sound-alikes (买 vs 卖, 问 vs 吻), with your own slips mixed in. The number reader shows and says any number the way people really do.
+- 口袋 **Your pocket**: tell it where you're going today and you get a cheat sheet for those places (what to say, what you'll hear, the traps), a warm-up, and a big-text Show mode to hand your phone over. Every line holds the full, searchable phrasebook.
+
+On a phone, the side list folds away behind one button that always names where you are.
+
+## With and without AI
+
+Everything above works with no AI at all:
+- "Why, exactly?" has a ready-made, proofread explanation for all 333 scripted slips.
+- Typed answers off the script are checked by the app itself. It finds the closest scripted line and spots common slips: the wrong measure word, 二 for 两, 不有, a wrong number, 是 before an adjective, 吗 after a question word, or missing key words. When it can't tell, it says so and shows the line that works.
+
+When Claude is available, through the claude.ai Artifact runtime (`window.claude`), you also get:
+- Claude replies in character to anything off the script, and explains any mistake not on file.
+- Wander: a situation you haven't practised, or one you name.
+- Play it live: a place replayed with no script, somewhere of the same kind, with a hidden twist.
+- After each run, Claude invents a new surprise for that place.
+
+A standalone app would put those calls behind its own small server.
 
 Live prototype: https://claude.ai/artifact/P1t7AavyFEdwh3Rfx6FtNE
