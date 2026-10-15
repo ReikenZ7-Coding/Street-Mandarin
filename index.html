@@ -1033,7 +1033,7 @@ function renderEnd() {
   const kinds = {}; runMissTags.forEach(t => kinds[t] = (kinds[t] || 0) + 1);
   const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
   if (runMisses.length) {
-    const parts = [`${runMisses.length} moment${runMisses.length > 1 ? "s" : ""}`];
+    const parts = [`${runMisses.length} of ${cur.turns.length} moments`];
     if (pat) { const go = el("button", "linkish", "Drill that"); go.onclick = () => startPattern(pat.id); parts.push(`, mostly ${pat.en.toLowerCase()}. `, go, " across every place."); }
     line("Slips", ...parts);
   } else line("Slips", "None. A clean run.");
