@@ -25,12 +25,14 @@ In a place:
 - Answers are graded good, close enough or wrong. Each gets an in-character reaction and a short note, and "Why, exactly?" goes one level deeper.
 - Some wrong answers carry consequences, like paying 20 kuai more for the expressway, and the end card shows what they cost you.
 - No two visits are the same. Every place has three or four surprises, and each run mixes in none, one or two, favouring ones you haven't met.
-- After a run you can rematch only the moments you missed. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
+- The end card is a four-line scorecard: what it cost you, your slips (with a drill for the kind you made most), surprises, and marks. After a run you can rematch only the moments you missed. There are three marks to earn per place: survived, a clean run, and a clean run through a surprise.
 
 **Three practice spaces**, each with one job:
 - 错题本 **Mistakes**: everything you got wrong, which comes back after 1, 3 and 7 days and leaves once you get it right three times. It also shows the kinds of slip you keep making (numbers, saying yes by accident, measure words…), with a drill for each across every place.
 - 耳朵 **Train your ear**: prices (十八 vs 八十, 一百五 vs 一百零五), phone numbers read with 幺, meeting times, and sound-alikes (买 vs 卖, 问 vs 吻), with your own slips mixed in. The number reader shows and says any number the way people really do.
 - 口袋 **Your pocket**: tell it where you're going today and you get a cheat sheet for those places (what to say, what you'll hear, the traps), a warm-up, and a big-text Show mode to hand your phone over. Every line holds the full, searchable phrasebook.
+
+**It happened for real**: back from a real place, type what you said, or what you heard and didn't get, roughly as you remember it. The app finds that moment in the place, explains it with what it already knows, and files it in Mistakes, where it comes back for review like any other slip. Open it from Mistakes or from Your pocket.
 
 On a phone, the side list folds away behind one button that always names where you are.
 
