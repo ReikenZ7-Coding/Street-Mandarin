@@ -58,7 +58,6 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .tagline { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
 .streak { margin: 6px 0 0; font-size: 13px; color: var(--jade); font-weight: 600; min-height: 1em; }
 .streak .zh { font-family: var(--f-han); margin-right: 6px; }
-.toggles { display: flex; gap: 8px; flex-wrap: wrap; }
 /* One help dial instead of three switches: less help as you get better */
 .help { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
 .help-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
@@ -90,7 +89,6 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .marks { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 4px; }
 .marks i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--jade); }
 .marks i.on { background: var(--jade); }
-.outcome .gain { color: var(--jade); font-weight: 600; }
 /* Phone: the side list folds away behind one button that always says where you are */
 .menu-btn { display: none; }
 @media (max-width: 760px) {
@@ -227,6 +225,9 @@ body.hint-off .opt .en-line { display: none; }
 @keyframes rush { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .rush i { animation: none; } }
 .again { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.rail-find { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); width: 100%; }
+.rail-places { display: flex; flex-direction: column; gap: 8px; }
+.find-none { font-size: 13px; color: var(--muted); margin: 0; }
 .trip-group { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; }
 /* Practice tools: compact, so places stay the main thing */
 .scn.tool { padding: 7px 10px; gap: 0 10px; }
@@ -250,7 +251,7 @@ body.hint-off .opt .en-line { display: none; }
 .pb.hard .pb-title { color: var(--cinnabar); }
 .trip-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
 .trip-goal { margin: 0; font-size: 14px; color: var(--muted); }
-.trip-pick { display: flex; flex-wrap: wrap; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.trip-pick { display: flex; flex-wrap: wrap; gap: 6px; }
 .pb-hear { border-top: 1px dashed var(--line); padding-top: 6px; font-size: 14px; }
 .pb-hear summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
 .pb-heard { display: flex; flex-wrap: wrap; gap: 2px 10px; padding: 4px 0; }
@@ -276,16 +277,11 @@ body.hint-off .opt .en-line { display: none; }
 .ear { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ear-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
 .fb .cost { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--cinnabar); }
-.outcome { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--bg); }
 .score { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--bg); font-size: 14px; }
 .score dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; padding-top: 2px; }
 .score dd { margin: 0; }
 .score ul { margin: 0; padding-left: 18px; font-weight: 600; color: var(--cinnabar); }
 @media (max-width: 520px) { .score { grid-template-columns: minmax(0, 1fr); gap: 2px; } .score dd { margin-bottom: 6px; } }
-.outcome p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
-.outcome-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cinnabar); font-weight: 700; }
-.outcome ul { margin: 6px 0 0; padding-left: 18px; }
-.outcome li { font-weight: 600; }
 .nb-item .where { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
 .nb-item .when { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
 .dots { display: inline-flex; gap: 3px; }
@@ -559,6 +555,17 @@ const GROUPS = [
 const groupOf = id => (GROUPS.find(g => g.ids.includes(id)) || { key: "more" }).key;
 let railOpen = (() => { try { return localStorage.getItem("sm-rail-open"); } catch { return null; } })();
 function setRailOpen(k) { railOpen = k; try { localStorage.setItem("sm-rail-open", k || ""); } catch {} }
+// Find: one box for places and phrases, so a long list never needs scrolling through
+const findBox = el("input", "rail-find"), placesBox = el("div", "rail-places");
+findBox.type = "search"; findBox.placeholder = "Find a place or phrase: toilet, 多少…"; findBox.setAttribute("aria-label", "Find a place or phrase");
+findBox.oninput = () => renderPlaces();
+let renderPlaces = () => {};
+const lineMatches = (o, q) => { const l = q.toLowerCase(), py = normPy(q); return o.h.includes(q) || o.e.toLowerCase().includes(l) || (py.length >= 3 && /^[a-z\s']+$/i.test(q) && normPy(o.p).includes(py)); };
+function placeMatches(s, q) {
+  const l = q.toLowerCase(), py = normPy(q);
+  return s.en.toLowerCase().includes(l) || s.place.includes(q) || (py.length >= 2 && /^[a-z\s']+$/i.test(q) && normPy(s.placePy || "").includes(py)) || s.goal.toLowerCase().includes(l) ||
+    s.turns.some(t => t.opts.some(o => o.k === "good" && lineMatches(o, q)) || (t.npc && (t.npc[0].includes(q) || t.npc[2].toLowerCase().includes(l))));
+}
 function setMenu(open) {
   const l = $(".layout"); if (l.classList.contains("menu-open") === open) return;
   l.classList.toggle("menu-open", open); renderRail();
@@ -602,6 +609,20 @@ function renderRail() {
     b.onclick = () => start(s.id);
     return b;
   };
+  rail.append(findBox, placesBox);
+  renderPlaces = () => {
+  placesBox.textContent = "";
+  const q = findBox.value.trim();
+  if (q) {
+    // Searching skips the folders: every place where this comes up, plus the lines in your pocket
+    const hits = S.filter(s => placeMatches(s, q));
+    hits.forEach(s => placesBox.append(placeBtn(s, false)));
+    if (!hits.length) placesBox.append(el("p", "find-none", `No place has “${q}” yet.`));
+    const lines = S.filter(s => done[s.id]).reduce((n, s) => n + s.turns.reduce((m, t) => m + t.opts.filter(o => o.k === "good" && lineMatches(o, q)).length, 0), 0);
+    if (lines) { const b = el("button", "linkish", `${plural(lines, "line")} with “${q}” in your pocket`); b.onclick = () => { pbQuery = q; startPhrasebook(); setMenu(false); }; placesBox.append(b); }
+    placesBox.querySelectorAll(".scn").forEach(b => b.addEventListener("click", () => setMenu(false)));
+    return;
+  }
   const seen = new Set(GROUPS.flatMap(g => g.ids));
   const folders = GROUPS.map(g => ({ key: g.key, name: g.name, list: g.ids.map(id => S.find(s => s.id === id)).filter(Boolean) }))
     .concat([{ key: "more", name: "More", list: S.filter(s => !seen.has(s.id)) }]).filter(f => f.list.length);
@@ -614,15 +635,18 @@ function renderRail() {
     h.append(nm, el("span", "f-count", n === f.list.length ? "All survived" : `${n} of ${f.list.length}`));
     if (!open && next) h.append(el("span", "f-next", `Next up: ${next.en}`));
     h.onclick = () => { setRailOpen(open ? "" : f.key); renderRail(); };
-    rail.append(h);
-    if (open) f.list.forEach(s => rail.append(placeBtn(s, s === next)));
+    placesBox.append(h);
+    if (open) f.list.forEach(s => placesBox.append(placeBtn(s, s === next)));
   });
+  placesBox.querySelectorAll(".scn").forEach(b => b.addEventListener("click", () => setMenu(false)));
+  };
+  renderPlaces();
   // On a phone the list folds away: the button names where you are, and picking anything folds it again
   const mb = $("#menu-btn"), open = $(".layout").classList.contains("menu-open"), on = rail.querySelector('.scn[aria-current="true"]');
   mb.textContent = ""; mb.setAttribute("aria-expanded", open ? "true" : "false");
   if (open) mb.append(el("span", "mb-name", "Places and practice"), el("span", "mb-act", "Close"));
   else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
-  rail.querySelectorAll(".scn").forEach(b => b.addEventListener("click", () => setMenu(false)));
+  rail.querySelectorAll(".scn.tool").forEach(b => b.addEventListener("click", () => setMenu(false)));
 }
 
 /* ---------- scenes ---------- */
@@ -1183,7 +1207,7 @@ function renderReviewMove() {
     head.append(el("h3", null, "Round done"));
     if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
     const row = el("div", "endcard");
-    const back = el("button", "btn", "Back to the situations");
+    const back = backBtn(); back.className = "btn";
     let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
     back.onclick = () => start(S.some(s => s.id === last) ? last : S[0].id);
     row.append(back); m.append(head, row); return;
@@ -1327,7 +1351,7 @@ function renderDrillMove() {
     const row = el("div", "endcard");
     const again = el("button", "btn", "Another round"); again.onclick = () => startDrill();
     const rd = el("button", "btn ghost", "Read any number"); rd.onclick = () => startReader();
-    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    const back = backBtn();
     row.append(again, rd, back); m.append(head, row); return;
   }
   const rdb = el("button", "linkish", "Number reader"); rdb.onclick = () => startReader();
@@ -1413,7 +1437,7 @@ function renderEarsMove() {
     head.append(el("h3", null, "Round done"), el("span", "prompt", `${eRight} of ${eq.length} heard right.`));
     const row = el("div", "endcard");
     const again = el("button", "btn", "Another round"); again.onclick = () => startEars();
-    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    const back = backBtn();
     row.append(again, back); m.append(head, row); return;
   }
   head.append(el("h3", null, `Line ${ei + 1} of ${eq.length}`), el("span", "prompt", eq[ei].mine ? "One of your own slips. What did they say?" : "What did they say?"));
@@ -1530,7 +1554,7 @@ function renderPatternMove() {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${pRight} of ${pq.length} clean.`));
     const row = el("div", "endcard");
     const again = el("button", "btn", "Another round"); again.onclick = () => pAgain();
-    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    const back = backBtn();
     row.append(again, back); m.append(head, row); return;
   }
   head.append(el("h3", null, `Moment ${pi + 1} of ${pq.length}`), el("span", "prompt", "What do you say?"));
@@ -1688,7 +1712,21 @@ function startTrip() {
 function tripPlaces() { return trip.ids.map(id => S.find(s => s.id === id)).filter(Boolean); }
 function renderTrip() {
   const log = $("#log"); log.textContent = "";
-  if (tripEditing || !trip.ids.length) { addNarr("Where are you going today? Pick a few places below."); return; }
+  if (tripEditing || !trip.ids.length) {
+    // The picker fills the big area: places by folder, tap the ones you're heading to
+    addNarr("Where are you going today? Tap the places.");
+    const grid = el("div", "trip-pick");
+    GROUPS.forEach(g => {
+      const list = g.ids.map(id => S.find(s => s.id === id)).filter(Boolean); if (!list.length) return;
+      grid.append(el("div", "trip-group", g.name));
+      list.forEach(s => {
+        const c = el("button", "chip", `${s.place} ${s.en}`); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false");
+        c.onclick = () => { trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false"); renderMove(); };
+        grid.append(c);
+      });
+    });
+    log.append(grid); log.scrollTop = 0; return;
+  }
   addNarr(`Today: ${tripPlaces().map(s => s.en).join(", ")}. Read it through on the way, tap Show to hand your phone over.`);
   tripPlaces().forEach(s => {
     const sec = el("section", "pb trip-card");
@@ -1715,20 +1753,10 @@ function renderTripMove() {
   m.append(pocketTabs("today"));
   if (tripEditing || !trip.ids.length) {
     head.append(el("h3", null, "Where to today?"), el("span", "prompt", `${trip.ids.length} picked`));
-    const grid = el("div", "trip-pick");
-    GROUPS.forEach(g => {
-      const list = g.ids.map(id => S.find(s => s.id === id)).filter(Boolean); if (!list.length) return;
-      grid.append(el("div", "trip-group", g.name));
-      list.forEach(s => {
-        const c = el("button", "chip", `${s.place} ${s.en}`); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false");
-        c.onclick = () => { trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); renderMove(); };
-        grid.append(c);
-      });
-    });
     const go = el("button", "btn", "Get me ready"); go.disabled = !trip.ids.length;
     go.onclick = () => { trip.day = dayKey(); store.set("sm-trip", trip); tripEditing = false; renderTrip(); renderRail(); renderMove(); };
     const row = el("div", "endcard"); row.append(go);
-    m.append(head, grid, row); return;
+    m.append(head, row); return;
   }
   head.append(el("h3", null, "Ready?"), el("span", "prompt", plural(trip.ids.length, "place") + " today"));
   const row = el("div", "endcard");
@@ -1746,6 +1774,8 @@ function startTripWarmup() {
   addNarr(`Every moment from today's places, in order. ${pq.length} in all.`);
   renderRail(); patternItem();
 }
+// "Back" names the actual place you'll land in
+function backBtn() { const s = S.find(x => x.id === lastScene()) || S[0], b = el("button", "btn ghost", `Back to ${s.place} ${s.en}`); b.onclick = () => start(s.id); return b; }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
 /* ---------- it happened for real: bring a real-life slip back into the app ---------- */
@@ -1942,7 +1972,7 @@ function renderPhrasesMove() {
   inp.oninput = () => { pbQuery = inp.value; renderPhrases(); };
   form.onsubmit = ev => ev.preventDefault();
   form.append(inp);
-  const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+  const back = backBtn();
   const row = el("div", "endcard"); row.append(back);
   m.append(head, form, row);
 }
@@ -2013,7 +2043,7 @@ function renderWanderMove() {
     if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
     else if (sample) { const again = el("button", "btn", "Wander somewhere else"); again.onclick = () => startWander(); row.append(again); }
     if (sample && wTranscript.length >= 4 && !cur.saved && !cur.live) { const keep = el("button", "btn ghost", "Turn this into a practice place"); keep.onclick = () => saveWander(keep); row.append(keep); }
-    const back = el("button", "btn ghost", "Back to the situations"); back.onclick = () => start(lastScene());
+    const back = backBtn();
     row.append(back); m.append(head, row);
     if (sample) {
       const form = el("form", "free");

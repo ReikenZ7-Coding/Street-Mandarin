@@ -18,7 +18,7 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 
 ## How it's organised
 
-**Places** (28 of them) live in five folders in the side list: Eat and drink, Get around, Shop, Sort things out, and Meet people. One folder is open at a time, places run from day-one essentials to harder ones, and a Next up tag shows where to go. Each place stands for a kind of place, so the noodle shop teaches you any counter where you order food.
+**Places** (28 of them) live in five folders in the side list: Eat and drink, Get around, Shop, Sort things out, and Meet people. One folder is open at a time, places run from day-one essentials to harder ones, and a Next up tag shows where to go. Each place stands for a kind of place, so the noodle shop teaches you any counter where you order food. One find box above the folders searches places and phrases together ("toilet", "多少", "duoshao").
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional).
