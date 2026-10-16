@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { hashPassword, checkPassword, newToken, sha256, encrypt, decrypt, limiter } from "./security.js";
 import { callClaude, checkKey, parseJson, AiError } from "./claude.js";
+import { callLocal, localStatus } from "./local.js";
 import { priceOf } from "./config.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -21,12 +22,16 @@ const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 const KEY_RE = /^sm-[a-z0-9-]{1,40}$/;
 const MAX_VALUE = 2_000_000, MAX_TOTAL = 8_000_000;
 
-export function createApp({ db, config, ai = { callClaude, checkKey } }) {
+export function createApp({ db, config, ai: aiIn = {} }) {
+  const ai = { callClaude, checkKey, callLocal, localStatus, ...aiIn };
+  const local = config.ai.provider === "local";
   const app = new Hono();
   const files = new Map(APP_FILES.map(f => {
     let body = fs.readFileSync(path.join(APP_ROOT, f), "utf8");
     // The page is the same one the Claude artifact uses; client.js connects it to this server
     if (f === "index.html") body = body.replace('<script src="scenes.js"></script>', '<script src="client.js"></script>\n<script src="scenes.js"></script>');
+    // With your own model, the page names it instead of Claude
+    if (f === "client.js" && local) body = `window.SM_AI_NAME = ${JSON.stringify(config.ai.localName)};\n` + body;
     return [f, body];
   }));
   const loginLimit = limiter(10, 15 * 60 * 1000), signupLimit = limiter(5, 60 * 60 * 1000), aiLimit = limiter(30, 60 * 1000);
@@ -54,7 +59,16 @@ export function createApp({ db, config, ai = { callClaude, checkKey } }) {
   const ip = c => (c.req.header("x-forwarded-for") || "").split(",").map(s => s.trim()).filter(Boolean).pop() || "local";
   const body = async c => { try { return await c.req.json(); } catch { return {}; } };
 
+  // Solo mode has one person, always signed in
+  let soloUser = null;
+  async function theSoloUser() {
+    if (soloUser) return soloUser;
+    await db.query("insert into users (email, pass) values ('me@solo.local', 'solo') on conflict (email) do nothing");
+    soloUser = (await db.query("select id, email, api_key_enc, api_key_hint from users where email = 'me@solo.local'"))[0];
+    return soloUser;
+  }
   async function currentUser(c) {
+    if (config.solo) return theSoloUser();
     const token = getCookie(c, COOKIE);
     if (!token) return null;
     const rows = await db.query(
@@ -76,6 +90,10 @@ export function createApp({ db, config, ai = { callClaude, checkKey } }) {
   }
 
   /* ---------- accounts ---------- */
+  // Solo has no accounts to make, leave or delete
+  app.use("/api/auth/*", async (c, next) => config.solo ? c.json({ code: "solo", error: "This copy runs in solo mode, with no sign-in." }, 404) : next());
+  app.use("/api/account", async (c, next) => config.solo && c.req.method === "DELETE" ? c.json({ code: "solo", error: "This copy runs in solo mode." }, 403) : next());
+
   app.post("/api/auth/signup", async c => {
     if (!signupLimit(ip(c))) return c.json({ code: "rate_limited", error: "Too many sign-ups from here. Try again later." }, 429);
     const { email, password } = await body(c);
@@ -125,8 +143,11 @@ export function createApp({ db, config, ai = { callClaude, checkKey } }) {
 
   app.get("/api/account", async c => {
     const u = await currentUser(c);
-    if (!u) return c.json({ signedIn: false, mode: config.ai.mode });
-    return c.json({ signedIn: true, email: u.email, ...aiStatus(u, await spentTodayMicros(u.id)) });
+    const where = { solo: config.solo, provider: config.ai.provider };
+    if (!u) return c.json({ signedIn: false, mode: config.ai.mode, ...where });
+    // Your own model: free, no key; the dialog shows whether it's running
+    if (local) { const st = await ai.localStatus(config.ai); return c.json({ signedIn: true, email: u.email, ...where, canUseAi: true, localOk: st.ok, localModel: st.model }); }
+    return c.json({ signedIn: true, email: u.email, ...where, ...aiStatus(u, await spentTodayMicros(u.id)) });
   });
 
   app.put("/api/account/key", needUser, async c => {
@@ -191,13 +212,34 @@ export function createApp({ db, config, ai = { callClaude, checkKey } }) {
     const { prompt, tier, cache } = await body(c);
     if (typeof prompt !== "string" || !prompt.trim()) return c.json({ code: "bad_request", error: "Nothing to ask." }, 400);
     if (prompt.length > config.ai.maxPromptChars) return c.json({ code: "too_big", error: "That request is too long." }, 413);
-    const quick = tier === "quick", model = quick ? config.ai.modelQuick : config.ai.modelMain;
+    const quick = tier === "quick", model = local ? "local:" + (config.ai.localModel || "loaded") : quick ? config.ai.modelQuick : config.ai.modelMain;
 
     // Shared answers are free: someone already paid for exactly this one
     const hash = cache ? sha256(model + "\n" + prompt) : null;
     if (hash) {
       const hit = await db.query("select body from ai_cache where hash = $1", [hash]);
       if (hit.length) return c.json({ result: JSON.parse(hit[0].body), cached: true });
+    }
+
+    if (local) {
+      let out;
+      try {
+        out = await ai.callLocal(config.ai, { prompt, quick });
+        let result = parseJson(out.text);
+        // Small models sometimes wrap or break the JSON: one more try, showing them their reply
+        if (!result || typeof result !== "object") {
+          out = await ai.callLocal(config.ai, { prompt, quick, retryNote: { previous: out.text.slice(0, 4000), ask: "That wasn't one valid JSON object. Reply again with only the JSON object the request asks for." } });
+          result = parseJson(out.text);
+        }
+        await db.query("insert into ai_usage (user_id, model, input_tokens, output_tokens, cost_micros, own_key) values ($1, $2, $3, $4, 0, true)",
+          [u.id, "local:" + (out.model || ""), out.usage.input, out.usage.output]);
+        if (!result || typeof result !== "object") return c.json({ code: "shape", error: out.truncated ? "The answer was cut off. Raise the context length or max tokens in LM Studio, then try again." : "The answer didn't come back in the right shape. Try again." }, 502);
+        if (hash) await db.query("insert into ai_cache (hash, body) values ($1, $2) on conflict (hash) do nothing", [hash, JSON.stringify(result)]);
+        return c.json({ result });
+      } catch (e) {
+        if (e instanceof AiError) return c.json({ code: e.code, error: e.message }, e.status);
+        throw e;
+      }
     }
 
     // Whose key pays: the learner's own if they added one, otherwise the owner's within the limits

@@ -670,6 +670,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 <script src="people.js"></script>
 <script>
 const S = window.SCENES;
+// Who writes the AI parts, as the page says it: Claude, or your own model when the app runs on your computer
+const AI_NAME = window.SM_AI_NAME || "Claude", AI_CAP = AI_NAME[0].toUpperCase() + AI_NAME.slice(1);
 // Places you made from your own wanders live alongside the built-in ones
 const TAGSET = ["sounds", "numbers", "agreeing", "listening", "grammar", "where", "words", "manners"];
 function validScene(x) {
@@ -949,7 +951,7 @@ function renderRail() {
   // Long Story: the novel you read in the evenings. (Wander's job, making things up, now lives here.)
   const lnx = LS && lsNext();
   rail.append(el("h2", "rail-sub", "Long Story"));
-  const lt = tool("长篇", LS ? LS.bible.title_english || "Long Story" : "Long Story", LS ? (lnx ? `Volume ${lnx.v} of ${LS.n}, chapter ${lnx.c}` : "Finished. Start another?") : "A novel Claude writes around you", mode === "long", () => startLong());
+  const lt = tool("长篇", LS ? LS.bible.title_english || "Long Story" : "Long Story", LS ? (lnx ? `Volume ${lnx.v} of ${LS.n}, chapter ${lnx.c}` : "Finished. Start another?") : `A novel ${AI_NAME} writes around you`, mode === "long", () => startLong());
   lt.id = "tool-long"; rail.append(lt);
   // Unscripted: the people from your days, on WeChat, for as long as you like to chat
   const unread = chatUnread(), nChats = PEOPLE.filter(x => ((CHATS[x.id] || {}).msgs || []).some(m => m.me)).length;
@@ -1176,7 +1178,7 @@ function typer(t) {
     form.append(mic);
   }
   form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) submitTyped(v, t); };
-  box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to Claude playing " + cur.whoEn + "." : "Checked against what a local would understand."));
+  box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to " + AI_NAME + " playing " + cur.whoEn + "." : "Checked against what a local would understand."));
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
   return box;
 }
@@ -2583,7 +2585,7 @@ function lsTonight() {
   const nx = LS && lsNext();
   if (LS && nx && lsLocked(nx.v)) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v} opens tomorrow`, why: "You finished today's volume. Look back over the words it taught you.", go: () => startLong() });
   if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
-  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? `A light novel set in China, written around you. It needs Claude, so ${aiHow(true)} to start one.` : "A light novel set in China, written around you by Claude, a volume a day.", go: () => startLong() });
+  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? `A light novel set in China, written around you. It needs ${AI_NAME}, so ${aiHow(true)} to start one.` : `A light novel set in China, written around you by ${AI_NAME}, a volume a day.`, go: () => startLong() });
 }
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
@@ -2849,7 +2851,7 @@ async function lsWrite(v, c) {
     if (mode === "long" && lsWaiting === lsKey(v, c)) { lsWaiting = null; lsRead(v, c); }
   } catch (e) {
     lsWaiting = null;
-    lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : e && e.code === "rate_limited" ? "Claude's busy right now. Try again in a moment." : "That chapter didn't come out right. Try again.";
+    lsErr = e && e.code === "not_granted" ? `Long Story needs permission to use ${AI_NAME}.` : e && e.code === "rate_limited" ? `${AI_CAP} is busy right now. Try again in a moment.` : "That chapter didn't come out right. Try again.";
     if (e && e.code === "not_granted") sample = null;
     if (mode === "long" && lsView === "wait") { const vol = LS.bible.volumes[v - 1] || {}; setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}: `, "not written yet"); renderMove(); }
   }
@@ -2881,7 +2883,7 @@ async function lsBegin() {
     if (mode === "long") { startLong(); lsAt = { v: 1, c: 1 }; } // story home, then straight into chapter one
     lsWrite(1, 1);
   } catch (e) {
-    lsPlanning = false; lsErr = e && e.code === "not_granted" ? "Long Story needs permission to use Claude." : "The plan didn't come out right. Try again.";
+    lsPlanning = false; lsErr = e && e.code === "not_granted" ? `Long Story needs permission to use ${AI_NAME}.` : "The plan didn't come out right. Try again.";
     if (e && e.code === "not_granted") sample = null;
     if (mode === "long" && !LS) { lsSetup(); renderMove(); }
   }
@@ -2892,7 +2894,7 @@ function startLong() {
   mode = "long"; busy = false; finished = false; clearRush(); lsView = "home"; lsMoment = null; lsWaiting = null; lsErr = "";
   cur = { id: "long", who: "书", whoEn: "the story", en: "Long Story", turns: [] };
   if (!LS) {
-    setHead("长篇", "chángpiān", "Long Story", "How it works: ", "Claude writes you a light novel set in China, a volume a day for a week or up to a month. You're the main character, and every chapter ends on something you have to say. The Chinese grows as you read.");
+    setHead("长篇", "chángpiān", "Long Story", "How it works: ", AI_CAP + " writes you a light novel set in China, a volume a day for a week or up to a month. You're the main character, and every chapter ends on something you have to say. The Chinese grows as you read.");
     lsSetup();
   } else {
     const b = LS.bible;
@@ -2919,7 +2921,7 @@ function lsSetup() {
   LS_THEMES.forEach(([zh, en, blurb], i) => { const c = el("button", "today-card" + (lsPick.theme === i ? " first" : "")); c.setAttribute("aria-pressed", lsPick.theme === i);
     c.append(el("span", "tc-han", zh), el("span", "tc-title", en), el("span", "tc-why", blurb)); c.onclick = () => { lsPick.theme = i; lsSetup(); }; tg.append(c); });
   const sur = el("button", "today-card" + (lsPick.theme === -2 ? " first" : "")); sur.setAttribute("aria-pressed", lsPick.theme === -2);
-  sur.append(el("span", "tc-han", "惊喜"), el("span", "tc-title", "Surprise me"), el("span", "tc-why", "Claude picks the city and the story.")); sur.onclick = () => { lsPick.theme = -2; lsSetup(); }; tg.append(sur);
+  sur.append(el("span", "tc-han", "惊喜"), el("span", "tc-title", "Surprise me"), el("span", "tc-why", AI_CAP + " picks the city and the story.")); sur.onclick = () => { lsPick.theme = -2; lsSetup(); }; tg.append(sur);
   const own = el("input", "ls-own"); own.type = "text"; own.placeholder = "Or your own idea: a mystery in a Chengdu teahouse…"; own.value = lsPick.own; own.setAttribute("aria-label", "Your own story idea");
   own.oninput = () => { lsPick.own = own.value; lsPick.theme = own.value.trim() ? -1 : 0; tg.querySelectorAll(".today-card").forEach(c => { c.classList.remove("first"); c.setAttribute("aria-pressed", "false"); }); };
   th.append(tg, own);
@@ -2928,7 +2930,7 @@ function lsSetup() {
   const he = el("div", "chips"); [["", "Either"], ["he", "他 he"], ["she", "她 she"]].forEach(([k, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", (lsPick.he || "") === k); c.onclick = () => { lsPick.he = k; lsSetup(); }; he.append(c); });
   nm.append(ni, el("span", "ls-label", "How people talk about you"), he);
   box.append(len, th, nm);
-  if (!sample) box.prepend(aiNote(`Long Story is written by Claude as you read, so it needs Claude. ${aiHow()} to start one. Short Story works without it.`));
+  if (!sample) box.prepend(aiNote(`Long Story is written by ${AI_NAME} as you read, so it needs ${AI_NAME}. ${aiHow()} to start one. Short Story works without it.`));
   if (lsPlanning) box.classList.add("busy");
   log.append(box); log.scrollTop = 0;
 }
@@ -3018,7 +3020,7 @@ function lsRead(v, c) {
   const zh = zhOn;
   if (LS.zh && !ch.zh) {
     // Not in Chinese yet: read the English meanwhile, and swap over when it's ready
-    const note = el("p", "ls-zh-note", sample ? "Putting this chapter into Chinese. Read on in English meanwhile; it switches when it's ready." : "This chapter isn't in Chinese yet, and that needs Claude.");
+    const note = el("p", "ls-zh-note", sample ? "Putting this chapter into Chinese. Read on in English meanwhile; it switches when it's ready." : `This chapter isn't in Chinese yet, and that needs ${AI_NAME}.`);
     log.append(note);
     if (sample) lsZhFetch(v, c).then(() => { if (lsAt && lsAt.v === v && lsAt.c === c && lsView === "read") lsRedraw(); })
       .catch(() => { note.textContent = "Couldn't put this chapter into Chinese just now. "; const again = el("button", "linkish", "Try again"); again.onclick = () => lsRedraw(); note.append(again); });
@@ -3124,7 +3126,7 @@ function renderLongMove() {
   if (lsErr) m.append(el("p", "ls-err", lsErr));
   if (lsErr && LS && lsAt && !lsWaiting && !lsCh(lsAt.v, lsAt.c) && sample) { const again = el("button", "btn", "Try again"); again.onclick = () => lsWrite(lsAt.v, lsAt.c); row.append(again); }
   if (lsPlanning || lsWaiting) {
-    m.append(el("div", "thinking", !LS ? "Claude is planning your story: the city, the people, and all the days…" : `Claude is writing volume ${lsAt.v}, chapter ${lsAt.c}…`));
+    m.append(el("div", "thinking", !LS ? `${AI_CAP} is planning your story: the city, the people, and all the days…` : `${AI_CAP} is writing volume ${lsAt.v}, chapter ${lsAt.c}…`));
     // Meanwhile: the words the story has taught you most recently
     const recent = LS ? Object.entries(LS.words).slice(-6) : [];
     if (recent.length) { const w = el("div", "ls-meanwhile"); w.append(el("span", "ls-label", "Meanwhile, from your story"));
@@ -3133,7 +3135,7 @@ function renderLongMove() {
   }
   if (!LS) {
     const go = el("button", "btn", `Begin: ${lsPick.n} volumes`); go.disabled = !sample; go.onclick = () => lsBegin();
-    row.append(go); if (!sample) row.append(el("span", "ls-prompt", `Needs Claude: ${aiHow(true)} to start one.`));
+    row.append(go); if (!sample) row.append(el("span", "ls-prompt", `Needs ${AI_NAME}: ${aiHow(true)} to start one.`));
     m.append(row); return;
   }
   if (lsView === "read" && lsMoment && !lsReady) {
@@ -3229,7 +3231,7 @@ function startChats() {
   if (yours.length) { log.append(el("h4", "pb-title", "Your chats")); const l = el("div", "chat-list"); yours.forEach(p => l.append(chatRow(p))); log.append(l); }
   log.append(el("h4", "pb-title", yours.length ? "Everyone else" : "Pick someone to chat with"));
   const l2 = el("div", "chat-list"); rest.forEach(p => l2.append(chatRow(p))); log.append(l2);
-  if (!sample) log.append(aiNote(`Chatting needs Claude, since every reply is written as you go. ${aiHow()} to chat. You can still read who everyone is.`));
+  if (!sample) log.append(aiNote(`Chatting needs ${AI_NAME}, since every reply is written as you go. ${aiHow()} to chat. You can still read who everyone is.`));
   window.scrollTo(0, 0); renderRail(); renderMove();
 }
 const chatLast = p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length ? m[m.length - 1].t : 0; };
@@ -3336,7 +3338,7 @@ function renderChatMove() {
   if (!chatWho) return;
   const p = personOf(chatWho), c = chatOf(chatWho), waiting = chatPending.has(chatWho);
   if (chatErrs[chatWho]) m.append(el("p", "ls-err", chatErrs[chatWho]));
-  if (!sample) { m.append(aiNote(`Chatting needs Claude, since every reply is written as you go. ${aiHow()} to chat.`)); return; }
+  if (!sample) { m.append(aiNote(`Chatting needs ${AI_NAME}, since every reply is written as you go. ${aiHow()} to chat.`)); return; }
   // A beginner can start from a line that works, and edit it before sending
   if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
     const st = el("div", "chat-starters");
@@ -3453,7 +3455,7 @@ async function chatSend(text, retry) {
     c.msgs = c.msgs.slice(-300);
   } catch (e) {
     me.fail = true;
-    chatErrs[id] = e && e.code === "not_granted" ? "Chatting needs permission to use Claude." : e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then tap the ! to send again." : "That message didn't go through. Tap the ! to send it again.";
+    chatErrs[id] = e && e.code === "not_granted" ? `Chatting needs permission to use ${AI_NAME}.` : e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then tap the ! to send again." : "That message didn't go through. Tap the ! to send it again.";
     if (e && e.code === "not_granted") sample = null;
   }
   chatPending.delete(id); delete me.pending; saveChats();
@@ -3949,7 +3951,7 @@ function renderFree(m) {
   const send = el("button", "btn", busy ? "…" : "Send"); send.type = "submit"; send.disabled = busy; inp.disabled = busy;
   form.append(inp, send);
   form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) offScript(v); };
-  m.append(form, el("p", "free-note", "Replies to your own words come from Claude, using your Claude account."));
+  m.append(form, el("p", "free-note", window.SM_AI_NAME ? `Replies to your own words come from ${AI_NAME}.` : "Replies to your own words come from Claude, using your Claude account."));
 }
 
 async function offScript(text) {
@@ -3994,7 +3996,7 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
     if (t && r.advance === true && kind !== "wrong") advance(); else renderMove();
   } catch (e) {
     think.remove(); busy = false;
-    const msg = e && e.code === "not_granted" ? "Off-script talk needs permission to use Claude. The scripted answers still work." :
+    const msg = e && e.code === "not_granted" ? `Off-script talk needs permission to use ${AI_NAME}. The scripted answers still work.` :
       e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then try again." :
       "That didn't go through. Try saying it again.";
     addNarr(msg);

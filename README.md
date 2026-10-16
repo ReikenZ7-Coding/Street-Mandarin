@@ -8,6 +8,25 @@ You walk into a noodle shop, a taxi, a night market, a street corner or a pharma
 
 Open `index.html` in a browser. There's no build step. It also runs inside Claude as an artifact, where the AI parts use the viewer's own Claude.
 
+## Running it on your own computer, with your own model
+
+Solo mode runs the app for one person on their own computer, with no accounts, and the AI parts come from a model you run yourself in [LM Studio](https://lmstudio.ai) or [Ollama](https://ollama.com). It costs nothing to run, and nothing leaves your computer.
+
+```
+cd server
+npm install
+npm run solo       # http://localhost:8787
+```
+
+- Start your model's server first: in LM Studio, load the model on the Developer tab and start the server (it listens on port 1234). Set the model's context length to at least 16384, because Long Story's prompts are long.
+- For Ollama, set `LOCAL_AI_URL=http://localhost:11434/v1` before `npm run solo`.
+- `LOCAL_AI_MODEL` picks a model by its id; by default the app uses the one that's loaded.
+- `LOCAL_AI_NAME` is what the page calls it ("Qwen is writing chapter 2…"). By default it says "your AI".
+- The 我 You button shows whether your model is running. Progress is saved in `server/data` as well as in the browser.
+- The server only listens to your own computer (`127.0.0.1`).
+
+A small model gets extra house rules with every request (`server/src/local.js`): answer with one valid JSON object, simplified characters, tone-mark pinyin, stay in character, be kind and accurate when judging. Its thinking is stripped, and an answer that isn't valid JSON is asked for once more. Chats and "How do I say…?" suit a small model well. Long Story asks the most of it, so a chapter that doesn't come out right can simply be tried again.
+
 ## Running it as a website
 
 The `server/` folder turns the app into a full website: accounts, progress that follows you to any device, and the AI parts running on Claude through the server.
@@ -109,7 +128,7 @@ Everything above works with no AI at all:
 - What a line says matters more than its exact words: 59 and 五十九 are the same, 痛 and 疼, 可是 and 但是. A wrong number, a missing or extra 不/没, or 前 for 后 is a real mistake even when everything else matches, and a swapped key word (冷水 for 热水) is never "one small slip". Your own name works where the script uses 马修.
 - Typed answers off the script are checked by the app itself. It finds the closest scripted line and spots common slips: the wrong measure word, 二 for 两, 不有, a wrong number, 是 before an adjective, 吗 after a question word, or missing key words. When it can't tell, it says so and shows the line that works.
 
-When Claude is available (inside a Claude artifact through `window.claude`, or on the website through your account), you also get:
+When Claude is available (inside a Claude artifact through `window.claude`, on the website through your account, or your own model in solo mode), you also get:
 - Claude replies in character to anything off the script, and explains any mistake not on file.
 - Long Story: the whole novel is written by Claude.
 - Unscripted: every reply, the notes under your messages, and "How do I say…?". Without Claude you can still see everyone and their first message.

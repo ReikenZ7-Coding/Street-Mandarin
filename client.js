@@ -47,7 +47,7 @@
     dirty.clear(); setSync("Saving…");
     try {
       await api("PUT", "/api/progress", { keys });
-      setSync("Saved to your account");
+      setSync(account && account.solo ? "Saved on this computer" : "Saved to your account");
     } catch (e) {
       sending.forEach(k => dirty.add(k));
       setSync(e.code === "too_big" ? e.message : "Not saved yet. It will try again.");
@@ -86,7 +86,7 @@
         return j.result;
       } catch (e) {
         const why = e.code;
-        if (["needs_key", "bad_key", "no_credit", "allowance", "budget", "signed_out"].includes(why)) banner(e.message, true);
+        if (["needs_key", "bad_key", "no_credit", "allowance", "budget", "signed_out", "model_offline", "too_big"].includes(why)) banner(e.message, true);
         // The app already knows these two codes: one says "no access", the other "try again soon"
         e.code = why === "rate_limited" || why === "allowance" || why === "budget" ? "rate_limited"
           : why === "needs_key" || why === "signed_out" || why === "bad_key" || why === "no_credit" ? "not_granted" : why;
@@ -113,8 +113,8 @@
         const changedHere = await pull();
         const last = Number(sessionStorage.getItem("sm-sync-reload") || 0);
         if (changedHere && Date.now() - last > 15000) { sessionStorage.setItem("sm-sync-reload", String(Date.now())); location.reload(); return; }
-        setSync("Saved to your account");
-      } catch { setSync("Couldn't reach your account. Progress is kept on this device for now."); }
+        setSync(account && account.solo ? "Saved on this computer" : "Saved to your account");
+      } catch { setSync(account && account.solo ? "Couldn't reach the app's server. Progress is kept in this browser for now." : "Couldn't reach your account. Progress is kept on this device for now."); }
       clearTimeout(showAnyway); hide.remove();
     }
     ready(account);
@@ -181,8 +181,9 @@ dialog.acct::backdrop { background: rgba(10, 20, 16, .45); }
     const inn = account && account.signedIn;
     btn.className = "acct-btn" + (inn ? " in" : "");
     btn.textContent = "";
-    btn.append(el("span", "han", inn ? "我" : "登录"), el("span", "en", inn ? " Account" : " Sign in"));
-    btn.title = inn ? `Signed in as ${account.email}` : "Sign in to keep your progress on every device";
+    const solo = account && account.solo;
+    btn.append(el("span", "han", inn ? "我" : "登录"), el("span", "en", solo ? " You" : inn ? " Account" : " Sign in"));
+    btn.title = solo ? "Your copy of the app, and your AI" : inn ? `Signed in as ${account.email}` : "Sign in to keep your progress on every device";
   }
 
   function field(label, type, name, auto) {
@@ -195,7 +196,7 @@ dialog.acct::backdrop { background: rgba(10, 20, 16, .45); }
     const head = el("div", "acct-head");
     const close = el("button", "linkish", "Close"); close.type = "button"; close.onclick = () => dlg.close();
     const inn = account && account.signedIn;
-    head.append(el("span", "han", inn ? "我" : "登录"), el("h2", null, inn ? "Your account" : view === "signup" ? "Create an account" : "Sign in"), close);
+    head.append(el("span", "han", inn ? "我" : "登录"), el("h2", null, account && account.solo ? "Just you" : inn ? "Your account" : view === "signup" ? "Create an account" : "Sign in"), close);
     box.append(head);
 
     if (!inn) {
@@ -231,11 +232,28 @@ dialog.acct::backdrop { background: rgba(10, 20, 16, .45); }
       return;
     }
 
-    box.append(el("p", null, `Signed in as ${account.email}`));
-    const s = el("p", "muted", syncState || "Saved to your account"); s.id = "acct-sync"; box.append(s);
+    if (account.solo) {
+      box.append(el("p", null, "Solo mode: this copy of Street Mandarin is just for you, on this computer. Everything you do is saved here as well as in the browser, so clearing the browser loses nothing."));
+      const s = el("p", "muted", syncState || "Saved"); s.id = "acct-sync"; box.append(s);
+    } else {
+      box.append(el("p", null, `Signed in as ${account.email}`));
+      const s = el("p", "muted", syncState || (account.solo ? "Saved on this computer" : "Saved to your account")); s.id = "acct-sync"; box.append(s);
+    }
+
+    if (account.provider === "local") {
+      // Your own model: whether it's running, and what to do if it isn't
+      const sec = el("div", "sec"); sec.append(el("h3", null, "Your AI"));
+      if (account.localOk) sec.append(el("p", null, `Running: ${account.localModel}. Chats, Long Story and "How do I say…?" use it, for free.`));
+      else sec.append(el("p", null, "Not running right now. Open LM Studio, load your model, and start its local server (Developer tab). Then reload this page."));
+      const re = el("button", "btn ghost small", "Check again"); re.type = "button";
+      re.onclick = async () => { try { account = await api("GET", "/api/account"); } catch {} draw(); };
+      sec.append(re); box.append(sec);
+      if (account.solo) return;
+    }
 
     // The AI parts
     const sec = el("div", "sec"); sec.append(el("h3", null, "Claude, for the AI parts"));
+    if (account.provider === "local") sec.hidden = true;
     sec.append(el("p", null, "Unscripted chats, Long Story and \"How do I say…?\" are written by Claude as you go. They run on your own Claude API key, so their cost goes to your Anthropic account. Short Story, Mistakes, Notes and everything else are free and need no key."));
     if (account.freeToday) sec.append(el("p", "muted", `Free today: about $${account.freeLeftToday.toFixed(2)} of AI left. With your own key there's no daily limit.`));
     if (account.hasKey) {
