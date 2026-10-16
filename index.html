@@ -29,6 +29,7 @@
   --btn: #1f5a43; --btn-fg: #f6f8f2;
   --sky: #f4f6ee; --mt-far: #d6e2d6; --mt-mid: #b9cfbd; --mt-near: #94b49f; --mist: #eef2e9;
   --stalk: #6f9f7c; --stalk-hi: #a8c9ae; --node: #4f7f5d; --leaf: #5e9670; --sun: rgba(222, 182, 110, 0.2);
+  --dawn: rgba(236, 170, 120, 0.26); --dusk: rgba(214, 150, 110, 0.16); --moon: #fbf6e6; --moon-shade: #e2d6c2; --moon-glow: rgba(255, 246, 220, 0.75); --crane: #40594b;
   --head-mt: #c6d8c8; --done-bg: #4f7f5d; --done-fg: #ffffff;
   --f-ui: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
   --f-han: "Noto Serif SC", "Songti SC", "SimSun", serif;
@@ -42,6 +43,7 @@
     --btn: #43c099; --btn-fg: #08130f;
     --sky: #0a1310; --mt-far: #12201b; --mt-mid: #172a23; --mt-near: #1d342b; --mist: #0d1714;
     --stalk: #24463a; --stalk-hi: #2f5a4a; --node: #183329; --leaf: #2a5444; --sun: rgba(236, 232, 205, 0.16);
+    --dawn: rgba(236, 190, 150, 0.14); --dusk: rgba(40, 60, 90, 0.35); --moon: rgba(236, 232, 205, 0.6); --moon-shade: #0a1310; --moon-glow: rgba(236, 232, 205, 0.12); --crane: #8fb3a0;
     --head-mt: #1d3029; --done-bg: #2f5a4a; --done-fg: #e3ebe5;
     color-scheme: dark;
   }
@@ -53,6 +55,7 @@
     --btn: #43c099; --btn-fg: #08130f;
     --sky: #0a1310; --mt-far: #12201b; --mt-mid: #172a23; --mt-near: #1d342b; --mist: #0d1714;
     --stalk: #24463a; --stalk-hi: #2f5a4a; --node: #183329; --leaf: #2a5444; --sun: rgba(236, 232, 205, 0.16);
+    --dawn: rgba(236, 190, 150, 0.14); --dusk: rgba(40, 60, 90, 0.35); --moon: rgba(236, 232, 205, 0.6); --moon-shade: #0a1310; --moon-glow: rgba(236, 232, 205, 0.12); --crane: #8fb3a0;
     --head-mt: #1d3029; --done-bg: #2f5a4a; --done-fg: #e3ebe5;
   color-scheme: dark;
 }
@@ -593,6 +596,9 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 @media (max-width: 760px) { .days { flex-wrap: nowrap; } .day-dot { flex: 1 1 0; min-width: 0; width: auto; height: 28px; margin-right: 3px; padding: 0; } .day-dot::after { right: -3px; width: 3px; } }
 .cando .cd-bar { border-radius: 2px; } .cando .cd-bar i { background: repeating-linear-gradient(90deg, var(--stalk) 0 30px, var(--node) 30px 33px); }
 /* section rules are bamboo too: long segments with a node between */
+.today.stops.compact { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.today.stops.compact .today-card { padding: 10px 12px; min-height: 0; }
+.today.stops.compact .tc-why { display: none; }
 .day-part { border-bottom: 0; background: repeating-linear-gradient(90deg, var(--line) 0 90px, transparent 90px 94px) left bottom / 100% 2px no-repeat; }
 
 /* lines arrive like ink soaking into paper */
@@ -606,6 +612,53 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .leaves i { position: absolute; top: -30px; width: 28px; height: 9px; border-radius: 0 100% 0 100%; background: var(--leaf); opacity: .85; animation: fall linear forwards; }
 @keyframes fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: 0.2; } }
 @media (prefers-reduced-motion: reduce) { .sc-bamboo .stalk, .sc-mts .drift, .ink, .leaves i { animation: none !important; } .leaves { display: none; } }
+/* ---------- Motion that answers you: each movement says something about what just happened ----------
+   The sky follows the story's day, verdicts are pressed on like a seal, what people say is brushed on,
+   a clean run sends a gust through the bamboo, a finished day grows the stalk, and cranes cross at dawn. */
+/* the sky keeps the story's time: sunrise before your first stop, high sun while you're out, moon at evening */
+.sc-sun { left: var(--sun-x, 56%); top: var(--sun-y, 14px); transition: left 2.4s ease-in-out, top 2.4s ease-in-out, background 2.4s, box-shadow 2.4s; }
+.sc-dusk { position: absolute; inset: 0 0 auto 0; height: 70vh; background: linear-gradient(to bottom, var(--dusk), transparent); opacity: 0; transition: opacity 2.4s ease-in-out; }
+.scenery[data-time="morning"] { --sun-x: 9%; --sun-y: 64px; }
+.scenery[data-time="out"] { --sun-x: 50%; --sun-y: 6px; }
+.scenery[data-time="evening"] { --sun-x: calc(100% - 150px); --sun-y: 30px; }
+.scenery[data-time="evening"] .sc-dusk { opacity: 1; }
+.scenery[data-time="evening"] .sc-sun { background: var(--moon); box-shadow: inset -24px 6px 0 0 var(--moon-shade), 0 0 36px 6px var(--moon-glow); width: 76px; height: 76px; filter: none; }
+.scenery[data-time="morning"] .sc-sun { background: var(--dawn); }
+/* a verdict is a seal pressed onto the page; a slip bleeds a little ink around it */
+.fb .seal { position: relative; animation: stamp .5s cubic-bezier(.2, .9, .3, 1.2) both; }
+.fb .seal::after { content: ""; position: absolute; inset: -6px; border-radius: 10px; border: 2px solid currentColor; opacity: 0; animation: press .7s .18s ease-out; pointer-events: none; }
+.fb.good .seal::after { color: var(--jade); } .fb.okay .seal::after { color: var(--ochre); } .fb.wrong .seal::after { color: var(--cinnabar); }
+.fb.wrong { position: relative; }
+.fb.wrong::before { content: ""; position: absolute; left: 4px; top: 2px; width: 64px; height: 64px; border-radius: 47% 53% 42% 58% / 55% 45% 55% 45%; background: var(--cinnabar); opacity: 0; filter: blur(5px); animation: bleed 1.1s .15s ease-out forwards; pointer-events: none; }
+.fb.wrong > * { position: relative; }
+@keyframes stamp { 0% { opacity: 0; transform: scale(1.9) rotate(-16deg); } 55% { opacity: 1; transform: scale(.9) rotate(-5deg); } 100% { opacity: 1; transform: scale(1) rotate(-6deg); } }
+@keyframes press { 0% { opacity: .55; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes bleed { 0% { opacity: .3; transform: scale(.4); } 100% { opacity: .12; transform: scale(1.25); } }
+/* what someone says to you is brushed on, left to right, the ink still soft at the tip */
+.row.npc.fresh .han { animation: brush .75s .08s cubic-bezier(.35, .1, .25, 1) both; }
+@keyframes brush { from { clip-path: inset(0 100% 0 0); filter: blur(1.2px); } 70% { filter: blur(.3px); } to { clip-path: inset(0 0 0 0); filter: none; } }
+/* a clean run: a gust goes through the bamboo and leaves blow off downwind */
+.scenery.gust .sc-bamboo .stalk { animation: gust 2.8s cubic-bezier(.25, .6, .3, 1) both !important; }
+.scenery.gust .sc-bamboo .stalk:nth-child(2) { animation-delay: .12s !important; } .scenery.gust .sc-bamboo .stalk:nth-child(3) { animation-delay: .24s !important; }
+@keyframes gust { 0% { transform: rotate(0); } 22% { transform: rotate(4.5deg); } 45% { transform: rotate(-1.6deg); } 70% { transform: rotate(1.2deg); } 100% { transform: rotate(0); } }
+.leaves i { background: var(--leaf); }
+/* a finished day grows its bamboo segment from the ground up, and its node sets */
+.day-dot.grow { background: var(--surface-2); isolation: isolate; }
+.day-dot.grow::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 3px; background: var(--done-bg); transform-origin: 50% 100%; animation: grow 1.1s .25s cubic-bezier(.3, .8, .3, 1) both; }
+.day-dot.grow::after { animation: node .5s 1.25s ease-out both; }
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes node { 0% { transform: scaleY(.2); background: var(--line); } 60% { transform: scaleY(1.25); } 100% { transform: scaleY(1); background: var(--node); } }
+/* a new day: cranes cross the mountains */
+.cranes { position: fixed; left: 0; right: 0; top: 0; height: 150px; z-index: 0; pointer-events: none; overflow: hidden; }
+.cranes svg { position: absolute; left: -80px; width: 46px; height: 24px; color: var(--crane); opacity: .75; animation: fly var(--t, 11s) linear var(--d, 0s) both; }
+.cranes svg path { transform-origin: 50% 60%; animation: flap 1.1s ease-in-out infinite alternate; }
+@keyframes fly { from { transform: translate(0, 0); } to { transform: translate(calc(100vw + 160px), var(--dy, -40px)); } }
+@keyframes flap { from { transform: scaleY(1); } to { transform: scaleY(-.55); } }
+@media (prefers-reduced-motion: reduce) {
+  .sc-sun, .sc-dusk { transition: none; }
+  .fb .seal, .fb .seal::after, .fb.wrong::before, .row.npc.fresh .han, .scenery.gust .sc-bamboo .stalk, .day-dot.grow::before, .day-dot.grow::after { animation: none !important; }
+  .fb.wrong::before { opacity: .1; } .cranes { display: none; } .day-dot.grow { background: var(--done-bg); }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -933,6 +986,7 @@ function railOrder() {
   return ids.map(id => S.find(s => s.id === id)).filter(Boolean).concat(S.filter(s => !ids.includes(s.id)));
 }
 function renderRail() {
+  setSky();
   const rail = $("#rail"); rail.querySelectorAll(".scn, .rail-sub, .rail-group, .folder").forEach(n => n.remove());
   // Three practice spaces, each with one job: your mistakes, your ear, and the lines in your pocket
   const due = dueItems().length, active = activeItems().length;
@@ -2446,7 +2500,7 @@ function lastScene() { let last = null; try { last = localStorage.getItem("sm-la
 /* ---------- your day: the start page, one day of the ten at a time ---------- */
 // Morning gets you ready (yesterday's slips, the words and lines for today's stops), Out is the stops
 // themselves, in story order, and Evening gathers what went wrong today so it comes back tomorrow.
-let homeDay = 0, dailyShift = 0;
+let homeDay = 0, dailyShift = 0, grownDays = store.get("sm-grown", []);
 function deeperPick() {
   // After the ten days: your most common kind of slip, then a place you only scraped through, then surprises, then rush hour
   const ord = railOrder(), c = patternCounts(), top = PATTERNS.filter(p => c[p.id] && c[p.id].open >= 2).sort((a, b) => c[b.id].open - c[a.id].open)[0];
@@ -2477,14 +2531,18 @@ function startHome(day) {
   // Ten dots: where you are in the ten days, and a way to look at any of them
   const nav = el("div", "days"); nav.setAttribute("aria-label", "The ten days");
   DAYS.forEach((x, i) => {
-    const b = el("button", "day-dot" + (dayDone(i) ? " done" : "") + (i === homeDay ? " on" : ""), String(i + 1));
+    const grow = dayDone(i) && !grownDays.includes(i);
+    if (grow) { grownDays.push(i); store.set("sm-grown", grownDays); }
+    const b = el("button", "day-dot" + (dayDone(i) ? " done" : "") + (grow && !stillMotion() ? " grow" : "") + (i === homeDay ? " on" : ""), String(i + 1));
     b.title = `Day ${i + 1}: ${x.title}`; b.setAttribute("aria-label", b.title + (dayDone(i) ? ", done" : "")); b.setAttribute("aria-current", i === homeDay ? "true" : "false");
     b.onclick = () => startHome(i); nav.append(b);
   });
   log.append(nav);
   const part = (en, zh, sub) => { const h = el("div", "day-part"); h.append(el("span", "dp-zh", zh), el("span", "dp-en", en)); if (sub) h.append(el("span", "dp-sub", sub)); log.append(h); };
-  // Morning: get ready
-  const started = stops.some(s => done[s.id]), early = homeMorningSlips(started), due = dueItems().length || early.length;
+  // Morning: get ready. Once the day's stops are done it has served its purpose, so Evening comes up under the stops
+  const finishedDay = dayDone(homeDay), started = stops.some(s => done[s.id]);
+  const early = homeMorningSlips(started), due = dueItems().length || early.length;
+  if (!finishedDay) {
   part("Morning", "早上", started ? null : "Get ready");
   const am = el("div", "today");
   if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One slip is back" : `${due} slips are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview(dueItems().length ? null : early) }, true));
@@ -2494,9 +2552,10 @@ function startHome(day) {
   const pinned = NOTES.find(x => x.pin);
   if (pinned) am.append(homeCard({ kind: "Your pinned note", han: "笔记", title: noteTitle(pinned), why: pinned.body.split("\n").filter(l => l.trim()).slice(1, 3).join(" · ") || "Open it to add to it.", go: () => openNotes(pinned.id) }));
   log.append(am, wordsForToday(d));
+  }
   // Out: the stops, in story order
   part("Out", "出门", `${stops.filter(s => done[s.id]).length} of ${stops.length}`);
-  const out = el("div", "today stops"), next = stops.find(s => !done[s.id]);
+  const out = el("div", "today stops" + (finishedDay ? " compact" : "")), next = stops.find(s => !done[s.id]);
   stops.forEach((s, i) => {
     const miss = notebook.filter(x => x.sid === s.id && !x.learned).length;
     const why = !done[s.id] ? d.stops[i].into : canDo(s.id) ? `You can ${lcFirst(CAN[s.id] || "do this")} on your own.` : miss ? `Got through, with ${plural(miss, "slip")} still open.` : "Got through. A clean run puts it on your list.";
@@ -2506,7 +2565,6 @@ function startHome(day) {
   // Evening: what went wrong today comes back tomorrow
   if (started) {
     part("Evening", "晚上", dayDone(homeDay) ? null : "So far");
-    if (dayDone(homeDay)) { const h = log.lastChild; requestAnimationFrame(() => { try { h.scrollIntoView({ block: "start" }); } catch {} }); }
     const pm = el("div", "today"), ids = stops.map(s => s.id);
     const slips = notebook.filter(x => ids.includes(x.sid) && !x.learned), kinds = {};
     slips.forEach(x => { const g = tagOf(x); if (g) kinds[g] = (kinds[g] || 0) + 1; });
@@ -2534,7 +2592,7 @@ function startHome(day) {
     if (more.childNodes.length) log.append(more);
   }
   log.append(canList());
-  if (!dayDone(homeDay) || !started) log.scrollTop = 0;
+  log.scrollTop = 0;
   renderRail(); renderMove();
 }
 /* Words for today: a word, a bit of slang and a phrase, from today's stops where there is one */
@@ -2615,7 +2673,7 @@ function renderHomeMove() {
     r.onclick = () => startReview(back ? null : early); row.append(r);
     const go = el("button", "btn ghost", `Or go: ${next.en}`); go.onclick = () => start(next.id); row.append(go);
   } else if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
-  else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => startHome(homeDay + 1); row.append(go); }
+  else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => { cranes(); startHome(homeDay + 1); }; row.append(go); }
   const all = el("button", "btn ghost", "Or pick any place");
   // On a phone that opens the folded list; on a wide screen the list is already there, so jump to its find box
   all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
@@ -4127,7 +4185,7 @@ function bambooSvg(side) {
 }
 function scenery() {
   const d = el("div", "scenery"); d.setAttribute("aria-hidden", "true");
-  d.innerHTML = `<div class="sc-sun"></div>
+  d.innerHTML = `<div class="sc-dusk"></div><div class="sc-sun"></div>
 <svg class="sc-mts" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
   <path class="far" d="M0 200 C70 180 110 120 170 112 C230 104 250 160 310 150 C360 142 380 70 430 60 C480 50 510 130 560 128 C620 126 640 90 700 96 C770 103 790 40 850 30 C910 20 930 110 990 112 C1050 114 1080 70 1140 76 C1200 82 1220 140 1290 132 C1350 125 1390 96 1440 100 L1440 320 L0 320Z"/>
   <g class="drift"><ellipse class="mistband" cx="420" cy="196" rx="420" ry="26" opacity=".8"/><ellipse class="mistband" cx="1120" cy="186" rx="380" ry="22" opacity=".7"/></g>
@@ -4143,13 +4201,40 @@ let inkBig = 0;
 new MutationObserver(ms => {
   const added = ms.flatMap(m => [...m.addedNodes]).filter(n => n.nodeType === 1);
   if (added.length > 3) { const quiet = Date.now() - inkBig < 1500; inkBig = Date.now(); if (quiet) return; }
-  added.forEach(n => { if (!n.classList.contains("noink")) n.classList.add("ink"); });
+  // A line or two arriving on its own (not a whole page drawn again) is brushed on
+  added.forEach(n => { if (!n.classList.contains("noink")) n.classList.add("ink"); if (added.length <= 3) n.classList.add("fresh"); });
 }).observe($("#log"), { childList: true });
+// The sky keeps the story's time for the day you're looking at (or the day this place belongs to)
+function setSky() {
+  const sc = document.querySelector(".scenery"); if (!sc) return;
+  const i = mode === "home" ? homeDay : cur && cur.id && dayOf(cur.id) >= 0 ? dayOf(cur.id) : curDay();
+  const d = DAYS[i], n = d ? d.stops.filter(x => done[x.id]).length : 0;
+  sc.dataset.time = !d ? "out" : n === d.stops.length ? "evening" : n === 0 ? "morning" : "out";
+}
+const stillMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// A new day: two or three cranes cross the mountains
+function cranes() {
+  if (stillMotion()) return;
+  const box = el("div", "cranes"); box.setAttribute("aria-hidden", "true");
+  const n = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < n; i++) {
+    const w = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    w.setAttribute("viewBox", "0 0 46 24");
+    w.innerHTML = `<path d="M2 14 C10 6 17 6 23 13 C29 6 36 6 44 14 C36 10 30 11 23 16 C16 11 10 10 2 14Z" fill="currentColor"/>`;
+    w.style.top = (4 + i * 14 + Math.random() * 10) + "px"; w.style.setProperty("--t", (10 + Math.random() * 4) + "s");
+    w.style.setProperty("--d", (i * 0.7 + Math.random() * 0.5) + "s"); w.style.setProperty("--dy", (-20 - Math.random() * 60) + "px");
+    w.style.scale = String(0.6 + Math.random() * 0.35); box.append(w);
+  }
+  document.body.append(box); setTimeout(() => box.remove(), 17000);
+}
 function leafFall() {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (stillMotion()) return;
+  // A gust goes through the bamboo first, and the leaves blow off downwind
+  const sc = document.querySelector(".scenery");
+  if (sc) { sc.classList.remove("gust"); void sc.offsetWidth; sc.classList.add("gust"); setTimeout(() => sc.classList.remove("gust"), 3400); }
   const box = el("div", "leaves"); box.setAttribute("aria-hidden", "true");
   for (let i = 0; i < 9; i++) {
-    const l = el("i"); l.style.left = (5 + Math.random() * 90) + "vw"; l.style.setProperty("--dx", (Math.random() * 160 - 80) + "px"); l.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+    const l = el("i"); l.style.left = (Math.random() * 80) + "vw"; l.style.setProperty("--dx", (60 + Math.random() * 220) + "px"); l.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
     l.style.animationDuration = (3.2 + Math.random() * 2.4) + "s"; l.style.animationDelay = (Math.random() * 0.9) + "s"; box.append(l);
   }
   document.body.append(box); setTimeout(() => box.remove(), 7000);

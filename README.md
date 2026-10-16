@@ -102,7 +102,14 @@ The side list shows the ten days, one open at a time, with a Next up tag. Tap th
 
 **Notes (笔记)**: a notebook that opens beside any page, from the header, so you can write while you read or chat. Write anything: words, vocab, explanations. Notes save as you type and can be searched and pinned (your pinned note shows on the day page). "Save to notes" works on chat messages, Mistakes, Your pocket and the Long Story word list. "Read the Chinese aloud" speaks a note, and with Claude, "Add pinyin and meanings" adds a glossary under your note without touching what you wrote.
 
-**The look** is a bamboo forest in the mountains: ink-wash ridges and slow mist at the foot of the page, bamboo framing wide screens, seal-stamp labels, bamboo-segment progress, and leaves that fall once on a clean finish. It all stops when the device asks for reduced motion.
+**The look** is a bamboo forest in the mountains: ink-wash ridges and slow mist at the foot of the page, bamboo framing wide screens, seal-stamp labels and bamboo-segment progress. Every movement answers something you did:
+- The sky keeps the story's time. The sun rises before your first stop, stands high while you're out, and turns to a moon over the bamboo at evening.
+- A verdict is pressed onto the page like a seal (对, 差不多, 错), and a slip bleeds a little red ink around it.
+- What people say to you is brushed on, left to right.
+- A clean run sends a gust through the bamboo and blows leaves off downwind. A finished day grows its bamboo segment from the ground up.
+- Starting a new day sends cranes across the sky.
+
+It all stops when the device asks for reduced motion.
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional). Word tiles show their pinyin while the help dial is on English or Pinyin.
