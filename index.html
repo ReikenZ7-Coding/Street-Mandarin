@@ -270,6 +270,7 @@ body.no-py .py { display: none; }
 .fb p { margin: 2px 0 0; }
 .why-btn { margin-top: 8px; border: 0; background: none; padding: 0; color: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; opacity: 0.8; }
 .why-btn:hover { opacity: 1; }
+.why-btn + .why-btn { margin-left: 16px; }
 .linkish { border: 0; background: none; padding: 0; font-size: 13px; font-weight: 600; color: var(--jade); text-decoration: underline; text-underline-offset: 3px; }
 .why-out { margin-top: 8px; padding-top: 8px; border-top: 1px dashed currentColor; font-size: 14px; }
 .why-tip { font-style: italic; }
@@ -997,12 +998,13 @@ function renderRail() {
     .concat([{ key: "more", name: "More", list: S.filter(s => !seen.has(s.id)) }]).filter(f => f.list.length);
   // Only one folder open at a time, so the list stays calm however many places there are
   if (!folders.some(f => f.key === railOpen)) setRailOpen(mode === "scene" && cur ? groupOf(cur.id) : (folders.find(f => f.list.some(s => !done[s.id])) || folders[0]).key);
+  const nowFolder = folders.find(f => f.list.some(s => !done[s.id]));
   folders.forEach(f => {
     const n = f.list.filter(s => done[s.id]).length, next = f.list.find(s => !done[s.id]), open = f.key === railOpen;
     const h = el("button", "folder"); h.setAttribute("aria-expanded", open ? "true" : "false");
     const nm = el("span", "f-name"); nm.append(el("span", "f-chev", "›"), " " + f.name);
     h.append(nm, el("span", "f-count", n === f.list.length ? "All survived" : `${n} of ${f.list.length}`));
-    if (!open && next) h.append(el("span", "f-next", `Next up: ${next.en}`));
+    if (!open && next && f === nowFolder) h.append(el("span", "f-next", `Next up: ${next.en}`));
     h.onclick = () => { setRailOpen(open ? "" : f.key); renderRail(); };
     placesBox.append(h);
     if (open) f.list.forEach(s => placesBox.append(placeBtn(s, s === next)));
@@ -1253,9 +1255,9 @@ const factNeg = x => (canonHan(x).replace(FIXED, "").match(/[不没别]/g) || []
 const factDir = x => (canonHan(x).match(/[前后左右东西南北]/g) || []).sort().join("");
 const sameFacts = (a, b) => factNums(a).join() === factNums(b).join() && factNeg(a) === factNeg(b) && factDir(a) === factDir(b);
 // Filler a local wouldn't miss: 好的 at the start, 呢 or 啊 at the end, an extra 我 or 的
-const bareHan = x => canonHan(x).replace(/^(好的|好|嗯|那|对)/, "").replace(/(好的|就行了?|就好)$/, "").replace(/没有?(?=[\u4e00-\u9fff])/g, "不").replace(/[我你呢的吧啊呀了嗯哦来]/g, "");
+const bareHan = x => canonHan(x).replace(/^(好的|好|嗯|那|对)/, "").replace(/(好的|就行了?|就好)$/, "").replace(/没有?(?![用要])(?=[\u4e00-\u9fff])/g, "不").replace(/[我你呢的吧啊呀了嗯哦来]/g, "");
 const PYFILL = /^(wo|de|ne|a|ya|ba|le|o|en|haode|hao|jiuxing|xiexie)$/;
-const barePy = x => pyWords(x.replace(/mei(you)?(?=\s*[a-z])/gi, "bu ")).filter(w => !PYFILL.test(w)).join("");
+const barePy = x => pyWords(x.replace(/mei(you)?(?!\s*(yong|yao))(?=\s*[a-z])/gi, "bu ")).filter(w => !PYFILL.test(w)).join("");
 const coreHan = x => { let h = canonHan(x); for (let i = 0; i < 2; i++) h = h.replace(/^(你好|请问|请|麻烦你?)/, "").replace(/(谢谢你?|谢了|麻烦了|麻烦你了)$/, "").replace(/(了|吧|啊|呀|哦|啦)$/, ""); return h; };
 const pyWords = x => x.normalize("NFD").replace(/ü/g, "v").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z]+/).filter(Boolean);
 const corePy = x => { const w = pyWords(x); for (let i = 0; i < 2; i++) { while (/^(nihao|ninhao|nin|hao|qing|qingwen|mafan)$/.test(w[0]) && w.length > 1) w.shift(); while (/^(xiexie|xiexienin|le|ba|a|ya|o|la)$/.test(w[w.length - 1])) w.pop(); } return w.join(""); };
@@ -1263,9 +1265,14 @@ const hasTones = x => /[̀-ͯ]|[1-5]/.test(x.normalize("NFD"));
 function matchTyped(text, t) {
   // Your own name counts as the name in the script (马修 in the WeChat scene)
   if (t.opts.some(o => o.h.includes("马修"))) text = text.replace(/[A-Za-z][A-Za-z ]*[A-Za-z]/g, m => /^(wo|jiao|shi|ni|hao)$/i.test(m) ? m : "马修");
-  const h = canonHan(text), py = normPy(text), han = isHanText(text), goods = t.opts.filter(o => o.k === "good");
+  const h = canonHan(text), py = normPy(text), han = isHanText(text), mains = t.opts.filter(o => o.k === "good");
+  // The "say instead" line a slip teaches is a good answer too: remembering what you were taught always counts
+  const taught = t.opts.filter(o => o.k !== "good" && Array.isArray(o.fix) && o.fix[0])
+    .map(o => Object.assign({}, mains[0], { h: o.fix[0], p: o.fix[1] || "", e: "", b: undefined }))
+    .filter((f, i, all) => !t.opts.some(o => canonHan(o.h) === canonHan(f.h)) && all.findIndex(x => canonHan(x.h) === canonHan(f.h)) === i);
+  const goods = mains.concat(taught);
   // 1. Exactly a scripted line. Toneless pinyin can fit two lines (冰 bīng and 病 bìng): give the benefit of the doubt
-  const exact = t.opts.filter(o => canonHan(o.h) === h || (!han && py && normPy(o.p) === py));
+  const exact = t.opts.concat(taught).filter(o => canonHan(o.h) === h || (!han && py && normPy(o.p) === py));
   if (exact.length) {
     const toned = !han && hasTones(text) && exact.find(o => o.p.normalize("NFD").toLowerCase().replace(/[^a-z̀-ͯ]/g, "") === text.normalize("NFD").toLowerCase().replace(/[^a-z̀-ͯ]/g, ""));
     // Without tone marks, a good line that sounds the same (give or take 谢谢) wins over a slip that only differs by tone
@@ -1299,7 +1306,7 @@ function matchTyped(text, t) {
   if (slip) return { o: slip[0], how: "slip" };
   // Judge against the good line that shares the most with what you said, with what they said as context
   const share = o => [...new Set(han ? canonHan(o.h) : pyWords(o.p))].filter(c => (han ? h : pyWords(text)).includes(c)).length;
-  const best = goods.slice().sort((a, b) => share(b) - share(a))[0];
+  const best = mains.slice().sort((a, b) => share(b) - share(a))[0];
   return { o: null, how: "none", good: best, also: [t.npc ? t.npc[0] : ""].concat(goods.map(o => o.h)).join("，") };
 }
 function submitTyped(text, t) {
@@ -1594,7 +1601,7 @@ function renderEnd() {
   if (twistNote) { line("New here", twistNote.replace(/^Something new can now happen here: /, "")); twistNote = ""; }
   // The person you just met adds you on WeChat: the conversation can carry on in Unscripted
   const pal = PEOPLE.find(x => x.met === cur.id);
-  if (pal && !((CHATS[pal.id] || {}).msgs || []).some(m => m.me)) { const hi = el("button", "linkish", `Say hi to ${pal.en}`); hi.onclick = () => startChat(pal.id); line("WeChat", `${pal.han} added you. `, hi); }
+  if (pal && sample && !((CHATS[pal.id] || {}).msgs || []).some(m => m.me)) { const hi = el("button", "linkish", `Say hi to ${pal.en}`); hi.onclick = () => startChat(pal.id); line("WeChat", `${pal.han} added you. `, hi); }
   // One clear next step, the rest as quieter options
   const row = el("div", "endcard");
   const di = dayOf(cur.id), stops = di < 0 ? [] : DAYS[di].stops, si = stops.findIndex(x => x.id === cur.id);
@@ -1652,6 +1659,7 @@ function logMistake(entry) {
   saveNotebook();
 }
 function markReviewed(n, right, hold) {
+  n.rv = Date.now(); // reviewed at least once, so it follows its own schedule from now on
   if (right && hold) n.due = Date.now() + GAPS[0] * DAY; // right, but only with the choices: same rung, back tomorrow
   else if (right) { n.step = (n.step || 0) + 1; if (n.step >= GAPS.length) n.learned = true; else n.due = Date.now() + GAPS[n.step] * DAY; }
   else { n.step = 0; n.due = Date.now() + GAPS[0] * DAY; }
@@ -1730,9 +1738,9 @@ const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"
 let rHow = "pick", rGood = null, rTiles = null, rHeld = false, rAgain = new Set();
 // A miss comes back once more at the end of the round, so you produce the fix while it's fresh
 function again(n) { if (!rAgain.has(n)) { rAgain.add(n); rq.push(n); } }
-function startReview() {
+function startReview(early) {
   mode = "review"; busy = false; transcript = [];
-  const due = dueItems();
+  const due = early && early.length ? early : dueItems();
   const seenAt = new Set();
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0))
     .filter(n => { const k = n.sid + (n.turn != null ? "t" + n.turn : n.cb != null ? "c" + n.cb : "s" + n.said); if (seenAt.has(k)) return false; seenAt.add(k); return true; }).slice(0, 10);
@@ -1741,7 +1749,8 @@ function startReview() {
   $("#log").textContent = "";
   renderRail();
   if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
-  if (!due.length) addNarr("Nothing is due yet, so this round is extra practice. It still counts.");
+  if (early && early.length) addNarr("Yesterday's slips, before you head out. They'd normally wait for tomorrow's date, but you've moved on to the next day already.");
+  else if (!due.length) addNarr("Nothing is due yet, so this round is extra practice. It still counts.");
   reviewItem();
 }
 function reviewItem() {
@@ -1857,9 +1866,8 @@ function renderReviewMove() {
     head.append(el("h3", null, "Round done"));
     if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
     const row = el("div", "endcard");
-    const nb = el("button", "btn", "Back to Mistakes"); nb.onclick = () => openNotebook();
-    const home = el("button", "btn ghost", "Your day"); home.onclick = () => startHome();
-    row.append(nb, home, backBtn()); m.append(head, row); return;
+    const nb = el("button", "btn ghost", "Mistakes"); nb.onclick = () => openNotebook();
+    row.append(backBtn(true), nb); m.append(head, row); return;
   }
   const n = rq[ri];
   head.append(el("h3", null, `Mistake ${ri + 1} of ${rq.length}`));
@@ -2431,7 +2439,8 @@ function startTripWarmup() {
   renderRail(); patternItem();
 }
 // "Back" names the actual place you'll land in
-function backBtn() { const s = S.find(x => x.id === lastScene()) || S[0], b = el("button", "btn ghost", `Back to ${s.place} ${s.en}`); b.onclick = () => start(s.id); return b; }
+// Every practice round ends back on your day, where the next stop (or tonight, or tomorrow) is waiting
+function backBtn(main) { const b = el("button", main ? "btn" : "btn ghost", "Back to your day"); b.onclick = () => startHome(); return b; }
 function lastScene() { let last = null; try { last = localStorage.getItem("sm-last"); } catch {} return S.some(s => s.id === last) ? last : S[0].id; }
 
 /* ---------- your day: the start page, one day of the ten at a time ---------- */
@@ -2475,10 +2484,10 @@ function startHome(day) {
   log.append(nav);
   const part = (en, zh, sub) => { const h = el("div", "day-part"); h.append(el("span", "dp-zh", zh), el("span", "dp-en", en)); if (sub) h.append(el("span", "dp-sub", sub)); log.append(h); };
   // Morning: get ready
-  const due = dueItems().length, started = stops.some(s => done[s.id]);
+  const started = stops.some(s => done[s.id]), early = homeMorningSlips(started), due = dueItems().length || early.length;
   part("Morning", "早上", started ? null : "Get ready");
   const am = el("div", "today");
-  if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One slip is back" : `${due} slips are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview() }, true));
+  if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One slip is back" : `${due} slips are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview(dueItems().length ? null : early) }, true));
   am.append(homeCard({ kind: "Your pocket", han: "口袋", title: stops.length === 1 ? "Lines for today's stop" : `Lines for today's ${stops.length === 2 ? "two" : "three"} stops`, why: "What to say, what you'll hear and the traps, including your own. Read it, or warm up.",
     go: () => { trip = { day: dayKey(), ids: stops.map(s => s.id) }; store.set("sm-trip", trip); tripEditing = false; startTrip(); } }));
   // A note you pinned comes with you every morning, like the page you keep open in a paper notebook
@@ -2497,6 +2506,7 @@ function startHome(day) {
   // Evening: what went wrong today comes back tomorrow
   if (started) {
     part("Evening", "晚上", dayDone(homeDay) ? null : "So far");
+    if (dayDone(homeDay)) { const h = log.lastChild; requestAnimationFrame(() => { try { h.scrollIntoView({ block: "start" }); } catch {} }); }
     const pm = el("div", "today"), ids = stops.map(s => s.id);
     const slips = notebook.filter(x => ids.includes(x.sid) && !x.learned), kinds = {};
     slips.forEach(x => { const g = tagOf(x); if (g) kinds[g] = (kinds[g] || 0) + 1; });
@@ -2504,10 +2514,11 @@ function startHome(day) {
     if (!slips.length) pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: "No slips open from today", why: "Nothing to bring back tomorrow. Your notebook has everything else.", go: () => openNotebook() }));
     else pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: `${plural(slips.length, "slip")} from today`, why: "They're in your notebook, and they come back tomorrow morning.", go: () => openNotebook() }));
     if (pat) pm.append(homeCard({ kind: "Tonight's drill", han: pat.zh, title: `Mostly ${pat.en.toLowerCase()}`, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
-    pm.append(lsTonight());
+    // Without AI, the evening keeps to what works: no story or chat that would stop at "needs AI"
+    if (sample || LS) pm.append(lsTonight());
     // Someone you met today can carry on the conversation in Unscripted
     const pal = PEOPLE.find(x => ids.includes(x.met) && done[x.met]);
-    if (pal) { const pm2 = ((CHATS[pal.id] || {}).msgs || []), mine = pm2.some(m => m.me), last = pm2[pm2.length - 1];
+    if (pal && sample) { const pm2 = ((CHATS[pal.id] || {}).msgs || []), mine = pm2.some(m => m.me), last = pm2[pm2.length - 1];
       pm.append(homeCard({ kind: "Keep in touch", han: "随便聊", title: mine ? `Chat with ${pal.en}` : `${pal.han} ${pal.en} added you on WeChat`, why: mine && last ? (last.me ? `You: ${last.h}` : last.voice ? "Sent you a voice message." : last.h) : "Say hi. The chat carries on as long as you like, and they remember you.", go: () => startChat(pal.id) })); }
     pm.append(homeCard({ kind: "For real", han: "真的", title: "Anything happen out there for real?", why: "If you're in China, log what you said or heard. It joins today's slips.", go: () => startField(ids[0]) }));
     log.append(pm);
@@ -2523,7 +2534,7 @@ function startHome(day) {
     if (more.childNodes.length) log.append(more);
   }
   log.append(canList());
-  log.scrollTop = 0;
+  if (!dayDone(homeDay) || !started) log.scrollTop = 0;
   renderRail(); renderMove();
 }
 /* Words for today: a word, a bit of slang and a phrase, from today's stops where there is one */
@@ -2587,11 +2598,23 @@ function lsTonight() {
   if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
   return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? `A light novel set in China, written around you. It needs ${AI_NAME}, so ${aiHow(true)} to start one.` : `A light novel set in China, written around you by ${AI_NAME}, a volume a day.`, go: () => startLong() });
 }
+// Yesterday's open slips, for a morning reached by playing straight on: by the clock they'd only be due
+// tomorrow, but the story has moved to the next day, so "they come back tomorrow morning" has to hold
+function homeMorningSlips(started) {
+  if (started || homeDay === 0 || !dayDone(homeDay - 1)) return [];
+  const ids = DAYS[homeDay - 1].stops.map(x => x.id);
+  return activeItems().filter(n => ids.includes(n.sid) && !n.rv && (n.due || 0) > Date.now());
+}
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
-  const d = DAYS[homeDay], next = d.stops.map(x => S.find(s => s.id === x.id)).find(s => !done[s.id]);
-  const row = el("div", "endcard");
-  if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
+  const d = DAYS[homeDay], stops = d.stops.map(x => S.find(s => s.id === x.id)), next = stops.find(s => !done[s.id]);
+  const row = el("div", "endcard"), started = stops.some(s => done[s.id]);
+  const back = dueItems().length, early = back ? [] : homeMorningSlips(started);
+  if (next && !started && (back || early.length)) {
+    const n = back || early.length, r = el("button", "btn", n === 1 ? "Review your slip first" : `Review ${n} slips first`);
+    r.onclick = () => startReview(back ? null : early); row.append(r);
+    const go = el("button", "btn ghost", `Or go: ${next.en}`); go.onclick = () => start(next.id); row.append(go);
+  } else if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
   else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => startHome(homeDay + 1); row.append(go); }
   const all = el("button", "btn ghost", "Or pick any place");
   // On a phone that opens the folded list; on a wide screen the list is already there, so jump to its find box
@@ -4141,7 +4164,7 @@ document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !ev.isCo
 if (said) startHome(); else start(lastScene());
 
 (async () => {
-  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); if (mode === "chat" && !chatWho) startChats(); else renderMove(); chatNudge(); } } } catch {}
+  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); if (mode === "chat" && !chatWho) startChats(); else if (mode === "home") startHome(homeDay); else renderMove(); chatNudge(); } } } catch {}
 })();
 </script>
 </body>

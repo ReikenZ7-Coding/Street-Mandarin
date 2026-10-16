@@ -25,7 +25,7 @@ npm run solo       # http://localhost:8787
 - The 我 You button shows whether your model is running. Progress is saved in `server/data` as well as in the browser.
 - The server only listens to your own computer (`127.0.0.1`).
 
-A small model gets extra house rules with every request (`server/src/local.js`): answer with one valid JSON object, simplified characters, tone-mark pinyin, stay in character, be kind and accurate when judging. Its thinking is stripped, and an answer that isn't valid JSON is asked for once more. Chats and "How do I say…?" suit a small model well. Long Story asks the most of it, so a chapter that doesn't come out right can simply be tried again.
+Chats, Long Story plans and chapters also send the exact JSON shape the page expects, which LM Studio and Ollama turn into a grammar, so a small model can only answer in that shape (a server that refuses this is asked plainly). A small model also gets extra house rules with every request (`server/src/local.js`): answer with one valid JSON object, simplified characters, tone-mark pinyin, stay in character, be kind and accurate when judging. Its thinking is stripped, and an answer that isn't valid JSON is asked for once more. Chats and "How do I say…?" suit a small model well. Long Story asks the most of it, so a chapter that doesn't come out right can simply be tried again.
 
 ## Running it as a website
 
@@ -76,7 +76,9 @@ After editing `scenes.js`, also run `node tools/build-why.js`. It keeps the read
 Every day has the same three parts, and each feeds the next:
 - **Morning**: slips from before that are due back, your pocket filled in for today's stops, and words for today (a word, a bit of slang and a phrase, from today's stops where there is one).
 - **Out**: the day's stops, in story order.
-- **Evening**: today's slips, one drill for the kind you made most, and "Anything happen out there for real?" for when you're actually in China. What you got wrong comes back the next morning.
+- **Evening**: today's slips, one drill for the kind you made most, and "Anything happen out there for real?" for when you're actually in China. What you got wrong comes back the next morning, even if you play straight on into the next day.
+
+The day's main button follows the day: review your slips first in the morning, then the next stop, then on to tomorrow. A finished day opens at its Evening, and every practice round (Mistakes, drills, Train your ear, a live scene) ends with "Back to your day".
 
 Progress is one list: **what you can do on your own** ("Check into a hotel", "Pay and split a bill"…). A place goes on it when you get through it with no slips. After the ten days, the day page points you at what's most worth going deeper on.
 
@@ -126,6 +128,7 @@ Everything above works with no AI at all:
 - "Why, exactly?" has a ready-made, proofread explanation for all 333 scripted slips.
 - Typed answers are forgiving where a local would be: tones are optional, courtesies like 谢谢 or a final 了 don't matter, and toneless pinyin that fits the right line gets the benefit of the doubt. A typed answer only counts as a scripted mistake if it contains what makes it one (我要牛肉面 isn't 我是牛肉面).
 - What a line says matters more than its exact words: 59 and 五十九 are the same, 痛 and 疼, 可是 and 但是. A wrong number, a missing or extra 不/没, or 前 for 后 is a real mistake even when everything else matches, and a swapped key word (冷水 for 热水) is never "one small slip". Your own name works where the script uses 马修.
+- The "say instead" line a slip teaches you always counts when you type it later, in the scene or in Mistakes.
 - Typed answers off the script are checked by the app itself. It finds the closest scripted line and spots common slips: the wrong measure word, 二 for 两, 不有, a wrong number, 是 before an adjective, 吗 after a question word, or missing key words. When it can't tell, it says so and shows the line that works.
 
 When Claude is available (inside a Claude artifact through `window.claude`, on the website through your account, or your own model in solo mode), you also get:
