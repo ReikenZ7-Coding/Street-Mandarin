@@ -1,0 +1,20 @@
+{
+  "name": "street-mandarin-server",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "@electric-sql/pglite": "^0.5.10",
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.13",
+    "postgres": "^3.4.9"
+  }
+}

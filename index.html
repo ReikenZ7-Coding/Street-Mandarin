@@ -2583,7 +2583,7 @@ function lsTonight() {
   const nx = LS && lsNext();
   if (LS && nx && lsLocked(nx.v)) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v} opens tomorrow`, why: "You finished today's volume. Look back over the words it taught you.", go: () => startLong() });
   if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
-  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? "A light novel set in China, written around you. It needs Claude, so open the app in Claude to start one." : "A light novel set in China, written around you by Claude, a volume a day.", go: () => startLong() });
+  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? `A light novel set in China, written around you. It needs Claude, so ${aiHow(true)} to start one.` : "A light novel set in China, written around you by Claude, a volume a day.", go: () => startLong() });
 }
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
@@ -2928,7 +2928,7 @@ function lsSetup() {
   const he = el("div", "chips"); [["", "Either"], ["he", "他 he"], ["she", "她 she"]].forEach(([k, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", (lsPick.he || "") === k); c.onclick = () => { lsPick.he = k; lsSetup(); }; he.append(c); });
   nm.append(ni, el("span", "ls-label", "How people talk about you"), he);
   box.append(len, th, nm);
-  if (!sample) box.prepend(el("p", "ls-note", "Long Story is written by Claude as you read, so it needs Claude. Open the app in Claude to start one. Short Story works without it."));
+  if (!sample) box.prepend(aiNote(`Long Story is written by Claude as you read, so it needs Claude. ${aiHow()} to start one. Short Story works without it.`));
   if (lsPlanning) box.classList.add("busy");
   log.append(box); log.scrollTop = 0;
 }
@@ -3133,7 +3133,7 @@ function renderLongMove() {
   }
   if (!LS) {
     const go = el("button", "btn", `Begin: ${lsPick.n} volumes`); go.disabled = !sample; go.onclick = () => lsBegin();
-    row.append(go); if (!sample) row.append(el("span", "ls-prompt", "Needs Claude: open the app in Claude to start one."));
+    row.append(go); if (!sample) row.append(el("span", "ls-prompt", `Needs Claude: ${aiHow(true)} to start one.`));
     m.append(row); return;
   }
   if (lsView === "read" && lsMoment && !lsReady) {
@@ -3229,7 +3229,7 @@ function startChats() {
   if (yours.length) { log.append(el("h4", "pb-title", "Your chats")); const l = el("div", "chat-list"); yours.forEach(p => l.append(chatRow(p))); log.append(l); }
   log.append(el("h4", "pb-title", yours.length ? "Everyone else" : "Pick someone to chat with"));
   const l2 = el("div", "chat-list"); rest.forEach(p => l2.append(chatRow(p))); log.append(l2);
-  if (!sample) log.append(el("p", "ls-note", "Chatting needs Claude, since every reply is written as you go. Open the app in Claude to chat. You can still read who everyone is."));
+  if (!sample) log.append(aiNote(`Chatting needs Claude, since every reply is written as you go. ${aiHow()} to chat. You can still read who everyone is.`));
   window.scrollTo(0, 0); renderRail(); renderMove();
 }
 const chatLast = p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length ? m[m.length - 1].t : 0; };
@@ -3336,7 +3336,7 @@ function renderChatMove() {
   if (!chatWho) return;
   const p = personOf(chatWho), c = chatOf(chatWho), waiting = chatPending.has(chatWho);
   if (chatErrs[chatWho]) m.append(el("p", "ls-err", chatErrs[chatWho]));
-  if (!sample) { m.append(el("p", "ls-note", "Chatting needs Claude, since every reply is written as you go. Open the app in Claude to chat.")); return; }
+  if (!sample) { m.append(aiNote(`Chatting needs Claude, since every reply is written as you go. ${aiHow()} to chat.`)); return; }
   // A beginner can start from a line that works, and edit it before sending
   if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
     const st = el("div", "chat-starters");
@@ -3925,6 +3925,13 @@ Return ONLY a JSON object:
 
 /* ---------- off-script with Claude ---------- */
 let sample = null;
+// Where the AI parts come from: Claude itself inside an artifact, or your account on the website
+const aiHow = lower => { const t = window.SM_AI_HOW || "Open the app in Claude"; return lower ? t[0].toLowerCase() + t.slice(1) : t; };
+function aiNote(text) {
+  const p = el("p", "ls-note", text);
+  if (window.SM_openAccount) { const b = el("button", "linkish", "Open Account"); b.type = "button"; b.onclick = () => window.SM_openAccount(); p.append(" ", b); }
+  return p;
+}
 let freeOpen = false;
 function renderFree(m) {
   if (!sample || mode !== "scene") return;

@@ -6,7 +6,41 @@ You walk into a noodle shop, a taxi, a night market, a street corner or a pharma
 
 ## Running it
 
-Open `index.html` in a browser. There's no build step.
+Open `index.html` in a browser. There's no build step. It also runs inside Claude as an artifact, where the AI parts use the viewer's own Claude.
+
+## Running it as a website
+
+The `server/` folder turns the app into a full website: accounts, progress that follows you to any device, and the AI parts running on Claude through the server.
+
+```
+cd server
+npm install
+npm start          # http://localhost:8787, with a built-in database in server/data
+npm test           # server tests (TEST_DATABASE_URL=postgres://… runs them on a real Postgres)
+```
+
+The page is the same `index.html`. The server adds `client.js` to it, which brings:
+- the Account button (sign up, sign in, your Claude key, sign out, delete account)
+- syncing everything the app saves
+- the AI connection, the same `sample.json(prompt)` call the app makes inside a Claude artifact
+
+Short Story, Mistakes, Notes and everything else that doesn't need AI work for everyone, signed in or not.
+
+**Who pays for the AI** is one setting, `AI_MODE`:
+- `byok` (the default): each learner adds their own Claude API key in Account, and their usage is billed to their own Anthropic account. The site costs its owner nothing for AI. Keys are checked when saved, stored encrypted with `APP_SECRET`, and never sent back to the browser.
+- `mix`: a free daily allowance on the owner's `ANTHROPIC_API_KEY` (`DAILY_ALLOWANCE_USD`), and your own key for more.
+- `owner`: everyone uses the owner's key, within the daily allowance.
+
+With the owner's key, `MONTHLY_BUDGET_USD` is a hard cap across everyone. Quick work (chats, "How do I say…?", glosses) uses `MODEL_QUICK` (default Claude Haiku 5.5, at low effort). Long Story uses `MODEL_MAIN` (default Claude Opus 5.5). Answers that can be shared are saved, so each one is paid for once.
+
+**Putting it online for free:**
+1. Create a free Postgres database at [Neon](https://neon.tech) and copy its connection string.
+2. On [Render](https://render.com), choose New, then Blueprint, and point it at this repository. `render.yaml` sets up a free web service, generates `APP_SECRET`, and asks for `DATABASE_URL`, where you paste the Neon string.
+3. Open the address Render gives you.
+
+A free Render service sleeps when nobody is using it, so the first visit after a quiet spell takes a little longer to load. The `Dockerfile` runs the same server on any host that runs containers.
+
+In production the server needs `DATABASE_URL` and an `APP_SECRET` of at least 32 characters. Changing `APP_SECRET` makes saved keys unreadable, and learners would add them again.
 
 ## Adding a place
 
@@ -75,13 +109,13 @@ Everything above works with no AI at all:
 - What a line says matters more than its exact words: 59 and 五十九 are the same, 痛 and 疼, 可是 and 但是. A wrong number, a missing or extra 不/没, or 前 for 后 is a real mistake even when everything else matches, and a swapped key word (冷水 for 热水) is never "one small slip". Your own name works where the script uses 马修.
 - Typed answers off the script are checked by the app itself. It finds the closest scripted line and spots common slips: the wrong measure word, 二 for 两, 不有, a wrong number, 是 before an adjective, 吗 after a question word, or missing key words. When it can't tell, it says so and shows the line that works.
 
-When Claude is available, through the claude.ai Artifact runtime (`window.claude`), you also get:
+When Claude is available (inside a Claude artifact through `window.claude`, or on the website through your account), you also get:
 - Claude replies in character to anything off the script, and explains any mistake not on file.
 - Long Story: the whole novel is written by Claude.
 - Unscripted: every reply, the notes under your messages, and "How do I say…?". Without Claude you can still see everyone and their first message.
 - Play it live: a place replayed with no script, somewhere of the same kind, with a hidden twist.
 - After each run, Claude invents a new surprise for that place.
 
-A standalone app would put those calls behind its own small server.
+On the website, `client.js` provides the same `window.claude` and the server makes the calls.
 
 Live prototype: https://claude.ai/artifact/P1t7AavyFEdwh3Rfx6FtNE
