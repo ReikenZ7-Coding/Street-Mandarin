@@ -2822,11 +2822,13 @@ function lsFetch(v, c) {
   if (!sample || !LS || v > LS.n || LS.chapters[key]) return Promise.resolve();
   if (lsJobs[key]) return lsJobs[key];
   const prompt = lsChapterPrompt(v, c), last = v === LS.n && c === LS_CH, story = LS;
+  const prev = c > 1 ? lsCh(v, c - 1) : v > 1 ? lsCh(v - 1, LS_CH) : null;
+  const opts = { cache: false, ...(LOCAL_AI ? { shape: chapterShape(last, !!(prev && prev.said && prev.said.k === "own")) } : {}) };
   return lsJobs[key] = (async () => {
     let err;
     for (let tries = 0; tries < 2; tries++) { // one quiet retry if what comes back isn't usable
       try {
-        const ch = lsCleanChapter(await sample.json(prompt, { cache: false }), last);
+        const ch = lsCleanChapter(await sample.json(prompt, opts), last);
         if (LS !== story) return; // a new story was started meanwhile
         LS.chapters[key] = ch; lsLogOwn(v, c, ch); lsSave(); if (LS.zh) await lsZhFetch(v, c).catch(() => {}); return;
       } catch (e) { err = e; if (e && (e.code === "not_granted" || e.code === "rate_limited")) break; }
@@ -2873,7 +2875,7 @@ async function lsBegin() {
   const n = Math.max(7, Math.min(30, lsPick.n | 0)), theme = lsPick.theme === -1 ? lsPick.own.trim() : lsPick.theme >= 0 ? `${LS_THEMES[lsPick.theme][1]}: ${LS_THEMES[lsPick.theme][2]}` : "";
   lsPlanning = true; lsErr = ""; renderMove(); const form = $(".ls-setup"); if (form) form.classList.add("busy");
   try {
-    const r = await sample.json(lsBiblePrompt(n, theme, lsPick.name.trim()), { cache: false });
+    const r = await sample.json(lsBiblePrompt(n, theme, lsPick.name.trim()), { cache: false, ...(LOCAL_AI ? { shape: bibleShape(n) } : {}) });
     if (!r || !r.title_hanzi || !Array.isArray(r.cast) || !r.cast.length || !Array.isArray(r.volumes) || r.volumes.length < n) throw new Error("shape");
     const bible = { title_hanzi: String(r.title_hanzi), title_pinyin: String(r.title_pinyin || ""), title_english: String(r.title_english || ""), city: String(r.city || ""), premise: String(r.premise || ""), question: String(r.question || ""), answer: String(r.answer || ""), turn: +r.turn_volume || Math.ceil(n / 2),
       cast: r.cast.slice(0, 5).filter(x => x && x.name_hanzi).map(x => ({ name_hanzi: String(x.name_hanzi), name_pinyin: String(x.name_pinyin || ""), address: String(x.address || x.name_hanzi), role: String(x.role || ""), voice: String(x.voice || "") })),
@@ -3398,6 +3400,38 @@ const CHAT_LEVEL = {
   simple: "Short, everyday sentences (HSK 2 to 3). No rare words.",
   natural: "Natural casual texting with your own slang and particles, but kept short: a beginner reading the pinyin should be able to follow."
 };
+// With your own model on your computer, the answers with the strictest shapes go with a JSON
+// schema, which LM Studio or Ollama turns into a grammar: a small model can then only answer in shape.
+// (Claude follows the prompt's own description, so it never needs one.)
+const LOCAL_AI = !!window.SM_AI_NAME;
+const shapeStr = { type: "string" }, shapeLine = { type: "array", items: shapeStr, minItems: 3, maxItems: 3 };
+const shapeObj = (props, required = Object.keys(props)) => ({ type: "object", properties: props, required, additionalProperties: false });
+const shapeHPE = shapeObj({ h: shapeStr, p: shapeStr, e: shapeStr });
+const CHAT_SHAPE = shapeObj({
+  messages: { type: "array", minItems: 1, maxItems: 3, items: shapeObj({ h: shapeStr, p: shapeStr, e: shapeStr, voice: { type: "boolean" } }, ["h", "p", "e"]) },
+  you: shapeHPE, verdict: { enum: ["good", "okay", "wrong", "english"] }, note: shapeStr, better_h: shapeStr, better_p: shapeStr,
+  tag: { enum: [...TAGSET, ""] }, about: shapeStr,
+});
+function chapterShape(last, own) {
+  const opt = shapeObj({ h: shapeStr, p: shapeStr, e: shapeStr, k: { enum: ["good", "okay", "wrong"] }, note: shapeStr, r: shapeLine,
+    fix: { type: "array", items: shapeStr, minItems: 2, maxItems: 2 }, tag: { enum: TAGSET }, b: shapeStr }, ["h", "p", "e", "k", "note", "r"]);
+  const props = {
+    title_english: shapeStr, title_hanzi: shapeStr,
+    blocks: { type: "array", minItems: 4, maxItems: 16, items: { anyOf: [shapeObj({ t: { const: "n" }, text: shapeStr }), shapeObj({ t: { const: "l" }, who: shapeStr, h: shapeStr, p: shapeStr, e: shapeStr })] } },
+    moment: shapeObj({ prompt: shapeStr, opts: { type: "array", minItems: 3, maxItems: 3, items: opt } }),
+    summary: shapeStr, new_words: { type: "array", maxItems: 6, items: shapeHPE },
+  };
+  if (own) props.feedback = shapeObj({ kind: { enum: ["good", "okay", "wrong"] }, note: shapeStr, better_hanzi: shapeStr, better_pinyin: shapeStr });
+  return shapeObj(props, Object.keys(props).filter(k => !(last && k === "moment")));
+}
+function bibleShape(n) {
+  return shapeObj({
+    title_hanzi: shapeStr, title_pinyin: shapeStr, title_english: shapeStr, city: shapeStr, premise: shapeStr, question: shapeStr, answer: shapeStr,
+    turn_volume: { type: "integer", minimum: 1, maximum: n },
+    cast: { type: "array", minItems: 3, maxItems: 5, items: shapeObj({ name_hanzi: shapeStr, name_pinyin: shapeStr, address: shapeStr, role: shapeStr, voice: shapeStr }) },
+    volumes: { type: "array", minItems: n, maxItems: n, items: shapeObj({ title_english: shapeStr, title_hanzi: shapeStr, beat: shapeStr, situations: { type: "array", minItems: 1, maxItems: 2, items: shapeStr } }) },
+  });
+}
 function chatPrompt(p, c, text) {
   const before = c.msgs[c.msgs.length - 1] && c.msgs[c.msgs.length - 1].me && c.msgs[c.msgs.length - 1].h === text ? c.msgs.slice(0, -1) : c.msgs;
   const hist = before.slice(-24).map(m => `${m.me ? "Them" : "You"}: ${m.voice ? "(voice message) " : ""}${m.h}`).join("\n");
@@ -3433,7 +3467,7 @@ async function chatSend(text, retry) {
   if (!me) { me = { me: true, h: text, t: Date.now() }; c.msgs.push(me); }
   delete me.fail; me.pending = true; chatPending.add(id); delete chatErrs[id]; saveChats(); practised(); chatDraw(); renderMove();
   try {
-    const r = await sample.json(chatPrompt(p, c, text), { cache: false, modelTier: "quick" });
+    const r = await sample.json(chatPrompt(p, c, text), { cache: false, modelTier: "quick", ...(LOCAL_AI ? { shape: CHAT_SHAPE } : {}) });
     const msgs = (r && Array.isArray(r.messages) ? r.messages : []).filter(x => x && x.h && isHanText(String(x.h))).slice(0, 3);
     if (!msgs.length) throw new Error("shape");
     if (r.you) { if (r.you.p) me.p = String(r.you.p); if (r.you.e) me.e = String(r.you.e); if (!isHanText(text) && r.you.h) me.zh = String(r.you.h); }

@@ -82,7 +82,7 @@
   const sample = {
     async json(prompt, opts = {}) {
       try {
-        const j = await api("POST", "/api/ai", { prompt, tier: opts.modelTier || "", cache: !!opts.cache });
+        const j = await api("POST", "/api/ai", { prompt, tier: opts.modelTier || "", cache: !!opts.cache, ...(opts.shape ? { shape: opts.shape } : {}) });
         return j.result;
       } catch (e) {
         const why = e.code;

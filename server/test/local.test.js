@@ -8,12 +8,13 @@ import { createApp } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 
 const seen = [];
-let reply = () => '{"ok":true}';
+let reply = () => '{"ok":true}', rejectSchema = false;
 const fake = http.createServer((req, res) => {
   let b = ""; req.on("data", d => (b += d)); req.on("end", () => {
     res.setHeader("content-type", "application/json");
     if (req.url === "/v1/models") return res.end(JSON.stringify({ data: [{ id: "qwen3.5-9b-test" }] }));
     const body = JSON.parse(b); seen.push(body);
+    if (rejectSchema && body.response_format) { res.statusCode = 400; return res.end(JSON.stringify({ error: "'response_format.type' must be 'json_schema' or 'text'" })); }
     res.end(JSON.stringify({ choices: [{ message: { content: reply(body) }, finish_reason: "stop" }], usage: { prompt_tokens: 900, completion_tokens: 120 } }));
   });
 });
@@ -91,4 +92,22 @@ test("the page calls your model by its name, not Claude", async () => {
   assert.match(js, /^window\.SM_AI_NAME = "Qwen";/);
   const plain = createApp({ db: await openDb(""), config: loadConfig({}) });
   assert.doesNotMatch(await (await plain.request("http://localhost/client.js")).text(), /SM_AI_NAME =/);
+});
+
+test("answers are held to the shape the page asks for, and a server without schemas is asked plainly", async () => {
+  const app = await soloApp();
+  seen.length = 0; reply = () => '{"messages":[]}';
+  const shape = { type: "object", properties: { messages: { type: "array" } }, required: ["messages"] };
+  await call(app, "POST", "/api/ai", { prompt: "chat", tier: "quick", shape });
+  assert.deepEqual(seen[0].response_format.json_schema.schema, shape);
+  await call(app, "POST", "/api/ai", { prompt: "anything" });
+  assert.deepEqual(seen[1].response_format.json_schema.schema, { type: "object" });
+  // A server that refuses it (on another address, so the memory is fresh)
+  rejectSchema = true; seen.length = 0;
+  const other = createApp({ db: await openDb(""), config: loadConfig({ SOLO: "1", AI_PROVIDER: "local", LOCAL_AI_URL: `http://127.0.0.1:${port}/v1` }) });
+  const r = await call(other, "POST", "/api/ai", { prompt: "chat", tier: "quick", shape });
+  assert.equal(r.status, 200); assert.equal(seen.length, 2); assert.equal(seen[1].response_format, undefined);
+  seen.length = 0; await call(other, "POST", "/api/ai", { prompt: "again", tier: "quick" });
+  assert.equal(seen.length, 1); assert.equal(seen[0].response_format, undefined);
+  rejectSchema = false;
 });

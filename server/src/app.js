@@ -209,7 +209,9 @@ export function createApp({ db, config, ai: aiIn = {} }) {
   app.post("/api/ai", needUser, async c => {
     const u = c.get("user");
     if (!aiLimit(String(u.id))) return c.json({ code: "rate_limited", error: "Too many messages at once. Wait a moment." }, 429);
-    const { prompt, tier, cache } = await body(c);
+    const { prompt, tier, cache, shape: shapeIn } = await body(c);
+    // The JSON schema an answer must match, for a local model (its server turns it into a grammar)
+    const shape = shapeIn && typeof shapeIn === "object" && !Array.isArray(shapeIn) && JSON.stringify(shapeIn).length < 20000 ? shapeIn : null;
     if (typeof prompt !== "string" || !prompt.trim()) return c.json({ code: "bad_request", error: "Nothing to ask." }, 400);
     if (prompt.length > config.ai.maxPromptChars) return c.json({ code: "too_big", error: "That request is too long." }, 413);
     const quick = tier === "quick", model = local ? "local:" + (config.ai.localModel || "loaded") : quick ? config.ai.modelQuick : config.ai.modelMain;
@@ -224,11 +226,11 @@ export function createApp({ db, config, ai: aiIn = {} }) {
     if (local) {
       let out;
       try {
-        out = await ai.callLocal(config.ai, { prompt, quick });
+        out = await ai.callLocal(config.ai, { prompt, quick, shape });
         let result = parseJson(out.text);
         // Small models sometimes wrap or break the JSON: one more try, showing them their reply
         if (!result || typeof result !== "object") {
-          out = await ai.callLocal(config.ai, { prompt, quick, retryNote: { previous: out.text.slice(0, 4000), ask: "That wasn't one valid JSON object. Reply again with only the JSON object the request asks for." } });
+          out = await ai.callLocal(config.ai, { prompt, quick, shape, retryNote: { previous: out.text.slice(0, 4000), ask: "That wasn't one valid JSON object. Reply again with only the JSON object the request asks for." } });
           result = parseJson(out.text);
         }
         await db.query("insert into ai_usage (user_id, model, input_tokens, output_tokens, cost_micros, own_key) values ($1, $2, $3, $4, 0, true)",

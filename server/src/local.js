@@ -32,20 +32,35 @@ export async function localStatus(ai) {
   catch { return { ok: false, model: ai.localModel || "" }; }
 }
 
-export async function callLocal(ai, { prompt, quick, retryNote }) {
+// Servers that can hold an answer to a JSON schema (LM Studio, Ollama, llama.cpp) get one: a small
+// model then can't wander off into chatter, a half-closed bracket or a missing field. A server
+// that refuses the option is remembered and asked plainly from then on.
+const noSchema = new Set();
+const ANY_OBJECT = { type: "object" };
+
+export async function callLocal(ai, { prompt, quick, retryNote, shape }) {
   let model;
   try { model = await localModelName(ai); } catch { model = ""; }
   if (!model) throw new AiError("model_offline", "Your local AI isn't running. Start the server in LM Studio (or Ollama) with your model loaded, then try again.", 503);
   const messages = [{ role: "system", content: LOCAL_SYSTEM }, { role: "user", content: prompt }];
   if (retryNote) messages.push({ role: "assistant", content: retryNote.previous }, { role: "user", content: retryNote.ask });
+  const ask = withSchema => fetch(ai.localUrl + "/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...(ai.localKey ? { authorization: `Bearer ${ai.localKey}` } : {}) },
+    body: JSON.stringify({
+      model, messages, temperature: quick ? 0.6 : 0.8, max_tokens: quick ? 2000 : 7000, stream: false,
+      ...(withSchema ? { response_format: { type: "json_schema", json_schema: { name: "answer", strict: true, schema: shape || ANY_OBJECT } } } : {}),
+    }),
+    signal: AbortSignal.timeout(quick ? 120000 : 600000),
+  });
   let r;
   try {
-    r = await fetch(ai.localUrl + "/chat/completions", {
-      method: "POST",
-      headers: { "content-type": "application/json", ...(ai.localKey ? { authorization: `Bearer ${ai.localKey}` } : {}) },
-      body: JSON.stringify({ model, messages, temperature: quick ? 0.6 : 0.8, max_tokens: quick ? 2000 : 7000, stream: false }),
-      signal: AbortSignal.timeout(quick ? 120000 : 600000),
-    });
+    const withSchema = !noSchema.has(ai.localUrl);
+    r = await ask(withSchema);
+    if (withSchema && r.status >= 400 && r.status < 500) {
+      const t = await r.clone().text().catch(() => "");
+      if (/response_format|json_schema|schema|grammar/i.test(t)) { noSchema.add(ai.localUrl); r = await ask(false); }
+    }
   } catch (e) {
     if (e && e.name === "TimeoutError") throw new AiError("rate_limited", "Your local AI took too long. Try again, or try a shorter request.", 504);
     throw new AiError("model_offline", "Your local AI isn't running. Start the server in LM Studio (or Ollama) with your model loaded, then try again.", 503);
