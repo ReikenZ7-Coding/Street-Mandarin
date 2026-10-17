@@ -166,6 +166,23 @@ body.hint-off .opt .en-line { display: none; }
 .nb-empty { color: var(--muted); font-size: 14px; }
 .nb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .small { font-size: 13px; padding: 6px 10px; }
+.scn.review { border-style: dashed; }
+.scn.review .han { color: var(--cinnabar); }
+.ear { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ear-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
+.fb .cost { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--cinnabar); }
+.outcome { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--bg); }
+.outcome p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.outcome-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--cinnabar); font-weight: 700; }
+.outcome ul { margin: 6px 0 0; padding-left: 18px; }
+.outcome li { font-weight: 600; }
+.nb-item .where { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.nb-item .when { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.dots { display: inline-flex; gap: 3px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--jade); display: inline-block; }
+.dots i.on { background: var(--jade); }
+.nb-item.learned { opacity: 0.55; }
+.nb-item.learned .said { text-decoration-color: var(--jade); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -180,6 +197,7 @@ body.hint-off .opt .en-line { display: none; }
     <div class="toggles" role="group" aria-label="Display options">
       <button class="chip" id="tg-py" aria-pressed="true">Pinyin</button>
       <button class="chip" id="tg-hint" aria-pressed="false">English on answers</button>
+      <button class="chip" id="tg-listen" aria-pressed="false" title="Hear lines first; the text appears after you answer">Listening mode</button>
     </div>
   </header>
 
@@ -199,7 +217,7 @@ body.hint-off .opt .en-line { display: none; }
 
     <aside class="notebook" aria-label="Mistake notebook">
       <div class="nb-head"><span class="nb-title">错题本</span><span class="nb-count" id="nb-count">0</span></div>
-      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you got wrong lands here.</p>
+      <p class="nb-sub"><span style="font-family:var(--f-py)">cuòtíběn</span>, the mistake notebook every Chinese student keeps. Everything you got wrong lands here, then comes back to test you after 1, 3 and 7 days.</p>
       <div class="nb-list" id="nb-list"></div>
       <div class="nb-actions" id="nb-actions"></div>
     </aside>
@@ -221,7 +239,7 @@ const S = [
       { npc: ["要辣的吗？", "Yào là de ma?", "Want it spicy?"], prompt: "You can't handle spice.",
         opts: [
           { h: "不要辣，谢谢。", p: "Bú yào là, xièxie.", e: "No spice, thanks.", k: "good", note: "Answer a 吗 ma question by repeating the verb: 要 (yes) or 不要 (no). 不 becomes bú before a falling tone." },
-          { h: "好的！", p: "Hǎo de!", e: "Okay!", k: "wrong", r: ["好嘞，特辣！", "Hǎo lei, tè là!", "You got it, extra spicy!"], note: "好的 means \"okay, yes\". She asked if you want it spicy and you agreed. Saying yes to everything is how you end up crying into your noodles.", fix: ["不要辣。", "Bú yào là."] },
+          { h: "好的！", p: "Hǎo de!", e: "Okay!", k: "wrong", carry: "Got extra-spicy noodles", flag: "spicy", r: ["好嘞，特辣！", "Hǎo lei, tè là!", "You got it, extra spicy!"], note: "好的 means \"okay, yes\". She asked if you want it spicy and you agreed. Saying yes to everything is how you end up crying into your noodles.", fix: ["不要辣。", "Bú yào là."] },
           { h: "我不辣。", p: "Wǒ bú là.", e: "I am not spicy.", k: "okay", r: ["你不辣？哦，不要辣，是吧？", "Nǐ bú là? Ò, bú yào là, shì ba?", "You're not spicy? Oh, you mean no spice, right?"], note: "我不辣 says \"I am not spicy\". She worked it out, but you need the verb: 不要辣, don't want spice.", fix: ["不要辣。", "Bú yào là."] }
         ] },
       { npc: ["在这儿吃还是带走？", "Zài zhèr chī háishi dàizǒu?", "Eat here or take away?"], prompt: "Pick one.",
@@ -238,6 +256,7 @@ const S = [
         ] }
     ],
     end: ["好，你的牛肉面，不辣的。慢用！", "Hǎo, nǐ de niúròu miàn, bú là de. Màn yòng!", "Here are your beef noodles, not spicy. Enjoy!"],
+    endAlt: { spicy: ["好，你的牛肉面，特辣的！慢用！", "Hǎo, nǐ de niúròu miàn, tè là de! Màn yòng!", "Here are your beef noodles, extra spicy! Enjoy!"] },
     endNote: "慢用 màn yòng (literally \"use slowly\") is what staff say when they serve your food." },
 
   { id: "taxi", place: "打车", placePy: "dǎ chē", en: "Taking a taxi", who: "司机", whoPy: "sījī", whoEn: "the driver",
@@ -253,7 +272,7 @@ const S = [
       { npc: ["赶时间吗？走高速要多二十块。", "Gǎn shíjiān ma? Zǒu gāosù yào duō èrshí kuài.", "In a hurry? The expressway is 20 extra."], prompt: "You're not in a hurry.",
         opts: [
           { h: "不急，不走高速。", p: "Bù jí, bù zǒu gāosù.", e: "No rush, skip the expressway.", k: "good", note: "急 jí means in a hurry. Saying no up front keeps the fare down." },
-          { h: "对对对。", p: "Duì duì duì.", e: "Yes yes yes.", k: "wrong", r: ["好，那走高速。", "Hǎo, nà zǒu gāosù.", "Great, expressway it is."], note: "Nodding along with 对对对 agrees to whatever was just said, including paying 20 more. When you don't follow, say 什么？shénme? (what?) or 慢一点 màn yìdiǎn (slower).", fix: ["不急，不走高速。", "Bù jí, bù zǒu gāosù."] },
+          { h: "对对对。", p: "Duì duì duì.", e: "Yes yes yes.", k: "wrong", carry: "Paid 20 kuai extra for the expressway", flag: "highway", r: ["好，那走高速。", "Hǎo, nà zǒu gāosù.", "Great, expressway it is."], note: "Nodding along with 对对对 agrees to whatever was just said, including paying 20 more. When you don't follow, say 什么？shénme? (what?) or 慢一点 màn yìdiǎn (slower).", fix: ["不急，不走高速。", "Bù jí, bù zǒu gāosù."] },
           { h: "我不赶时间吗。", p: "Wǒ bù gǎn shíjiān ma.", e: "I'm not in a hurry?", k: "okay", r: ["不赶啊？好，那不走高速。", "Bù gǎn a? Hǎo, nà bù zǒu gāosù.", "Not in a hurry? Fine, no expressway."], note: "吗 ma turns a sentence into a question, so you just asked whether you're in a hurry. Drop it when you're answering.", fix: ["我不赶时间。", "Wǒ bù gǎn shíjiān."] }
         ] },
       { npc: ["快到了。在哪儿停？", "Kuài dào le. Zài nǎr tíng?", "Almost there. Where do I stop?"], prompt: "Ask him to stop just ahead.",
@@ -262,7 +281,8 @@ const S = [
           { h: "我停。", p: "Wǒ tíng.", e: "I stop.", k: "wrong", r: ["你停？你又不开车！", "Nǐ tíng? Nǐ yòu bù kāichē!", "YOU stop? You're not even driving!"], note: "Leave out the subject. 停 or 这儿停 (stop here) is a request; 我停 means you're the one stopping.", fix: ["前面停一下。", "Qiánmiàn tíng yíxià."] },
           { h: "就在这儿停吧。", p: "Jiù zài zhèr tíng ba.", e: "Right here is fine.", k: "good", note: "吧 ba at the end makes it a friendly suggestion rather than an order." }
         ] },
-      { npc: ["好，四十二块。", "Hǎo, sìshí'èr kuài.", "Okay, 42 kuai."], prompt: "Pay the fare.",
+      { npc: ["好，四十二块。", "Hǎo, sìshí'èr kuài.", "Okay, 42 kuai."],
+        npcAlt: { highway: ["好，四十二，加高速二十，一共六十二块。", "Hǎo, sìshí'èr, jiā gāosù èrshí, yígòng liùshí'èr kuài.", "Okay, 42, plus 20 for the expressway. 62 in total."] }, prompt: "Pay the fare.",
         opts: [
           { h: "好，我扫码。能开发票吗？", p: "Hǎo, wǒ sǎo mǎ. Néng kāi fāpiào ma?", e: "Sure, I'll scan. Can I get a receipt?", k: "good", note: "发票 fāpiào is the official receipt. It also puts the trip on record if you leave something in the car." },
           { h: "十四？给你十四块。", p: "Shísì? Gěi nǐ shísì kuài.", e: "Fourteen? Here's 14.", k: "wrong", r: ["不是十四，是四十二！四十……二。", "Bú shì shísì, shì sìshí'èr! Sìshí… èr.", "Not fourteen, FORTY-TWO!"], note: "四十二 is four-ten-two = 42. 十四 is ten-four = 14. Also, sì (4) falls in tone while shí (10) rises. Listen for that.", fix: ["四十二块，我扫码。", "Sìshí'èr kuài, wǒ sǎo mǎ."] },
@@ -280,19 +300,19 @@ const S = [
         opts: [
           { h: "太贵了！便宜一点儿吧。", p: "Tài guì le! Piányi yìdiǎnr ba.", e: "Too expensive! A bit cheaper?", k: "good", note: "一百五 yìbǎi wǔ is short for 150, not 105. The opening price is an invitation to bargain." },
           { h: "便宜！", p: "Piányi!", e: "Cheap!", k: "wrong", r: ["对啊，很便宜！买吧！", "Duì a, hěn piányi! Mǎi ba!", "Right, so cheap! Buy it!"], note: "便宜 piányi alone means \"cheap!\", so you just praised her price. To ask for a discount say 便宜一点儿 piányi yìdiǎnr, a bit cheaper.", fix: ["便宜一点儿吧。", "Piányi yìdiǎnr ba."] },
-          { h: "好，我买。", p: "Hǎo, wǒ mǎi.", e: "Okay, I'll take it.", k: "wrong", r: ["好嘞！一百五！", "Hǎo lei! Yìbǎi wǔ!", "Wonderful! 150!"], note: "150 is the tourist opening price. Locals often pay a third to a half of the first number. Never accept the first price at a market.", fix: ["太贵了！", "Tài guì le!"] }
+          { h: "好，我买。", p: "Hǎo, wǒ mǎi.", e: "Okay, I'll take it.", k: "wrong", carry: "Paid 150 kuai. Locals pay about 50.", end: true, r: ["好嘞！一百五！", "Hǎo lei! Yìbǎi wǔ!", "Wonderful! 150!"], note: "150 is the tourist opening price. Locals often pay a third to a half of the first number. Never accept the first price at a market.", fix: ["太贵了！", "Tài guì le!"] }
         ] },
       { npc: ["那你说多少？", "Nà nǐ shuō duōshao?", "So what's your price?"], prompt: "Make an opening offer.",
         opts: [
           { h: "四十块。", p: "Sìshí kuài.", e: "40 kuai.", k: "good", note: "Start low, around a quarter to a third of her price. You need room to move up." },
-          { h: "一百四。", p: "Yìbǎi sì.", e: "140.", k: "wrong", r: ["好啊！一百四，卖给你！", "Hǎo a! Yìbǎi sì, mài gěi nǐ!", "Sure! 140, it's yours!"], note: "If she says yes instantly, you offered too much. 一百四 is 140, just 10 off.", fix: ["四十块。", "Sìshí kuài."] },
+          { h: "一百四。", p: "Yìbǎi sì.", e: "140.", k: "wrong", carry: "Paid 140 kuai for a T-shirt worth about 50", end: true, r: ["好啊！一百四，卖给你！", "Hǎo a! Yìbǎi sì, mài gěi nǐ!", "Sure! 140, it's yours!"], note: "If she says yes instantly, you offered too much. 一百四 is 140, just 10 off.", fix: ["四十块。", "Sìshí kuài."] },
           { h: "四块。", p: "Sì kuài.", e: "4 kuai.", k: "wrong", r: ["四块？你开玩笑吧！", "Sì kuài? Nǐ kāi wánxiào ba!", "Four kuai? You're joking!"], note: "四块 is 4 kuai, too low to take seriously. You probably meant 四十 sìshí, 40.", fix: ["四十块。", "Sìshí kuài."] }
         ] },
       { npc: ["四十？不行不行，最少一百。", "Sìshí? Bù xíng bù xíng, zuì shǎo yìbǎi.", "Forty? No way. 100 minimum."], prompt: "Hold your ground.",
         opts: [
           { h: "那算了，我不要了。", p: "Nà suàn le, wǒ bú yào le.", e: "Forget it then, I don't want it.", k: "good", note: "算了 suàn le, \"forget it\", plus starting to walk away is the strongest move in any market." },
           { h: "五十，行不行？", p: "Wǔshí, xíng bu xíng?", e: "50, okay?", k: "good", note: "行不行 xíng bu xíng, \"does it work?\", is the classic way to float a counteroffer." },
-          { h: "好吧，一百。", p: "Hǎo ba, yìbǎi.", e: "Fine, 100.", k: "wrong", r: ["好嘞！", "Hǎo lei!", "Deal!"], note: "You gave in at the first pushback. Counter in small steps, or start to walk away.", fix: ["那算了，我不要了。", "Nà suàn le, wǒ bú yào le."] }
+          { h: "好吧，一百。", p: "Hǎo ba, yìbǎi.", e: "Fine, 100.", k: "wrong", carry: "Paid 100 kuai, about double the going price", end: true, r: ["好嘞！", "Hǎo lei!", "Deal!"], note: "You gave in at the first pushback. Counter in small steps, or start to walk away.", fix: ["那算了，我不要了。", "Nà suàn le, wǒ bú yào le."] }
         ] },
       { npc: ["哎，回来回来！五十五，给你了！", "Āi, huílái huílái! Wǔshíwǔ, gěi nǐ le!", "Hey, come back! 55, it's yours!"], prompt: "Close the deal.",
         opts: [
@@ -370,20 +390,23 @@ const store = {
 };
 let notebook = store.get("sm-notebook", []);
 let done = store.get("sm-done", {});
-let prefs = store.get("sm-prefs", { py: true, hint: false });
+let prefs = Object.assign({ py: true, hint: false, listen: false }, store.get("sm-prefs", {}));
 
 /* ---------- state ---------- */
+let mode = "scene"; // "scene" | "review"
 let cur = null, turn = 0, order = [], busy = false, finished = false;
+let flags = {}, outcomes = [];  // consequences that carry through a scene
 let transcript = []; // [{who:'npc'|'me', text}] for Claude context
 const $ = s => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 /* ---------- speech ---------- */
 const canSpeak = "speechSynthesis" in window;
-function speak(text) {
+function speak(text, rate = 0.85) {
   if (!canSpeak) return;
-  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN"; u.rate = 0.85;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "zh-CN"; u.rate = rate;
     const v = speechSynthesis.getVoices().find(v => /zh[-_]CN/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u); } catch {}
 }
 const SPEAK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
@@ -405,136 +428,214 @@ function bubbleContent(h, p, e, revealEn) {
 function addNpc(line) {
   const row = el("div", "row npc");
   const who = el("div", "who", cur.who.slice(0, 2)); who.title = cur.whoEn;
-  const b = el("div", "bubble"); b.append(bubbleContent(line[0], line[1], line[2], false));
+  const b = el("div", "bubble");
+  if (prefs.listen && canSpeak) {
+    // Listening mode: audio first, text only once you've answered (or asked for it)
+    const txt = el("div", "lt"); txt.hidden = true; txt.append(bubbleContent(line[0], line[1], line[2], false));
+    const ear = el("div", "ear");
+    const play = el("button", "btn small", "Play"); play.onclick = () => speak(line[0]);
+    const slow = el("button", "btn ghost small", "Slower"); slow.onclick = () => speak(line[0], 0.55);
+    const show = el("button", "reveal", "Show text"); show.onclick = () => { txt.hidden = false; ear.remove(); };
+    ear.append(el("span", "ear-label", "Listen"), play, slow, show);
+    b.append(ear, txt);
+    speak(line[0]);
+  } else b.append(bubbleContent(line[0], line[1], line[2], false));
   row.append(who, b); $("#log").append(row);
   transcript.push({ who: "npc", text: line[0] });
   scrollLog();
 }
+function revealHeard() {
+  document.querySelectorAll("#log .lt[hidden]").forEach(n => { n.hidden = false; });
+  document.querySelectorAll("#log .ear").forEach(n => n.remove());
+}
 function addMe(h, p, e, kind) {
+  revealHeard();
   const row = el("div", "row me" + (kind && kind !== "good" ? " " + kind : ""));
   const b = el("div", "bubble"); b.append(bubbleContent(h, p, e, true));
   row.append(b); $("#log").append(row);
   transcript.push({ who: "me", text: h });
   scrollLog();
 }
-function addFeedback(kind, note, fix) {
+function addFeedback(kind, note, fix, extra) {
   const box = el("div", "fb " + kind);
   const seal = el("div", "seal", kind === "wrong" ? "错" : kind === "okay" ? "差不多" : "对");
   const body = el("div");
-  body.append(el("div", "label", kind === "wrong" ? "Didn't land" : kind === "okay" ? "Understood, but…" : "Nice"));
+  body.append(el("div", "label", extra && extra.label ? extra.label : kind === "wrong" ? "Didn't land" : kind === "okay" ? "Understood, but…" : "Nice"));
   body.append(el("p", null, note));
   if (fix && kind !== "good") {
     const bt = el("div", "better"); bt.append("Say instead: ", el("span", "h", fix[0]));
     if (fix[1]) bt.append(" ", el("span", "p", fix[1]));
     body.append(bt);
   }
+  if (extra && extra.cost) body.append(el("div", "cost", extra.cost));
   box.append(seal, body); $("#log").append(box); scrollLog();
 }
-function addNarr(t) { $("#log").append(el("div", "narr", t)); }
+function addNarr(t) { $("#log").append(el("div", "narr", t)); scrollLog(); }
 function scrollLog() { const l = $("#log"); l.scrollTop = l.scrollHeight; }
+function setHead(place, py, en, goalLabel, goal) {
+  $("#place").textContent = place; $("#place-py").textContent = py; $("#place-en").textContent = en;
+  const g = $("#goal"); g.textContent = ""; g.append(el("b", null, goalLabel), goal);
+}
 
 function renderRail() {
   const rail = $("#rail"); rail.querySelectorAll(".scn").forEach(n => n.remove());
+  const due = dueItems().length, active = activeItems().length;
+  const rv = el("button", "scn review"); rv.setAttribute("aria-current", mode === "review" ? "true" : "false");
+  rv.append(el("span", "han", "复习"), el("span", "name", "Mistakes that came back"));
+  rv.append(el("span", "meta", due ? `${due} due now` : active ? "Nothing due yet" : "No mistakes yet"));
+  rv.onclick = () => startReview();
+  rail.append(rv);
   S.forEach(s => {
-    const b = el("button", "scn"); b.setAttribute("aria-current", cur && cur.id === s.id ? "true" : "false");
-    const miss = notebook.filter(n => n.sid === s.id).length;
+    const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
+    const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
     b.append(el("span", "han", s.place), el("span", "name", s.en));
     const meta = el("span", "meta");
-    if (done[s.id]) meta.append(el("span", "done", "Survived"), miss ? ` · ${miss} mistake${miss > 1 ? "s" : ""}` : "");
-    else meta.append(miss ? `${miss} mistake${miss > 1 ? "s" : ""} so far` : "Not tried yet");
+    if (done[s.id]) meta.append(el("span", "done", "Survived"), miss ? ` · ${plural(miss, "mistake")}` : "");
+    else meta.append(miss ? `${plural(miss, "mistake")} so far` : "Not tried yet");
     b.append(meta);
     b.onclick = () => start(s.id);
     rail.append(b);
   });
 }
 
+/* ---------- scenes ---------- */
 function start(id) {
-  cur = S.find(s => s.id === id); turn = 0; finished = false; transcript = []; busy = false;
+  mode = "scene";
+  cur = S.find(s => s.id === id); turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = [];
   try { localStorage.setItem("sm-last", id); } catch {}
-  $("#place").textContent = cur.place; $("#place-py").textContent = cur.placePy;
-  $("#place-en").textContent = cur.en;
-  const g = $("#goal"); g.textContent = ""; g.append(el("b", null, "Your goal: "), cur.goal);
+  setHead(cur.place, cur.placePy, cur.en, "Your goal: ", cur.goal);
   $("#log").textContent = ""; addNarr(cur.intro);
   renderRail(); beginTurn();
 }
 
 function beginTurn() {
   const t = cur.turns[turn];
-  if (t.npc) addNpc(t.npc);
+  const alt = t.npcAlt && Object.keys(t.npcAlt).find(f => flags[f]);
+  if (t.npc) addNpc(alt ? t.npcAlt[alt] : t.npc);
   order = shuffle(t.opts);
   renderMove();
 }
 
 function renderMove() {
+  if (mode === "review") return renderReviewMove();
   const m = $("#move"); m.textContent = "";
   if (finished) return renderEnd();
   const t = cur.turns[turn];
   const head = el("div", "move-head");
   head.append(el("h3", null, `Your move · ${turn + 1} of ${cur.turns.length}`), el("span", "prompt", t.prompt));
+  m.append(head, optionButtons(order, choose));
+  renderFree(m);
+}
+
+function optionButtons(list, onPick) {
   const opts = el("div", "opts");
-  order.forEach(o => {
+  list.forEach(o => {
     const b = el("button", "opt"); b.disabled = busy;
     b.append(el("span", "han", o.h), el("span", "py", o.p), el("span", "en-line", o.e));
-    b.onclick = () => choose(o);
+    b.onclick = () => onPick(o);
     opts.append(b);
   });
-  m.append(head, opts);
-  renderFree(m);
+  return opts;
 }
 
 function choose(o) {
   if (busy) return;
   addMe(o.h, o.p, o.e, o.k);
   if (o.r) addNpc(o.r);
-  addFeedback(o.k, o.note, o.fix);
-  if (o.k !== "good") logMistake({ sid: cur.id, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note });
+  addFeedback(o.k, o.note, o.fix, o.carry ? { label: "Didn't land, and it stuck", cost: "This one carries on. You'll see what it cost at the end." } : null);
+  if (o.k !== "good") logMistake({ sid: cur.id, turn, kind: o.k, said: o.h, fix: o.fix ? o.fix[0] : "", fixPy: o.fix ? o.fix[1] : "", why: o.note });
+  if (o.carry) {
+    outcomes.push(o.carry);
+    if (o.flag) flags[o.flag] = true;
+    if (o.end) return finish(true);
+    return advance();
+  }
   if (o.k === "wrong") { order = shuffle(order); renderMove(); }
   else advance();
 }
 
 function advance() {
   turn++;
-  if (turn >= cur.turns.length) {
-    finished = true; addNpc(cur.end); addNarr(cur.endNote);
-    done[cur.id] = true; store.set("sm-done", done); renderRail(); renderMove();
-  } else beginTurn();
+  if (turn >= cur.turns.length) finish(false); else beginTurn();
+}
+
+function finish(cutShort) {
+  finished = true;
+  if (!cutShort) {
+    const alt = cur.endAlt && Object.keys(cur.endAlt).find(f => flags[f]);
+    addNpc(alt ? cur.endAlt[alt] : cur.end); addNarr(cur.endNote);
+  }
+  done[cur.id] = true; store.set("sm-done", done); renderRail(); renderMove();
 }
 
 function renderEnd() {
   const m = $("#move");
-  const miss = notebook.filter(n => n.sid === cur.id).length;
   const head = el("div", "move-head");
-  head.append(el("h3", null, "You survived"), el("span", "prompt", miss ? `${miss} mistake${miss > 1 ? "s" : ""} in your notebook from this place.` : "Not a single mistake. Try another place."));
+  head.append(el("h3", null, outcomes.length ? "You made it, at a price" : "You survived"));
+  const res = el("div", "outcome");
+  if (outcomes.length) {
+    res.append(el("div", "outcome-title", "How it went"));
+    const ul = el("ul"); outcomes.forEach(o => ul.append(el("li", null, o))); res.append(ul);
+    res.append(el("p", null, "Play it again to get a better result."));
+  } else res.append(el("p", null, "Clean run. Nothing you said cost you anything."));
   const row = el("div", "endcard");
   const again = el("button", "btn ghost", "Play it again"); again.onclick = () => start(cur.id);
   const next = S[(S.indexOf(cur) + 1) % S.length];
   const nx = el("button", "btn", `Next: ${next.en}`); nx.onclick = () => start(next.id);
   row.append(again, nx);
-  m.append(head, row);
+  m.append(head, res, row);
   renderFree(m);
 }
 
-/* ---------- notebook ---------- */
+/* ---------- notebook + spaced comebacks ---------- */
+const DAY = 864e5, GAPS = [1, 3, 7]; // days until a mistake comes back; 3 right answers and it's learned
+const activeItems = () => notebook.filter(n => !n.learned);
+const dueItems = () => activeItems().filter(n => (n.due || 0) <= Date.now());
+function saveNotebook() { store.set("sm-notebook", notebook); renderNotebook(); renderRail(); }
 function logMistake(entry) {
-  entry.t = Date.now();
-  notebook.unshift(entry); notebook = notebook.slice(0, 200);
-  store.set("sm-notebook", notebook); renderNotebook(); renderRail();
+  const now = Date.now();
+  const same = notebook.find(n => !n.learned && n.sid === entry.sid && n.said === entry.said);
+  if (same) notebook.splice(notebook.indexOf(same), 1);
+  notebook.unshift(Object.assign(entry, { t: now, step: 0, due: now + GAPS[0] * DAY }));
+  notebook = notebook.slice(0, 200);
+  saveNotebook();
+}
+function markReviewed(n, right) {
+  if (right) { n.step = (n.step || 0) + 1; if (n.step >= GAPS.length) n.learned = true; else n.due = Date.now() + GAPS[n.step] * DAY; }
+  else { n.step = 0; n.due = Date.now() + GAPS[0] * DAY; }
+  saveNotebook();
+}
+function whenText(n) {
+  if (n.learned) return "Learned";
+  const d = Math.ceil(((n.due || 0) - Date.now()) / DAY);
+  return d <= 0 ? "Due now" : d === 1 ? "Comes back tomorrow" : `Comes back in ${d} days`;
 }
 let confirmClear = false;
 function renderNotebook() {
-  $("#nb-count").textContent = notebook.length;
+  $("#nb-count").textContent = activeItems().length;
   const list = $("#nb-list"); list.textContent = "";
   if (!notebook.length) list.append(el("div", "nb-empty", "Empty for now. Pick a wrong answer on purpose if you're curious what happens; that's the point."));
   notebook.forEach(n => {
     const s = S.find(x => x.id === n.sid);
-    const it = el("div", "nb-item");
-    it.append(el("div", "where", (s ? s.en : "Off-script") + (n.kind === "okay" ? " · close enough" : "")));
+    const it = el("div", "nb-item" + (n.learned ? " learned" : ""));
+    const top = el("div", "where");
+    top.append((s ? s.en : "Off-script") + (n.kind === "okay" ? " · close enough" : ""));
+    const st = el("span", "when", whenText(n));
+    const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
+    GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
+    top.append(st, dots);
+    it.append(top);
     it.append(el("div", "said" + (n.kind === "okay" ? " okay" : ""), n.said));
     if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
     it.append(el("div", "why", n.why));
     list.append(it);
   });
   const a = $("#nb-actions"); a.textContent = "";
+  const due = dueItems().length, active = activeItems().length;
+  if (active) {
+    const r = el("button", "btn small", due ? `Review ${due} now` : "Practise them anyway");
+    r.onclick = () => startReview(); a.append(r);
+  }
   if (notebook.length) {
     const c = el("button", "btn ghost small", confirmClear ? "Tap again to clear everything" : "Clear notebook");
     c.onclick = () => { if (confirmClear) { notebook = []; store.set("sm-notebook", notebook); confirmClear = false; renderRail(); } else confirmClear = true; renderNotebook(); };
@@ -542,10 +643,91 @@ function renderNotebook() {
   }
 }
 
+/* ---------- review round: mistakes come back ---------- */
+let rq = [], ri = 0, rRight = 0, rLearned = 0, rAnswered = false, rReveal = false;
+function startReview() {
+  mode = "review"; busy = false; transcript = [];
+  const due = dueItems();
+  rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0)).slice(0, 10);
+  ri = 0; rRight = 0; rLearned = 0;
+  setHead("复习", "fùxí", "Mistakes that came back", "How it works: ", "Get each one right three times, a few days apart, and it leaves your notebook.");
+  $("#log").textContent = "";
+  renderRail();
+  if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
+  if (!due.length) addNarr("Nothing is due yet, so this round is extra practice. It still counts.");
+  reviewItem();
+}
+function reviewItem() {
+  rAnswered = false; rReveal = false;
+  const n = rq[ri], s = S.find(x => x.id === n.sid), t = s && n.turn != null ? s.turns[n.turn] : null;
+  if (s) cur = s;
+  if (t) {
+    addNarr(`${s.en}, again. ${t.prompt}`);
+    if (t.npc) addNpc(t.npc);
+    order = shuffle(t.opts);
+  } else {
+    addNarr(`${s ? s.en + ", off-script" : "Off-script"}. You said: ${n.said}`);
+    order = [];
+  }
+  renderReviewMove();
+}
+function reviewChoose(o) {
+  const n = rq[ri];
+  rAnswered = true;
+  addMe(o.h, o.p, o.e, o.k);
+  const right = o.k === "good";
+  if (!right && o.r) addNpc(o.r);
+  markReviewed(n, right);
+  if (right) { rRight++; if (n.learned) rLearned++; }
+  addFeedback(o.k, right ? (n.learned ? "Third time right. It's learned and leaves your notebook." : `Right this time. ${whenText(n)}.`) : o.note,
+    o.fix, right ? null : { label: "Still tricky", cost: "Back to the start: it returns tomorrow." });
+  renderReviewMove();
+}
+function selfGrade(right) {
+  const n = rq[ri];
+  rAnswered = true; markReviewed(n, right);
+  if (right) { rRight++; if (n.learned) rLearned++; }
+  addNarr(right ? (n.learned ? "Learned. It leaves your notebook." : `${whenText(n)}.`) : "It returns tomorrow.");
+  renderReviewMove();
+}
+function renderReviewMove() {
+  const m = $("#move"); m.textContent = "";
+  const head = el("div", "move-head");
+  if (!rq.length || ri >= rq.length) {
+    head.append(el("h3", null, "Round done"));
+    if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
+    const row = el("div", "endcard");
+    const back = el("button", "btn", "Back to the situations");
+    let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
+    back.onclick = () => start(S.some(s => s.id === last) ? last : S[0].id);
+    row.append(back); m.append(head, row); return;
+  }
+  const n = rq[ri];
+  head.append(el("h3", null, `Mistake ${ri + 1} of ${rq.length}`));
+  m.append(head);
+  if (rAnswered) {
+    const row = el("div", "endcard");
+    const nx = el("button", "btn", ri + 1 < rq.length ? "Next mistake" : "Finish round");
+    nx.onclick = () => { ri++; if (ri < rq.length) reviewItem(); else { addNarr(`Round done: ${rRight} of ${rq.length} right.`); renderReviewMove(); } };
+    row.append(nx); m.append(row); return;
+  }
+  if (order.length) { head.append(el("span", "prompt", "What do you say this time?")); m.append(optionButtons(order, reviewChoose)); return; }
+  // Off-script mistake: recall it, then grade yourself honestly
+  head.append(el("span", "prompt", "What should you have said?"));
+  if (!rReveal) {
+    const b = el("button", "btn ghost", "Show the answer"); b.onclick = () => { rReveal = true; addFeedback("okay", n.why, n.fix ? [n.fix, n.fixPy] : null, { label: "The better way" }); renderReviewMove(); };
+    m.append(b); return;
+  }
+  const row = el("div", "endcard");
+  const y = el("button", "btn", "I knew it"); y.onclick = () => selfGrade(true);
+  const no = el("button", "btn ghost", "I didn't"); no.onclick = () => selfGrade(false);
+  row.append(y, no); m.append(row);
+}
+
 /* ---------- off-script with Claude ---------- */
 let sample = null;
 function renderFree(m) {
-  if (!sample) return;
+  if (!sample || mode !== "scene") return;
   const form = el("form", "free");
   const inp = el("input"); inp.id = "free-input"; inp.type = "text"; inp.autocomplete = "off";
   inp.placeholder = finished ? "Keep chatting with " + cur.whoEn + "…" : "Or say it your own way: hanzi, pinyin, even English";
@@ -592,7 +774,7 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
     const kind = ["good", "okay", "wrong"].includes(r.verdict) ? r.verdict : "okay";
     if (r.npc_hanzi) addNpc([r.npc_hanzi, r.npc_pinyin || "", r.npc_english || ""]);
     addFeedback(kind, r.note || "", r.better_hanzi ? [r.better_hanzi, r.better_pinyin || ""] : null);
-    if (kind !== "good") logMistake({ sid: cur.id, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: r.note || "" });
+    if (kind !== "good") logMistake({ sid: cur.id, turn: t ? turn : null, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: r.note || "" });
     busy = false;
     if (t && r.advance === true && kind !== "wrong") advance(); else renderMove();
   } catch (e) {
@@ -612,9 +794,12 @@ function applyPrefs() {
   document.body.classList.toggle("hint-off", !prefs.hint);
   $("#tg-py").setAttribute("aria-pressed", prefs.py);
   $("#tg-hint").setAttribute("aria-pressed", prefs.hint);
+  $("#tg-listen").setAttribute("aria-pressed", prefs.listen);
+  $("#tg-listen").hidden = !canSpeak;
 }
 $("#tg-py").onclick = () => { prefs.py = !prefs.py; store.set("sm-prefs", prefs); applyPrefs(); };
 $("#tg-hint").onclick = () => { prefs.hint = !prefs.hint; store.set("sm-prefs", prefs); applyPrefs(); };
+$("#tg-listen").onclick = () => { prefs.listen = !prefs.listen; store.set("sm-prefs", prefs); applyPrefs(); };
 
 applyPrefs(); renderNotebook();
 let last = null; try { last = localStorage.getItem("sm-last"); } catch {}
