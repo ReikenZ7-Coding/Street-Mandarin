@@ -8,12 +8,19 @@ You walk into a noodle shop, a taxi, a night market, a street corner or a pharma
 
 Open `index.html` in a browser. There's no build step.
 
+## Adding a place
+
+Scenes live in `scenes.js`. The comment at the top explains each field. Copy an existing scene, change the lines, and give one good answer per moment a `b` field with its word tiles split by `|`.
+
 ## What's in it
 
-- Five scenarios: noodle shop, taxi, night market bargaining, asking directions, pharmacy
+- Ten places: noodle shop, taxi, night market bargaining, asking directions, pharmacy, convenience store, metro ticket, hotel check-in, making a friend, splitting the bill
+- Two ways to answer each moment: pick from three answers, or build the sentence yourself from word tiles
 - Answers graded as good, close enough, or wrong, each with an in-character reaction and a coaching note
 - Pinyin toggle, tap-to-translate, and spoken audio through the browser's Chinese voice when it has one
-- A mistake notebook saved in the browser
+- A mistake notebook saved in the browser. Mistakes come back in review rounds after 1, 3 and 7 days, and leave once you get them right three times.
+- Consequences that carry: some wrong answers move the story on, like paying 20 kuai more for the expressway, and the end card shows what they cost you
+- Listening mode: hear each line first (with a slower replay) and see the text only after you answer
 
 The "say it your own way" free-typing mode uses Claude through the claude.ai Artifact runtime (`window.claude`). Opened directly from this repo, that box is hidden and the scripted scenarios still work.
 
