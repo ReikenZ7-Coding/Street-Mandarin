@@ -4537,7 +4537,7 @@ function jadeDawn(n) {
 // The opening: darkness, a heartbeat of jade light, the mountains, the sun, the dragon, and the world becomes the interface
 function jadeOpening(force) {
   if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
-  if (!force) { try { if (sessionStorage.getItem("sm-opened") || (navigator.webdriver && !location.hash.includes("opening"))) return; sessionStorage.setItem("sm-opened", "1"); } catch { return; } }
+  if (!force) { try { if (sessionStorage.getItem("sm-opened") || (navigator.webdriver && !location.hash.includes("opening"))) return; sessionStorage.setItem("sm-opened", "1"); } catch {} }
   const sc = $(".scenery"), wrap = $(".wrap"), W = innerWidth, H = innerHeight;
   const op = el("div", "opening"); op.setAttribute("aria-hidden", "true");
   op.innerHTML = `<div class="op-rays"></div><div class="op-sun"></div><div class="op-cloud l"></div><div class="op-cloud r"></div><div class="op-flash"></div>
