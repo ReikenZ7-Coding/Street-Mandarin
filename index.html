@@ -731,6 +731,13 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 54 22'%3E%3Cpath d='M1 21 C6 20 8 9 12 9 C15 9 15 15 18 15 C21 15 22 2 27 2 C32 2 31 13 35 13 C38 13 38 8 41 8 C45 8 46 19 53 21' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 54 22'%3E%3Cpath d='M1 21 C6 20 8 9 12 9 C15 9 15 15 18 15 C21 15 22 2 27 2 C32 2 31 13 35 13 C38 13 38 8 41 8 C45 8 46 19 53 21' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat; filter: drop-shadow(0 0 4px rgba(80, 240, 160, .8)); }
 @keyframes drawpeak { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0 0; } }
+/* a new day: dawn behind the peaks and the day's name in jade light */
+.dawn { position: fixed; inset: 0; z-index: 80; pointer-events: none; background: rgba(7, 26, 19, .82); animation: dawn-out 2.2s ease forwards; }
+.dawn text { transform-box: fill-box; transform-origin: center; }
+.dawn::before { content: ""; position: absolute; left: -20%; right: -20%; bottom: -40%; height: 110%; background: radial-gradient(50% 50% at 50% 62%, rgba(232, 214, 150, .34), rgba(80, 240, 160, .14) 42%, transparent 70%); animation: dawn-rise 2.3s cubic-bezier(.2, .7, .2, 1) forwards; }
+.dawn svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+@keyframes dawn-rise { from { transform: translateY(35%); } to { transform: none; } }
+@keyframes dawn-out { 0% { opacity: 0; } 12%, 62% { opacity: 1; } to { opacity: 0; } }
 /* moving between major pages: a jade energy trail sweeps across and reveals the next */
 .sweep { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
 .sweep i { position: absolute; top: -20%; bottom: -20%; left: 0; width: 38vw; transform: translateX(-60vw) skewX(-18deg);
@@ -828,8 +835,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .jw-aurora, .jw-shaft, .jw .vein, .jw .lamp, .jw .fall, .jw-mist, .ripple, .sweep, .opening, :root[data-look="jade"] .thinking::before, :root[data-look="jade"] .ink, .wrap.op-in, .wrap.op-in * { animation: none !important; }
-  .sweep, .opening, .ripple { display: none !important; } .wrap.op-wait { opacity: 1; }
+  .jw-aurora, .jw-shaft, .jw .vein, .jw .lamp, .jw .fall, .jw-mist, .ripple, .sweep, .dawn, .opening, :root[data-look="jade"] .thinking::before, :root[data-look="jade"] .ink, .wrap.op-in, .wrap.op-in * { animation: none !important; }
+  .sweep, .dawn, .opening, .ripple { display: none !important; } .wrap.op-wait { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
@@ -2846,7 +2853,7 @@ function renderHomeMove() {
     r.onclick = () => startReview(back ? null : early); row.append(r);
     const go = el("button", "btn ghost", `Or go: ${next.en}`); go.onclick = () => start(next.id); row.append(go);
   } else if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
-  else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => { cranes(); startHome(homeDay + 1); }; row.append(go); }
+  else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => { cranes(); jadeDawn(homeDay + 2); startHome(homeDay + 1); }; row.append(go); }
   const all = el("button", "btn ghost", "Or pick any place");
   // On a phone that opens the folded list; on a wide screen the list is already there, so jump to its find box
   all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
@@ -4510,6 +4517,22 @@ function jadeSweep(key) {
   const ps = [...s.querySelectorAll("path")], L = ps[0].getTotalLength();
   ps.forEach(p => { p.style.strokeDasharray = `${L * 0.28} ${L * 2}`; p.animate([{ strokeDashoffset: L * 0.28 }, { strokeDashoffset: -L * 1.02 }], { duration: 700, easing: "cubic-bezier(.45,.05,.4,1)", fill: "forwards" }); });
   const sc = $(".scene"); if (sc) { sc.classList.remove("swept"); void sc.offsetWidth; sc.classList.add("swept"); setTimeout(() => sc.classList.remove("swept"), 700); }
+}
+// A new day is a major moment: dawn rises behind the peaks and the day's name is written in jade light
+function jadeDawn(n) {
+  if (!isJade() || stillMotion() || document.querySelector(".opening, .dawn")) return;
+  sweepAt = Date.now();
+  const W = innerWidth, H = innerHeight, size = Math.min(W * 0.26, H * 0.2), d = el("div", "dawn"); d.setAttribute("aria-hidden", "true");
+  d.innerHTML = `<svg viewBox="0 0 ${W} ${H}"><text class="op-word" x="${W / 2}" y="${H * 0.42}" text-anchor="middle" font-size="${size}">第${NUM_HAN[n] || n}天</text></svg>`;
+  document.body.append(d); setTimeout(() => d.remove(), 2300);
+  const t = d.querySelector("text"); t.style.strokeDasharray = 3000;
+  t.animate([{ strokeDashoffset: 3000, fill: "rgba(80,240,160,0)" }, { strokeDashoffset: 0, fill: "rgba(80,240,160,0)", offset: 0.7 }, { strokeDashoffset: 0, fill: "rgba(185,255,220,.85)" }], { duration: 1200, easing: "ease-in-out", fill: "forwards" });
+  // then the name settles into the page's own heading, and the page is back
+  setTimeout(() => {
+    const to = $("#place"), a = t.getBoundingClientRect(); if (!to || !a.width) return;
+    const b = to.getBoundingClientRect(), k = b.height / a.height;
+    t.animate([{ transform: "none", opacity: 1 }, { transform: `translate(${b.left + b.width / 2 - (a.left + a.width / 2)}px, ${b.top + b.height / 2 - (a.top + a.height / 2)}px) scale(${k})`, opacity: 0.2 }], { duration: 650, easing: "cubic-bezier(.6,0,.3,1)", fill: "forwards" });
+  }, 1300);
 }
 // The opening: darkness, a heartbeat of jade light, the mountains, the sun, the dragon, and the world becomes the interface
 function jadeOpening(force) {
