@@ -59,7 +59,10 @@ export async function openDb(url, { schema } = {}) {
   } else {
     // "pglite:./data/dev" keeps data in a folder; anything else is in memory
     const { PGlite } = await import("@electric-sql/pglite");
-    const pg = new PGlite(url && url.startsWith("pglite:") ? url.slice(7) : undefined);
+    const dir = url && url.startsWith("pglite:") ? url.slice(7) : undefined;
+    // PGlite only makes the last folder, so a fresh clone needs server/data made first
+    if (dir) (await import("node:fs")).mkdirSync(dir, { recursive: true });
+    const pg = new PGlite(dir);
     db = {
       query: async (text, params = []) => (await pg.query(text, params)).rows,
       exec: text => pg.exec(text),

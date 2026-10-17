@@ -102,14 +102,20 @@ The side list shows the ten days, one open at a time, with a Next up tag. Tap th
 
 **Notes (笔记)**: a notebook that opens beside any page, from the header, so you can write while you read or chat. Write anything: words, vocab, explanations. Notes save as you type and can be searched and pinned (your pinned note shows on the day page). "Save to notes" works on chat messages, Mistakes, Your pocket and the Long Story word list. "Read the Chinese aloud" speaks a note, and with Claude, "Add pinyin and meanings" adds a glossary under your note without touching what you wrote.
 
-**The look** is a bamboo forest in the mountains: ink-wash ridges and slow mist at the foot of the page, bamboo framing wide screens, seal-stamp labels and bamboo-segment progress. Every movement answers something you did:
-- The sky keeps the story's time. The sun rises before your first stop, stands high while you're out, and turns to a moon over the bamboo at evening.
+**The look** is 玉境 Jade by default: a cinematic Chinese mountain world in dark emerald, drawn entirely in code (SVG, CSS and one small canvas, no image files). The landscape carries the spectacle; the interface stays quiet and precise.
+- **The opening** (about seven seconds, once per visit, skipped by any key or tap, replayable from the footer): a jade line pulses in the dark and splits open onto mountains in fog, the camera rushes through the peaks, the clouds part for a golden-green sun, a translucent jade dragon circles the sky as 玉境 is written, and then it dissolves into particles that draw the edges of the interface while the panels rise from the mist.
+- **The world**: layered karst peaks with jade rim light, veins of light running down them, gold lamps, waterfalls that flow upward, a pavilion on a floating cliff, a sea of cloud, stars and aurora. The layers move at different depths as you scroll and move the cursor, and a soft glow follows the pointer.
+- **The interface**: panels are dark stone tablets with fine luminous edges, buttons glow on hover, and a click spreads a liquid jade ripple. Moving between major pages sends a fast sweep of green light. While the AI is working, a small mountain draws itself. Antique gold is kept for what matters most: the next stop and your progress.
+- The palette: Obsidian Pine #071A13, Imperial Jade #0E5C3B, Dragonfire #50F0A0, Cloud Jade #B9D8C4, Antique Gold #C7A96B, Midnight Forest #101D19.
+
+**Paper** (switch in the footer) is the earlier light look, a bamboo forest with ink-wash ridges. In both looks, every movement answers something you did:
+- The sky keeps the story's time. The sun rises before your first stop, stands high while you're out, and turns to a moon at evening.
 - A verdict is pressed onto the page like a seal (对, 差不多, 错), and a slip bleeds a little red ink around it.
 - What people say to you is brushed on, left to right.
 - A clean run sends a gust through the bamboo and blows leaves off downwind. A finished day grows its bamboo segment from the ground up.
 - Starting a new day sends cranes across the sky.
 
-It all stops when the device asks for reduced motion.
+All of it stops, and the opening never plays, when the device asks for reduced motion.
 
 In a place:
 - Answer each moment three ways: pick one of three answers, build it from word tiles, or type or say it (characters or pinyin, tones optional). Word tiles show their pinyin while the help dial is on English or Pinyin.
