@@ -7,6 +7,7 @@
 <script>try { document.documentElement.dataset.look = localStorage.getItem("sm-look") || "jade"; if (localStorage.getItem("sm-motion") === "on") document.documentElement.dataset.motion = "on"; } catch (e) { document.documentElement.dataset.look = "jade"; }</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap&text=%E7%8E%89%E5%A2%83">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@600;900&display=swap">
 <style>
 /* Layout: scenario rail | live scene (conversation + your move) | 错题本 mistake notebook. Stacks to one column on phones. */
@@ -732,6 +733,15 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 :root[data-look="jade"] input[type=range]::-moz-range-progress { height: 3px; border-radius: 3px; background: var(--dragonfire); }
 :root[data-look="jade"] input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6.5px; border-radius: 50%; background: #d9ffe9; border: 2px solid var(--dragonfire); box-shadow: 0 0 12px rgba(80, 240, 160, .7); }
 :root[data-look="jade"] input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #d9ffe9; border: 2px solid var(--dragonfire); box-shadow: 0 0 12px rgba(80, 240, 160, .7); }
+/* Notes slide in from the side; the phone menu unfolds from the top */
+:root[data-look="jade"] .notes:not([hidden]) { animation: slide-in .26s cubic-bezier(.2, .75, .25, 1) both; }
+@keyframes slide-in { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@media (max-width: 760px) { :root[data-look="jade"] .layout.menu-open .rail { animation: drop-in .24s cubic-bezier(.2, .75, .25, 1) both; } }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+/* someone typing: three jade dots that fill in one by one */
+:root[data-look="jade"] .chat-typing::after { content: ""; display: inline-block; vertical-align: middle; height: 6px; width: 24px; margin-left: 8px; overflow: hidden;
+  background: radial-gradient(circle at 3px 3px, var(--dragonfire) 2.4px, transparent 3px) 0 0 / 8px 6px repeat-x; animation: typing-dots 1.2s steps(4, jump-none) infinite; }
+@keyframes typing-dots { from { width: 0; } to { width: 24px; } }
 /* new lines and cards arrive quickly, without blur */
 :root[data-look="jade"] .ink { animation: emerge .28s cubic-bezier(.2, .7, .2, 1) both; }
 @keyframes emerge { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -797,12 +807,12 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .opening:not(.gl) .op-black { animation-duration: 1s; }
 @keyframes op-dark { from { opacity: 1; } to { opacity: 0; } }
 .opening .op-word { position: absolute; left: 0; right: 0; top: 34%; display: flex; justify-content: center; gap: .08em; z-index: 3;
-  font-family: var(--f-han); font-weight: 900; font-size: min(17vw, 26vh); line-height: 1; color: #eafff3; text-shadow: 0 0 28px rgba(80, 240, 160, .55), 0 0 2px rgba(80, 240, 160, .8); }
+  font-family: "Ma Shan Zheng", var(--f-han); font-weight: 400; font-size: min(19vw, 30vh); line-height: 1; color: #eafff3; text-shadow: 0 0 28px rgba(80, 240, 160, .55), 0 0 2px rgba(80, 240, 160, .8); }
 .opening .op-word span { display: block; clip-path: inset(0 0 100% 0); animation: op-brush .7s cubic-bezier(.6, 0, .25, 1) forwards; }
 .opening.gl .op-word span { animation-delay: 1.75s; } .opening.gl .op-word span + span { animation-delay: 1.95s; }
 .opening:not(.gl) .op-word span { animation-delay: .35s; } .opening:not(.gl) .op-word span + span { animation-delay: .55s; }
 @keyframes op-brush { from { clip-path: inset(0 0 100% 0); transform: translateY(-4%); filter: blur(2px); } to { clip-path: inset(-10% -10% -10% -10%); transform: none; filter: none; } }
-.opening .op-sub { position: absolute; left: 0; right: 0; top: calc(34% + min(17vw, 26vh) + 18px); text-align: center; z-index: 3; color: var(--gold); letter-spacing: .5em; text-indent: .5em; font-size: 12px; text-transform: uppercase; opacity: 0; animation: op-fade .6s forwards; }
+.opening .op-sub { position: absolute; left: 0; right: 0; top: calc(34% + min(19vw, 30vh) + 14px); text-align: center; z-index: 3; color: var(--gold); letter-spacing: .5em; text-indent: .5em; font-size: 12px; text-transform: uppercase; opacity: 0; animation: op-fade .6s forwards; }
 .opening.gl .op-sub { animation-delay: 2.3s; } .opening:not(.gl) .op-sub { animation-delay: .9s; }
 @keyframes op-fade { to { opacity: .9; } }
 .opening.ph-out .op-word, .opening.ph-out .op-sub { transition: opacity .45s, transform .6s cubic-bezier(.5, 0, .2, 1); opacity: 0; transform: translateY(-14px) scale(.96); }
@@ -817,7 +827,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal, :root:not([data-motion="on"]) .notes, :root:not([data-motion="on"]) .layout.menu-open .rail, :root:not([data-motion="on"]) .chat-typing::after { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -1029,6 +1039,7 @@ function addMe(h, p, e, kind) {
   scrollLog();
 }
 function addFeedback(kind, note, fix, extra) {
+  if (kind === "good" && jadeW && !stillMotion()) jadeW.vein = Math.max(jadeW.vein || 0, 0.45); // a right answer sends a little light through the mountain's veins
   const box = el("div", "fb " + kind);
   const seal = el("div", "seal", extra && extra.seal || (kind === "wrong" ? "错" : kind === "okay" ? "差不多" : "对"));
   if (extra && extra.seal) seal.style.fontSize = "20px";
