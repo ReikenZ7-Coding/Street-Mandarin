@@ -104,8 +104,8 @@ The side list shows the ten days, one open at a time, with a Next up tag. Tap th
 
 **The look** is 玉境 Jade by default: a cinematic Chinese mountain world in dark emerald, rendered live in 3D by the graphics chip (one WebGL shader, no image files). The landscape carries the spectacle; the interface stays quiet and precise.
 - **The world** is raymarched: karst peaks with weathered rock and moss rising out of a layered sea of cloud, haze that glows toward the sun, light shafts, stars and aurora, gold lamps on the ledges, and veins of light running down a few faces. Behind the app the camera drifts slowly through the valley, leans toward the cursor and rises as you scroll; the sun follows the story's day (low at morning, high while you're out, night at evening). It renders fewer pixels on a slow machine. Without a graphics chip (or WebGL) it uses the earlier drawn layers instead.
-- **The opening** (about eight seconds, once per visit, skipped by any key or tap, replayable from the footer): a jade line pulses in the dark and splits open, the camera rushes forward and down between the peaks, the sun climbs out of the cloud with a wave of light, and a translucent 3D jade dragon (scales, four clawed legs, a ridge of spines, a flowing mane, gold eyes) circles the sky as 玉境 is written. Then it dissolves scale by scale into particles that draw the edges of the interface while the panels rise from the mist.
-- **The interface**: panels are dark stone tablets with fine luminous edges, buttons glow on hover, and a click spreads a liquid jade ripple. Moving between major pages sends a small jade dragon streaking across. Starting a new day is a bigger moment: dawn rises behind the peaks, the day's name (第二天…) is written in jade light, and it settles into the page's heading. While the AI is working, a small mountain draws itself. A clean run sends a surge of light through the veins. Antique gold is kept for what matters most: the next stop and your progress.
+- **The opening** (under four seconds, once per visit, skipped by any key or tap, replayable from the footer): out of the dark, the camera pushes through a bamboo grove whose stalks lean aside to let you through, comes out above the peaks as the sun climbs, the 3D jade dragon crosses the sky around 玉境, and the interface rises into place.
+- **The interface**: panels are dark stone tablets with fine luminous edges; buttons, answers and cards catch a soft jade light where the pointer is and press in under a tap. **The grove** is the transition language: moving to another page sends the camera sideways through a real 3D bamboo grove (jointed stalks, leaves that flutter, lit by the time of day) while the page settles in behind it, in about two thirds of a second. A new day is a slower pass in morning light while the sun rises again in the world behind, and the day's name is brushed into the heading. A clean run shakes a few real leaves loose from the canopy. Verdicts set with a short glint across the card; a slip gives a small shake.
 - The palette: Obsidian Pine #071A13, Imperial Jade #0E5C3B, Dragonfire #50F0A0, Cloud Jade #B9D8C4, Antique Gold #C7A96B, Midnight Forest #101D19.
 
 **Paper** (switch in the footer) is the earlier light look, a bamboo forest with ink-wash ridges. In both looks, every movement answers something you did:
@@ -113,7 +113,9 @@ The side list shows the ten days, one open at a time, with a Next up tag. Tap th
 - A verdict is pressed onto the page like a seal (对, 差不多, 错), and a slip bleeds a little red ink around it.
 - What people say to you is brushed on, left to right.
 - A clean run sends a gust through the bamboo and blows leaves off downwind. A finished day grows its bamboo segment from the ground up.
-- Starting a new day sends cranes across the sky.
+- In Paper, starting a new day sends cranes across the sky.
+
+If the device asks for less motion (on Windows: Settings › Accessibility › Visual effects › Animation effects), everything stays still. The footer says so, and says why when the 3D world is off, with a "Play the motion anyway" switch.
 
 All of it stops, and the opening never plays, when the device asks for reduced motion.
 

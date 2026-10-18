@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Street Mandarin</title>
-<script>try { document.documentElement.dataset.look = localStorage.getItem("sm-look") || "jade"; } catch (e) { document.documentElement.dataset.look = "jade"; }</script>
+<script>try { document.documentElement.dataset.look = localStorage.getItem("sm-look") || "jade"; if (localStorage.getItem("sm-motion") === "on") document.documentElement.dataset.motion = "on"; } catch (e) { document.documentElement.dataset.look = "jade"; }</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@600;900&display=swap">
@@ -361,7 +361,7 @@ body.hint-off .opt .en-line { display: none; }
 .rush { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
 .rush i { display: block; height: 100%; width: 100%; background: var(--cinnabar); transform-origin: left; animation: rush linear forwards; }
 @keyframes rush { from { transform: scaleX(1); } to { transform: scaleX(0); } }
-@media (prefers-reduced-motion: reduce) { .rush i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .rush i { animation: none; } }
 .again { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .rail-find { font: inherit; font-size: 14px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); width: 100%; }
 .rail-places { display: flex; flex-direction: column; gap: 8px; }
@@ -489,6 +489,7 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
 .how-note { font-size: 13px; color: var(--muted); flex: 1 1 200px; }
 
 /* Notes: a drawer beside whatever you're doing (a sheet on phones) */
+@media (min-width: 761px) { .notes-btn { margin-left: auto; margin-right: -8px; } } /* beside the help switch, not floating in the middle */
 .notes-btn { align-self: center; display: inline-flex; align-items: baseline; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 12px; font-weight: 600; font-size: 14px; }
 .notes-btn .han { font-size: 16px; color: var(--jade); }
 .notes-btn[aria-expanded="true"] { border-color: var(--jade); background: var(--jade-soft); }
@@ -612,7 +613,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .leaves { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
 .leaves i { position: absolute; top: -30px; width: 28px; height: 9px; border-radius: 0 100% 0 100%; background: var(--leaf); opacity: .85; animation: fall linear forwards; }
 @keyframes fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: 0.2; } }
-@media (prefers-reduced-motion: reduce) { .sc-bamboo .stalk, .sc-mts .drift, .ink, .leaves i { animation: none !important; } .leaves { display: none; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .sc-bamboo .stalk, :root:not([data-motion="on"]) .sc-mts .drift, :root:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .leaves i { animation: none !important; } :root:not([data-motion="on"]) .leaves { display: none; } }
 /* ---------- Motion that answers you: each movement says something about what just happened ----------
    The sky follows the story's day, verdicts are pressed on like a seal, what people say is brushed on,
    a clean run sends a gust through the bamboo, a finished day grows the stalk, and cranes cross at dawn. */
@@ -655,11 +656,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .cranes svg path { transform-origin: 50% 60%; animation: flap 1.1s ease-in-out infinite alternate; }
 @keyframes fly { from { transform: translate(0, 0); } to { transform: translate(calc(100vw + 160px), var(--dy, -40px)); } }
 @keyframes flap { from { transform: scaleY(1); } to { transform: scaleY(-.55); } }
-@media (prefers-reduced-motion: reduce) {
-  .sc-sun, .sc-dusk { transition: none; }
-  .fb .seal, .fb .seal::after, .fb.wrong::before, .row.npc.fresh .han, .scenery.gust .sc-bamboo .stalk, .day-dot.grow::before, .day-dot.grow::after { animation: none !important; }
-  .fb.wrong::before { opacity: .1; } .cranes { display: none; } .day-dot.grow { background: var(--done-bg); }
-}
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .sc-sun, :root:not([data-motion="on"]) .sc-dusk { transition: none; } :root:not([data-motion="on"]) .fb .seal, :root:not([data-motion="on"]) .fb .seal::after, :root:not([data-motion="on"]) .fb.wrong::before, :root:not([data-motion="on"]) .row.npc.fresh .han, :root:not([data-motion="on"]) .scenery.gust .sc-bamboo .stalk, :root:not([data-motion="on"]) .day-dot.grow::before, :root:not([data-motion="on"]) .day-dot.grow::after { animation: none !important; } :root:not([data-motion="on"]) .fb.wrong::before { opacity: .1; } :root:not([data-motion="on"]) .cranes { display: none; } :root:not([data-motion="on"]) .day-dot.grow { background: var(--done-bg); } }
 /* ==========================================================================================
    玉境 Jade Ascension: a hidden immortal kingdom in the mountains, as the app's default look.
    The landscape is the spectacle; the interface stays precise and quiet. "Paper" (above) is
@@ -719,39 +716,36 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 :root[data-look="jade"] .fb.wrong { background: rgba(60, 22, 16, .55); border-color: rgba(242, 131, 107, .45); }
 :root[data-look="jade"] .fb.okay { background: rgba(60, 48, 20, .45); border-color: rgba(199, 169, 107, .45); }
 :root[data-look="jade"] input, :root[data-look="jade"] textarea { background: rgba(4, 14, 10, .7); color: var(--fg); border-color: rgba(80, 240, 160, .25); }
-/* liquid jade: a ring spreads from where you touch */
-.ripple { position: absolute; border-radius: 50%; pointer-events: none; width: 10px; height: 10px; margin: -5px 0 0 -5px; border: 2px solid var(--dragonfire); box-shadow: 0 0 12px var(--dragonfire), inset 0 0 8px rgba(80, 240, 160, .5); animation: ripple .65s ease-out forwards; }
-@keyframes ripple { from { transform: scale(0); opacity: .9; } to { transform: scale(var(--r, 30)); opacity: 0; } }
-/* cards rise out of the fog */
-:root[data-look="jade"] .ink { animation: emerge .55s cubic-bezier(.2, .7, .2, 1) both; }
-@keyframes emerge { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+/* a soft jade light follows the pointer across buttons, answers and cards, and they press in under a tap */
+:root[data-look="jade"] :is(.btn, .opt, .today-card, .scn, .chip, .seg button)::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), rgba(80, 240, 160, .16), rgba(80, 240, 160, .04) 45%, transparent 70%); }
+:root[data-look="jade"] .lit::after { opacity: 1; }
+:root[data-look="jade"] :is(.btn:not([disabled]), .opt, .today-card, .scn, .chip):active { transform: scale(.985); }
+:root[data-look="jade"] .seg button { position: relative; overflow: hidden; }
+/* new lines and cards arrive quickly, without blur */
+:root[data-look="jade"] .ink { animation: emerge .28s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes emerge { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* a verdict: the seal sets with a short jade (or gold, or red) glint across the card; a slip gives a small shake, not a splash */
+:root[data-look="jade"] .fb { position: relative; overflow: hidden; }
+:root[data-look="jade"] .fb .seal { animation: seal-set .34s cubic-bezier(.2, .9, .3, 1.25) both; }
+:root[data-look="jade"] .fb .seal::after, :root[data-look="jade"] .fb.wrong::before { display: none; }
+:root[data-look="jade"] .fb::after { content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-110%);
+  background: linear-gradient(105deg, transparent 30%, var(--glint, rgba(80, 240, 160, .16)) 48%, rgba(234, 255, 243, .12) 50%, var(--glint, rgba(80, 240, 160, .16)) 52%, transparent 70%); animation: glint .7s .08s cubic-bezier(.4, 0, .2, 1) forwards; }
+:root[data-look="jade"] .fb.okay { --glint: rgba(199, 169, 107, .2); } :root[data-look="jade"] .fb.wrong { --glint: rgba(242, 131, 107, .14); animation: slip .3s ease-out; }
+@keyframes seal-set { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes glint { to { transform: translateX(110%); } }
+@keyframes slip { 20% { transform: translateX(-4px); } 45% { transform: translateX(3px); } 70% { transform: translateX(-1.5px); } 100% { transform: none; } }
+:root[data-look="jade"] .row.npc.fresh .han { animation-duration: .42s; }
+:root[data-look="jade"] .day-dot.grow::before { animation-duration: .6s; animation-delay: .1s; } :root[data-look="jade"] .day-dot.grow::after { animation-delay: .65s; animation-duration: .35s; }
 /* while the AI works, a mountain draws itself in glowing ink */
 :root[data-look="jade"] .thinking { display: flex; align-items: center; gap: 10px; color: var(--cloud); font-style: normal; }
 :root[data-look="jade"] .thinking::before { content: ""; flex: none; width: 54px; height: 22px; background: linear-gradient(90deg, var(--dragonfire) 0 50%, rgba(80, 240, 160, .15) 50% 100%) 100% 0 / 200% 100%; animation: drawpeak 1.6s ease-in-out infinite;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 54 22'%3E%3Cpath d='M1 21 C6 20 8 9 12 9 C15 9 15 15 18 15 C21 15 22 2 27 2 C32 2 31 13 35 13 C38 13 38 8 41 8 C45 8 46 19 53 21' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 54 22'%3E%3Cpath d='M1 21 C6 20 8 9 12 9 C15 9 15 15 18 15 C21 15 22 2 27 2 C32 2 31 13 35 13 C38 13 38 8 41 8 C45 8 46 19 53 21' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat; filter: drop-shadow(0 0 4px rgba(80, 240, 160, .8)); }
 @keyframes drawpeak { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0 0; } }
-/* a new day: dawn behind the peaks and the day's name in jade light */
-.dawn { position: fixed; inset: 0; z-index: 80; pointer-events: none; background: rgba(7, 26, 19, .82); animation: dawn-out 2.2s ease forwards; }
-.dawn text { transform-box: fill-box; transform-origin: center; }
-.dawn::before { content: ""; position: absolute; left: -20%; right: -20%; bottom: -40%; height: 110%; background: radial-gradient(50% 50% at 50% 62%, rgba(232, 214, 150, .34), rgba(80, 240, 160, .14) 42%, transparent 70%); animation: dawn-rise 2.3s cubic-bezier(.2, .7, .2, 1) forwards; }
-.dawn svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-@keyframes dawn-rise { from { transform: translateY(35%); } to { transform: none; } }
-@keyframes dawn-out { 0% { opacity: 0; } 12%, 62% { opacity: 1; } to { opacity: 0; } }
-/* moving between major pages: a jade energy trail sweeps across and reveals the next */
-.sweep { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
-.sweep i { position: absolute; top: -20%; bottom: -20%; left: 0; width: 38vw; transform: translateX(-60vw) skewX(-18deg);
-  background: linear-gradient(90deg, transparent, rgba(80, 240, 160, .0) 20%, rgba(80, 240, 160, .22) 55%, rgba(185, 255, 220, .55) 62%, rgba(80, 240, 160, .12) 70%, transparent);
-  animation: sweep .62s cubic-bezier(.5, 0, .3, 1) forwards; }
-@keyframes sweep { to { transform: translateX(130vw) skewX(-18deg); } }
-.sweep i { opacity: .55; }
-.sweep svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.sweep path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.sweep .halo { stroke: rgba(80, 240, 160, .16); stroke-width: 26; }
-.sweep .core { stroke: rgba(80, 240, 160, .55); stroke-width: 7; }
-.sweep .spine { stroke: #eafff3; stroke-width: 1.6; opacity: .85; }
-:root[data-look="jade"] .scene.swept .log, :root[data-look="jade"] .scene.swept .scene-head > * { animation: reveal .6s cubic-bezier(.5, 0, .3, 1) both; }
-@keyframes reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+/* the bamboo grove: a 3D canvas that passes in front of the page between places */
+.grove { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 75; pointer-events: none; display: none; }
+.grove.on { display: block; }
 
 /* ---------- the living world behind the page ---------- */
 .jw { position: absolute; inset: 0; display: none; }
@@ -787,60 +781,34 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 :root[data-look="jade"] .scenery[data-time="evening"] .sc-sun { width: 82px; height: 82px; }
 :root[data-look="jade"] .sc-bamboo { opacity: .9; filter: drop-shadow(1px 0 0 rgba(80, 240, 160, .25)); }
 
-/* ---------- the opening: 玉境 awakens ---------- */
+/* ---------- the opening: out of the dark, through the grove, into the peaks ---------- */
 .opening { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
-.opening .op-black { position: absolute; left: 0; right: 0; background: #000; transition: transform 1s cubic-bezier(.7, 0, .2, 1); }
-.opening .op-black.top { top: 0; height: 50.2%; } .opening .op-black.bot { bottom: 0; height: 50.2%; }
-.opening.ph-split .op-black.top { transform: translateY(-101%); } .opening.ph-split .op-black.bot { transform: translateY(101%); }
-.opening .op-line { position: absolute; left: 50%; top: 50%; height: 2px; width: 60vw; margin: -1px 0 0 -30vw; background: linear-gradient(90deg, transparent, var(--dragonfire), #d9ffe9, var(--dragonfire), transparent); box-shadow: 0 0 18px 2px rgba(80, 240, 160, .8); transform: scaleX(0); animation: beat 1.3s .15s ease-out both; z-index: 2; }
-@keyframes beat { 0% { transform: scaleX(0); opacity: 0; } 30% { transform: scaleX(.6); opacity: 1; } 45% { transform: scaleX(.45) scaleY(.6); } 60% { transform: scaleX(1) scaleY(1.6); } 100% { transform: scaleX(1); } }
-.opening.ph-split .op-line { transition: opacity .5s; opacity: 0; }
-.opening canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; }
-.opening .op-flash { position: absolute; inset: 0; background: radial-gradient(60% 50% at 50% 55%, rgba(220, 255, 235, .85), rgba(80, 240, 160, .25) 45%, transparent 75%); opacity: 0; }
-.opening.ph-heaven .op-flash { animation: flash 1.1s ease-out both; }
-@keyframes flash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
-.opening .op-cloud { position: absolute; top: 18%; width: 70%; height: 46%; background: radial-gradient(closest-side, rgba(185, 216, 196, .55), rgba(185, 216, 196, .18) 60%, transparent); filter: blur(8px); opacity: 0; transition: transform 1.3s cubic-bezier(.6, 0, .2, 1), opacity .6s; }
-.opening .op-cloud.l { left: 0; } .opening .op-cloud.r { right: 0; }
-.opening.ph-rush .op-cloud { opacity: 1; }
-.opening.ph-heaven .op-cloud.l { transform: translateX(-80%); opacity: 0; } .opening.ph-heaven .op-cloud.r { transform: translateX(80%); opacity: 0; }
-.opening .op-rays { position: absolute; left: 50%; top: 52%; width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax; opacity: 0;
-  background: repeating-conic-gradient(from 0deg, rgba(232, 214, 140, .16) 0 4deg, transparent 4deg 13deg);
-  -webkit-mask: radial-gradient(circle, black 2%, transparent 45%); mask: radial-gradient(circle, black 2%, transparent 45%); transition: opacity 1.2s; animation: spin 30s linear infinite; }
-.opening.ph-heaven .op-rays { opacity: 1; } .opening.ph-dragon .op-rays, .opening.ph-assemble .op-rays { opacity: .5; } .opening.ph-done .op-rays { opacity: 0; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.opening .op-sun { position: absolute; left: 50%; top: 52%; width: 22vmin; height: 22vmin; margin: -11vmin 0 0 -11vmin; border-radius: 50%; background: radial-gradient(circle, #fff6cf 0, #e8d48c 30%, rgba(199, 169, 107, .5) 55%, transparent 70%); transform: translateY(40vh); opacity: 0; transition: transform 1.6s cubic-bezier(.2, .8, .2, 1), opacity 1s; }
-.opening.ph-heaven .op-sun { transform: none; opacity: 1; } .opening.ph-assemble .op-sun { opacity: 0; transition: opacity .8s; }
-.opening svg.op-sky { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; overflow: visible; }
-.op-dragon { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.op-word { font-family: var(--f-han); font-weight: 900; fill: transparent; stroke: var(--dragonfire); stroke-width: 1.4; paint-order: stroke; filter: drop-shadow(0 0 8px rgba(80, 240, 160, .9)); }
+.opening .op-black { position: absolute; inset: 0; background: #020806; animation: op-dark .7s .05s ease-out both; }
+.opening:not(.gl) .op-black { animation-duration: 1s; }
+@keyframes op-dark { from { opacity: 1; } to { opacity: 0; } }
+.opening .op-word { position: absolute; left: 0; right: 0; top: 34%; display: flex; justify-content: center; gap: .08em; z-index: 3;
+  font-family: var(--f-han); font-weight: 900; font-size: min(17vw, 26vh); line-height: 1; color: #eafff3; text-shadow: 0 0 28px rgba(80, 240, 160, .55), 0 0 2px rgba(80, 240, 160, .8); }
+.opening .op-word span { display: block; clip-path: inset(0 0 100% 0); animation: op-brush .7s cubic-bezier(.6, 0, .25, 1) forwards; }
+.opening.gl .op-word span { animation-delay: 1.75s; } .opening.gl .op-word span + span { animation-delay: 1.95s; }
+.opening:not(.gl) .op-word span { animation-delay: .35s; } .opening:not(.gl) .op-word span + span { animation-delay: .55s; }
+@keyframes op-brush { from { clip-path: inset(0 0 100% 0); transform: translateY(-4%); filter: blur(2px); } to { clip-path: inset(-10% -10% -10% -10%); transform: none; filter: none; } }
+.opening .op-sub { position: absolute; left: 0; right: 0; top: calc(34% + min(17vw, 26vh) + 18px); text-align: center; z-index: 3; color: var(--gold); letter-spacing: .5em; text-indent: .5em; font-size: 12px; text-transform: uppercase; opacity: 0; animation: op-fade .6s forwards; }
+.opening.gl .op-sub { animation-delay: 2.3s; } .opening:not(.gl) .op-sub { animation-delay: .9s; }
+@keyframes op-fade { to { opacity: .9; } }
+.opening.ph-out .op-word, .opening.ph-out .op-sub { transition: opacity .45s, transform .6s cubic-bezier(.5, 0, .2, 1); opacity: 0; transform: translateY(-14px) scale(.96); }
 .opening .op-skip { position: absolute; right: 18px; bottom: 18px; z-index: 6; pointer-events: auto; background: rgba(7, 26, 19, .6); color: var(--cloud); border: 1px solid rgba(80, 240, 160, .35); border-radius: 8px; padding: 8px 14px; font-size: 13px; letter-spacing: .04em; }
-.opening .op-title { position: absolute; left: 0; right: 0; top: 70%; text-align: center; z-index: 5; color: var(--cloud); font-family: var(--f-han); letter-spacing: .5em; font-size: 13px; opacity: 0; transition: opacity 1s; text-transform: uppercase; }
-.opening.ph-dragon .op-title { opacity: .9; } .opening.ph-assemble .op-title { opacity: 0; }
-.opening.ph-done { transition: opacity .6s; opacity: 0; }
-/* the world, during the opening: the camera rushes through the layers */
-.scenery.op-hidden .jw, .scenery.op-hidden .sc-bamboo, .scenery.op-hidden .sc-sun { opacity: 0; }
-.scenery.op-rush .jw-layer { transition: transform 1.7s cubic-bezier(.15, .7, .2, 1), filter 1.7s, opacity 1.2s; }
-/* as heaven opens, the far cliff and its pavilion catch the light and the falls run brighter */
-.scenery .jw-layer { transition: opacity 1.4s ease; }
-.scenery.op-heaven .jw-layer[data-depth="0.15"] { opacity: .95 !important; }
-.scenery.op-heaven .jw .fall { stroke: rgba(220, 255, 236, .9); stroke-width: 3; }
-.scenery.op-heaven .jw .fall-halo { opacity: .22; }
-.scenery.op-far .jw-layer { transform: scale(var(--z, 2)) translateY(8%) !important; filter: blur(6px); }
-.scenery .jw, .scenery .sc-bamboo, .scenery .sc-sun { transition: opacity 1s; }
+.opening.ph-done { transition: opacity .4s; opacity: 0; }
 .wrap.op-wait { opacity: 0; }
-.wrap.op-in { animation: uiin .9s ease-out both; }
-.wrap.op-in .scene, .wrap.op-in .rail > *, .wrap.op-in header.top > * { animation: tablet .9s cubic-bezier(.2, .7, .2, 1) both; }
-.wrap.op-in .rail > *:nth-child(2n) { animation-delay: .08s; } .wrap.op-in .scene { animation-delay: .15s; }
-@keyframes uiin { from { opacity: 0; } to { opacity: 1; } }
-@keyframes tablet { from { opacity: 0; transform: translateY(26px) scale(.985); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+.wrap.op-in .scene, .wrap.op-in .rail > *, .wrap.op-in header.top > * { animation: tablet .5s cubic-bezier(.2, .75, .25, 1) both; }
+.wrap.op-in header.top > *:nth-child(2) { animation-delay: .05s; } .wrap.op-in .rail > *:nth-child(n+2) { animation-delay: .08s; } .wrap.op-in .rail > *:nth-child(n+5) { animation-delay: .14s; } .wrap.op-in .scene { animation-delay: .1s; }
+@keyframes tablet { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.look-note { color: var(--muted); font-size: 12px; margin-left: 8px; }
 .look-pick { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
-@media (prefers-reduced-motion: reduce) {
-  .jw-aurora, .jw-shaft, .jw .vein, .jw .lamp, .jw .fall, .jw-mist, .ripple, .sweep, .dawn, .opening, :root[data-look="jade"] .thinking::before, :root[data-look="jade"] .ink, .wrap.op-in, .wrap.op-in * { animation: none !important; }
-  .sweep, .dawn, .opening, .ripple { display: none !important; } .wrap.op-wait { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>
@@ -1933,7 +1901,7 @@ function nbItem(n) {
 }
 function openNotebook() {
   mode = "notebook"; busy = false;
-  renderNotebook(); renderRail();
+  renderNotebook(); renderRail(); jadeSweep("notebook");
   try { $(".notebook").scrollIntoView({ block: "nearest" }); } catch {}
 }
 function renderNotebook() {
@@ -3906,6 +3874,11 @@ function renderFoot() {
   const look = el("span", "look-pick"); look.append("Look:");
   [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
   if (isJade() && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => jadeOpening(true); look.append(re); }
+  // say plainly when the full world can't play, so a quiet screen is never a mystery
+  if (isJade()) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? "3D world on." : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
+  // the device setting wins by default, but it's your app: you can ask for the motion anyway
+  const asked = document.documentElement.dataset.motion === "on";
+  if (asked || stillMotion()) { const mo = el("button", "linkish", asked ? "Use less motion again" : "Play the motion anyway"); mo.onclick = () => { try { asked ? localStorage.removeItem("sm-motion") : localStorage.setItem("sm-motion", "on"); sessionStorage.removeItem("sm-opened-3d"); } catch {} location.reload(); }; look.append(mo); }
   f.append(look);
   if (footOpen === "out") {
     const t = el("textarea"); t.readOnly = true; t.value = progressCode(); t.setAttribute("aria-label", "Your progress code");
@@ -4398,10 +4371,10 @@ function setSky() {
   const d = DAYS[i], n = d ? d.stops.filter(x => done[x.id]).length : 0;
   sc.dataset.time = !d ? "out" : n === d.stops.length ? "evening" : n === 0 ? "morning" : "out";
 }
-const stillMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const stillMotion = () => document.documentElement.dataset.motion !== "on" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 // A new day: two or three cranes cross the mountains
 function cranes() {
-  if (stillMotion()) return;
+  if (stillMotion() || isJade()) return;
   const box = el("div", "cranes"); box.setAttribute("aria-hidden", "true");
   const n = 2 + Math.floor(Math.random() * 2);
   for (let i = 0; i < n; i++) {
@@ -4416,6 +4389,7 @@ function cranes() {
 }
 function leafFall() {
   if (stillMotion()) return;
+  if (isJade() && jadeW && jadeLeaves()) return; // in 玉境 the leaves are real 3D ones from the grove
   // A gust goes through the bamboo first, and the leaves blow off downwind
   const sc = document.querySelector(".scenery");
   if (sc) { sc.classList.remove("gust"); void sc.offsetWidth; sc.classList.add("gust"); setTimeout(() => sc.classList.remove("gust"), 3400); }
@@ -4670,11 +4644,12 @@ function jadeCamera(st) {
   const rt = V3.norm(V3.cross([0, 1, 0], fw)), up = V3.cross(fw, rt);
   return { ro, fw, rt, up };
 }
+let jadeWhy = "";
 function jadeGL(canvas, opts = {}) {
   const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
-  if (!gl) return null;
+  if (!gl) { jadeWhy = "this browser has WebGL turned off"; return null; }
   // without a graphics chip the 3D world would only slow the page down, so the drawn layers are used instead
-  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"); if (/swiftshader|llvmpipe|software|basic render/i.test(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "")) return null; } catch {}
+  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"); if (/swiftshader|llvmpipe|software|basic render/i.test(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "")) { jadeWhy = "no graphics chip found"; return null; } } catch {}
   const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   const prog = (vs, fs) => { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); return p; };
   const pr = prog("attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }", JADE_FRAG);
@@ -4768,6 +4743,181 @@ function jadeGL(canvas, opts = {}) {
   }
   return { state, dragon, draw, gl };
 }
+// 竹林 The grove: a real 3D bamboo grove (jointed stalks, leaves that flutter, light from the time of day).
+// It passes in front of the page when you move somewhere, and in the opening the camera flies through it into the peaks.
+const GROVE_VERT = `
+attribute vec3 aPos; attribute vec3 aNrm; attribute vec2 aUv; attribute vec4 aMeta; attribute vec2 aBase;
+uniform vec3 uCam, uFw, uRt, uUp; uniform float uAspect, uFocal, uTime, uWind, uPart, uFall; uniform vec4 uWin;
+varying vec3 vN, vW; varying vec2 vUv; varying vec4 vMeta; varying float vZ, vFade;
+float hs(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+void main() {
+  vec3 p = aPos; float seed = aMeta.y, sway = aMeta.z;
+  // the grove thins out towards its edges, stalk by stalk
+  float here = (1.0 - smoothstep(uWin.y * 0.55, uWin.y, abs(aBase.x - uWin.x))) * (1.0 - smoothstep(uWin.z - uWin.w, uWin.z, aBase.y));
+  if (hs(seed * 91.7) > here) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
+  vFade = 1.0;
+  // a clean finish: a few leaves come loose and drift down past you
+  if (uFall > 0.0) {
+    float k = hs(seed * 5.3), tt = uFall - k * 1.2;
+    if (aMeta.x < 0.5 || hs(seed * 13.1) > 0.09 || abs(aBase.y) > 5.0 || tt < 0.0) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); return; }
+    p.y += 2.5 - tt * (1.7 + k);
+    p.x += sin(tt * 1.9 + seed) * 0.45 + tt * 0.5; p.z += cos(tt * 1.4 + seed * 2.0) * 0.3;
+    p += aNrm * sin(tt * 5.0 + aUv.x * 3.0 + seed) * 0.12 * aUv.x;
+    vFade = smoothstep(0.0, 0.5, tt) * smoothstep(4.2, 3.0, tt);
+  }
+  // each stalk bends in the wind, more at the top; each leaf flutters on its own
+  float gust = 0.35 + uWind;
+  p.xz += vec2(sin(uTime * 1.3 + seed * 6.3), cos(uTime * 0.9 + seed * 4.1) * 0.6) * sway * sway * 0.22 * gust;
+  // the grove parts to let you through: stalks just ahead of you lean out of the way
+  float dx = aBase.x - uCam.x, dz = aBase.y - uCam.z;
+  float ahead = smoothstep(10.0, 2.0, dz) * smoothstep(-2.0, 0.6, dz) * smoothstep(1.8, 0.0, abs(dx));
+  p.x += (dx < 0.0 ? -1.0 : 1.0) * uPart * ahead * 1.5 * smoothstep(0.0, 0.3, sway) * (0.6 + sway);
+  if (aMeta.x > 0.5) p += aNrm * sin(uTime * (8.0 + hs(seed) * 5.0) + seed * 40.0 + aUv.x * 2.5) * 0.045 * aUv.x * aMeta.w * gust;
+  vec3 v = p - uCam; float x = dot(v, uRt), y = dot(v, uUp), z = dot(v, uFw);
+  vN = aNrm; vW = p; vUv = aUv; vMeta = aMeta; vZ = z;
+  float n = 0.04, f = 90.0;
+  gl_Position = vec4(x * uFocal / uAspect, y * uFocal, z * (f + n) / (f - n) - 2.0 * f * n / (f - n), z);
+}`;
+const GROVE_FRAG = `
+precision highp float;
+varying vec3 vN, vW; varying vec2 vUv; varying vec4 vMeta; varying float vZ, vFade;
+uniform vec3 uCam, uSunDir, uSunCol, uHaze, uShade; uniform float uAlpha, uFogNear, uFogFar;
+float hs(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+void main() {
+  vec3 n = normalize(vN), V = normalize(uCam - vW);
+  if (!gl_FrontFacing) n = -n;
+  float seed = vMeta.y, lit = max(dot(n, uSunDir), 0.0), back = pow(max(dot(-V, uSunDir), 0.0), 3.0);
+  vec3 col;
+  if (vMeta.x < 0.5) {
+    // a stalk: jade green, older ones gone yellow; a dark seam at every joint with a raised ring and the pale bloom below it
+    float k = fract(vUv.y / vMeta.w + seed * 3.0);
+    vec3 base = mix(vec3(0.07, 0.30, 0.14), vec3(0.30, 0.40, 0.12), hs(seed * 7.0) * hs(seed * 3.1));
+    base *= 0.9 + 0.12 * sin(vUv.x * 6.2832 * 5.0 + seed * 9.0) * sin(vUv.y * 3.0 + seed);
+    float seam = smoothstep(0.03, 0.0, k) + smoothstep(0.97, 1.0, k), ring = smoothstep(0.06, 0.02, abs(k - 0.035));
+    float bloom = smoothstep(0.80, 0.95, k) * (1.0 - smoothstep(0.95, 0.985, k));
+    base = mix(base, vec3(0.62, 0.70, 0.58), bloom * 0.22);
+    base = mix(base, base * 1.35, ring * 0.6);
+    base = mix(base, vec3(0.03, 0.08, 0.05), seam * 0.85);
+    col = base * (uShade + (0.35 + 0.65 * lit) * uSunCol * 0.9);
+    float fr = pow(1.0 - abs(dot(n, V)), 3.0);
+    col += uSunCol * fr * (0.15 + 0.85 * back) * 0.7;
+    vec3 H = normalize(uSunDir + V); col += uSunCol * pow(max(dot(n, H), 0.0), 48.0) * 0.3;
+  } else {
+    // a leaf: dark above, a paler midrib, and yellow-green light shining through when the sun is behind it
+    vec3 base = mix(vec3(0.05, 0.17, 0.07), vec3(0.14, 0.30, 0.09), hs(seed * 13.0));
+    base = mix(base * 1.7, base, smoothstep(0.0, 0.16, abs(vUv.y)));
+    col = base * (uShade + (0.3 + 0.7 * lit) * uSunCol) + vec3(0.62, 0.85, 0.22) * uSunCol * back * 0.9;
+    col *= 0.8 + 0.2 * vUv.x;
+  }
+  float fog = smoothstep(uFogNear, uFogFar, vZ);
+  col = mix(col, uHaze, fog);
+  float a = (1.0 - fog * 0.92) * uAlpha * vFade;
+  gl_FragColor = vec4(col * a, a);
+}`;
+const GROVE_VEIL = `
+precision mediump float; varying vec2 vP; uniform vec3 uHaze, uSunCol; uniform float uVeil; uniform vec2 uSun;
+void main() {
+  float glow = exp(-length((vP - uSun) * vec2(1.6, 1.0)) * 2.2);
+  vec3 c = mix(uHaze * 0.55, uHaze * 1.1, smoothstep(-1.0, 1.0, vP.y)) + uSunCol * glow * 0.35;
+  float a = uVeil * (0.75 + 0.25 * smoothstep(1.0, -1.0, vP.y));
+  gl_FragColor = vec4(c * a, a);
+}`;
+// the grove's shape: clumps of stalks either side of a path along x (z = 0), denser close by
+function groveMesh() {
+  let sd = 7; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+  const stalks = [], ok = (x, z) => Math.abs(z) > 0.8 && stalks.every(s => Math.hypot(s.x - x, s.z - z) > 0.26);
+  const clump = (cx, cz, n) => { for (let i = 0; i < n * 3 && n > 0; i++) { const a = rnd() * 6.283, r = Math.sqrt(rnd()) * 0.65, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (ok(x, z)) { stalks.push({ x, z }); n--; } } };
+  clump(0.15, 1.15, 4); clump(-2.6, 1.6, 3); clump(2.9, 1.4, 3); clump(0.4, -1.3, 3);
+  for (let i = 0; i < 34; i++) clump(-5 + rnd() * 10, 2 + rnd() * 11, 2 + Math.floor(rnd() * 3)); // the stretch the opening flies through
+  for (let i = 0; i < 150; i++) {
+    const x = -24 + rnd() * 50, side = rnd() < 0.62 ? 1 : -1, z = side * (0.9 + Math.pow(rnd(), 1.7) * 30);
+    clump(x, z, 1 + Math.floor(rnd() * 4));
+  }
+  stalks.sort((a, b) => Math.abs(b.z) - Math.abs(a.z)); // far first, so the haze layers correctly
+  const V = [], I = []; let nv = 0;
+  const vert = (p, n, u, v, m, b) => { V.push(p[0], p[1], p[2], n[0], n[1], n[2], u, v, m[0], m[1], m[2], m[3], b[0], b[1]); return nv++; };
+  for (const s of stalks) {
+    const seed = rnd() * 100, H = 9 + rnd() * 7, near = Math.abs(s.z) < 6, r0 = 0.06 + rnd() * 0.07, spacing = 0.55 + rnd() * 0.35;
+    const lx = (rnd() - 0.5) * 0.08, lz = (rnd() - 0.5) * 0.08, cx = (rnd() - 0.5) * 0.012, cz = (rnd() - 0.5) * 0.012;
+    const at = y => [s.x + lx * y + cx * y * y, y - 1.2, s.z + lz * y + cz * y * y];
+    const N = near ? 22 : 12, M = near ? 12 : 7, base = nv;
+    for (let i = 0; i <= N; i++) {
+      const y = i / N * H, c = at(y), r = r0 * (1 - 0.35 * y / H);
+      for (let j = 0; j <= M; j++) { const a = j / M * 6.2832, d = [Math.cos(a), 0, Math.sin(a)]; vert([c[0] + d[0] * r, c[1], c[2] + d[2] * r], d, j / M, y, [0, seed, y / H, spacing], [s.x, s.z]); }
+    }
+    for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) { const a = base + i * (M + 1) + j, b = a + M + 1; I.push(a, b, a + 1, b, b + 1, a + 1); }
+    // twigs of leaves from the upper joints
+    for (let y = H * 0.42; y < H; y += spacing) {
+      if (rnd() > (near ? 0.75 : Math.abs(s.z) < 14 ? 0.4 : 0.22)) continue;
+      const c = at(y), ta = rnd() * 6.283, tw = 0.25 + rnd() * 0.5, out = [Math.cos(ta), 0, Math.sin(ta)];
+      const tip = [c[0] + out[0] * tw, c[1] + tw * 0.35, c[2] + out[2] * tw], nl = 3 + Math.floor(rnd() * 4);
+      for (let k = 0; k < nl; k++) {
+        const la = ta + (rnd() - 0.5) * 2.2, droop = 0.25 + rnd() * 0.9, L = 0.32 + rnd() * 0.36, w = L * (0.11 + rnd() * 0.04);
+        const f = k / nl, o = [c[0] + (tip[0] - c[0]) * (0.4 + f * 0.6), c[1] + (tip[1] - c[1]) * (0.4 + f * 0.6), c[2] + (tip[2] - c[2]) * (0.4 + f * 0.6)];
+        const d = V3.norm([Math.cos(la) * Math.cos(droop), -Math.sin(droop), Math.sin(la) * Math.cos(droop)]);
+        const side = V3.norm(V3.cross(d, [0, 1, 0])), roll = (rnd() - 0.5) * 1.2;
+        const sv = V3.norm(V3.add(V3.mul(side, Math.cos(roll)), V3.mul([0, 1, 0], Math.sin(roll)))), nrm = V3.norm(V3.cross(sv, d));
+        const lb = nv, S = 6, sway = y / H;
+        for (let i = 0; i <= S; i++) {
+          const u = i / S, wp = w * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.65)), 0.85);
+          const p = V3.add(V3.add(o, V3.mul(d, L * u)), [0, -L * 0.22 * u * u, 0]);
+          vert(V3.add(p, V3.mul(sv, -wp)), nrm, u, -1, [1, seed + k * 1.37, sway, L], [s.x, s.z]);
+          vert(V3.add(V3.add(p, V3.mul(sv, wp)), V3.mul(nrm, wp * 0.25)), nrm, u, 1, [1, seed + k * 1.37, sway, L], [s.x, s.z]);
+        }
+        for (let i = 0; i < S; i++) { const a = lb + i * 2; I.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+      }
+    }
+  }
+  return { verts: new Float32Array(V), idx: new Uint32Array(I), count: I.length };
+}
+// light for the time of day: sun 1 is full day, 0.55 morning, 0.12 evening
+function groveLight(sun) {
+  const mix = (a, b, k) => a.map((x, i) => x + (b[i] - x) * k);
+  const day = sun > 0.55 ? (sun - 0.55) / 0.45 : 0, eve = sun < 0.55 ? (0.55 - sun) / 0.43 : 0;
+  let col = mix([1.0, 0.78, 0.48], [1.0, 0.96, 0.84], day); col = mix(col, [1.0, 0.5, 0.28], Math.min(1, eve));
+  let haze = mix([0.36, 0.40, 0.30], [0.34, 0.52, 0.42], day); haze = mix(haze, [0.13, 0.12, 0.13], Math.min(1, eve));
+  const shade = mix([0.10, 0.16, 0.12], [0.12, 0.2, 0.15], day);
+  return { col, haze, shade, dir: V3.norm([-0.35 + day * 0.5, 0.3 + day * 0.4 - eve * 0.15, 1]) };
+}
+function jadeGroveGL(canvas) {
+  const gl = canvas.getContext("webgl", { antialias: true, alpha: true, premultipliedAlpha: true, powerPreference: "high-performance" });
+  if (!gl || !gl.getExtension("OES_element_index_uint")) return null;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const prog = (vs, fs) => { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); return p; };
+  const pg = prog(GROVE_VERT, GROVE_FRAG), pv = prog("attribute vec2 a; varying vec2 vP; void main() { vP = a; gl_Position = vec4(a, 0.0, 1.0); }", GROVE_VEIL);
+  const U = n => gl.getUniformLocation(pg, n), UV = n => gl.getUniformLocation(pv, n);
+  const mesh = groveMesh();
+  const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, mesh.verts, gl.STATIC_DRAW);
+  const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.idx, gl.STATIC_DRAW);
+  const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const A = [["aPos", 3, 0], ["aNrm", 3, 3], ["aUv", 2, 6], ["aMeta", 4, 8], ["aBase", 2, 12]].map(([n, k, o]) => [gl.getAttribLocation(pg, n), k, o]);
+  // state: cam position, yaw (0 looks across the path, π/2 along it), pitch, time, alpha, veil, window [centre, half width], sun, wind
+  function draw(st) {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5), W = Math.round(canvas.clientWidth * dpr), H = Math.round(canvas.clientHeight * dpr);
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    const L = groveLight(st.sun), cy = Math.cos(st.pitch), fw = [Math.sin(st.yaw) * cy, Math.sin(st.pitch), Math.cos(st.yaw) * cy];
+    const rt = V3.norm(V3.cross([0, 1, 0], fw)), up = V3.cross(fw, rt), aspect = W / H, focal = st.focal || 1.25;
+    if (st.veil > 0) {
+      gl.disable(gl.DEPTH_TEST); gl.useProgram(pv); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      const a = gl.getAttribLocation(pv, "a"); A.forEach(([l]) => l >= 0 && gl.disableVertexAttribArray(l)); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+      const sp = [V3.dot(L.dir, rt) / Math.max(0.2, V3.dot(L.dir, fw)) * focal / aspect, V3.dot(L.dir, up) / Math.max(0.2, V3.dot(L.dir, fw)) * focal];
+      gl.uniform3fv(UV("uHaze"), L.haze); gl.uniform3fv(UV("uSunCol"), L.col); gl.uniform1f(UV("uVeil"), st.veil); gl.uniform2fv(UV("uSun"), sp);
+      gl.drawArrays(gl.TRIANGLES, 0, 3); gl.disableVertexAttribArray(a);
+    }
+    gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.useProgram(pg);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    A.forEach(([l, k, o]) => { if (l < 0) return; gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, k, gl.FLOAT, false, 56, o * 4); });
+    gl.uniform3fv(U("uCam"), st.cam); gl.uniform3fv(U("uFw"), fw); gl.uniform3fv(U("uRt"), rt); gl.uniform3fv(U("uUp"), up);
+    gl.uniform1f(U("uAspect"), aspect); gl.uniform1f(U("uFocal"), focal); gl.uniform1f(U("uTime"), st.t); gl.uniform1f(U("uWind"), st.wind || 0);
+    gl.uniform4fv(U("uWin"), st.win || [0, 1000, 1000, 1]); gl.uniform1f(U("uPart"), st.part || 0); gl.uniform1f(U("uFall"), st.fall || 0);
+    gl.uniform3fv(U("uSunDir"), L.dir); gl.uniform3fv(U("uSunCol"), L.col); gl.uniform3fv(U("uHaze"), L.haze); gl.uniform3fv(U("uShade"), L.shade);
+    gl.uniform1f(U("uAlpha"), st.alpha); gl.uniform1f(U("uFogNear"), st.fogNear || 2); gl.uniform1f(U("uFogFar"), st.fogFar || 26);
+    gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_INT, 0);
+  }
+  return { draw, gl, canvas, verts: mesh.verts.length / 14 };
+}
 function jadeWorld(sc) {
   const jw = el("div", "jw");
   jw.innerHTML = `<canvas class="jw-stars"></canvas><div class="jw-aurora a1"></div><div class="jw-aurora a2"></div><div class="jw-shaft"></div><div class="jw-glow"></div>
@@ -4812,7 +4962,7 @@ function jadeWorld(sc) {
 let jadeW = null;
 function jadeLive(jw, sc) {
   const cv = el("canvas", "jw-gl"); jw.prepend(cv);
-  let w; try { w = jadeGL(cv, { scale: 0.5 }); } catch (e) { w = null; }
+  let w; try { w = jadeGL(cv, { scale: 0.5 }); } catch (e) { w = null; jadeWhy = "the graphics chip refused the 3D world"; console.warn("玉境 3D:", e); }
   if (!w) { cv.remove(); return false; }
   jw.classList.add("gl"); sc.classList.add("gl"); jadeW = w;
   const st = w.state, still = stillMotion(), t0 = performance.now();
@@ -4849,233 +4999,120 @@ function jadeLive(jw, sc) {
   if (still) { st.scale = 0.6; addEventListener("resize", w.redraw); new MutationObserver(() => setTimeout(w.redraw, 50)).observe(sc, { attributes: true, attributeFilter: ["data-time"] }); }
   return true;
 }
-// Liquid jade: a ring spreads from wherever you press a button, an answer or a card
-document.addEventListener("pointerdown", e => {
-  if (!isJade() || stillMotion()) return;
-  const t = e.target.closest(".btn, .opt, .today-card, .chip, .scn, .seg button"); if (!t) return;
-  const r = t.getBoundingClientRect(), ring = el("span", "ripple");
-  ring.style.left = (e.clientX - r.left) + "px"; ring.style.top = (e.clientY - r.top) + "px"; ring.style.setProperty("--r", Math.ceil(Math.max(r.width, r.height) / 4));
-  t.append(ring); setTimeout(() => ring.remove(), 700);
+// ---------- motion in 玉境: a 3D bamboo grove passes in front of the page, and the world behind it answers ----------
+// Pointer light: buttons, answers and cards catch a soft jade light where the pointer is
+let litEl = null;
+document.addEventListener("pointermove", e => {
+  if (!isJade()) return;
+  const t = e.target.closest ? e.target.closest(".btn, .opt, .today-card, .scn, .chip, .seg button") : null;
+  if (litEl && litEl !== t) litEl.classList.remove("lit");
+  litEl = t; if (!t) return;
+  const r = t.getBoundingClientRect(); t.style.setProperty("--mx", (e.clientX - r.left) + "px"); t.style.setProperty("--my", (e.clientY - r.top) + "px"); t.classList.add("lit");
 }, { passive: true });
-// Moving to another major page: a jade dragon streaks across and its trail reveals the page
+// The grove lives on its own canvas above the page. It's made once, while the page is idle, and only where the 3D world runs.
+let groveG, groveRun = null;
+function grove() {
+  if (groveG !== undefined) return groveG;
+  groveG = null; if (!jadeW) return null;
+  const cv = el("canvas", "grove"); cv.setAttribute("aria-hidden", "true"); document.body.append(cv);
+  try { groveG = jadeGroveGL(cv); } catch (e) { console.warn("竹林:", e); }
+  if (!groveG) cv.remove();
+  return groveG;
+}
+if (!stillMotion()) (window.requestIdleCallback || setTimeout)(() => isJade() && grove(), { timeout: 2500 });
+const groveSun = () => (jadeW && jadeW.goal ? jadeW.goal.sun : 1);
+const smooth = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+// play one pass of the grove: frame(k 0..1, seconds) returns what to draw
+function grovePlay(ms, frame) {
+  const g = grove(); if (!g) return null;
+  if (groveRun) groveRun.stop();
+  const t0 = performance.now(), run = { over: false, stop() { if (this.over) return; this.over = true; g.canvas.classList.remove("on"); if (groveRun === this) groveRun = null; } };
+  groveRun = run; g.canvas.classList.add("on");
+  (function tick(now) {
+    if (run.over) return;
+    const e = Math.max(0, (now - t0) / 1000), k = Math.min(1, e * 1000 / ms);
+    g.draw(frame(k, e)); if (k < 1) requestAnimationFrame(tick); else run.stop();
+  })(t0);
+  return run;
+}
+// the sideways pass: the camera tracks through the grove, the near stalks whip past and the page settles in behind them
+function groveSweep(ms, dir, sun) {
+  return grovePlay(ms, (k, e) => {
+    const m = k * 0.3 + 0.7 * (0.5 - 0.5 * Math.cos(Math.PI * k));
+    return { cam: [dir * (-6.4 + 12.8 * m), 1.6, 0], yaw: dir * 0.1, pitch: 0.1, t: performance.now() / 1000, sun, wind: 1, win: [0, 7.5, 1000, 1],
+      alpha: Math.min(1, k / 0.1, (1 - k) / 0.16), veil: 0.42 * Math.pow(Math.sin(Math.PI * k), 2), focal: 1.2, fogNear: 2, fogFar: 22 };
+  });
+}
+function pageIn(node, dir, delay, ms) {
+  if (node && node.animate) node.animate([{ opacity: 0, transform: `translateX(${dir * 22}px)` }, { opacity: 1, transform: "none" }], { duration: ms, delay, easing: "cubic-bezier(.2,.75,.25,1)", fill: "backwards" });
+}
+// Moving to another major page
 let sweepKey = "", sweepAt = 0;
 function jadeSweep(key) {
-  if (!isJade() || stillMotion() || key === sweepKey || document.querySelector(".opening")) { sweepKey = key; return; }
-  sweepKey = key; if (Date.now() - sweepAt < 900) return; sweepAt = Date.now();
-  const s = el("div", "sweep"); s.setAttribute("aria-hidden", "true"); s.append(el("i"));
-  // a small jade dragon streaks across on a wave, the light trailing behind it
-  const W = innerWidth, H = innerHeight, y0 = H * (0.25 + Math.random() * 0.4), ph = Math.random() * 6, amp = H * 0.09;
-  const d = "M" + Array.from({ length: 41 }, (_, i) => `${(-0.15 + i * 1.3 / 40) * W} ${y0 + Math.sin(ph + i * 0.42) * amp - i * H * 0.004}`).join(" L");
-  s.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 ${W} ${H}"><path class="halo" d="${d}"/><path class="core" d="${d}"/><path class="spine" d="${d}"/></svg>`);
-  document.body.append(s); setTimeout(() => s.remove(), 760);
-  const ps = [...s.querySelectorAll("path")], L = ps[0].getTotalLength();
-  ps.forEach(p => { p.style.strokeDasharray = `${L * 0.28} ${L * 2}`; p.animate([{ strokeDashoffset: L * 0.28 }, { strokeDashoffset: -L * 1.02 }], { duration: 700, easing: "cubic-bezier(.45,.05,.4,1)", fill: "forwards" }); });
-  const sc = $(".scene"); if (sc) { sc.classList.remove("swept"); void sc.offsetWidth; sc.classList.add("swept"); setTimeout(() => sc.classList.remove("swept"), 700); }
+  const first = !sweepKey; // the first page of a visit just appears
+  if (first || !isJade() || stillMotion() || key === sweepKey || document.querySelector(".opening")) { sweepKey = key; return; }
+  sweepKey = key; if (Date.now() - sweepAt < 700) return; sweepAt = Date.now();
+  const dir = /^home/.test(key) ? -1 : 1, sc = $(mode === "notebook" ? ".notebook" : ".scene");
+  if (groveSweep(680, dir, groveSun())) pageIn(sc, dir, 240, 380); else pageIn(sc, dir, 0, 240);
 }
-// A new day is a major moment: dawn rises behind the peaks and the day's name is written in jade light
+// A new day: a slower pass through the grove while the sun really rises in the world behind, and the day's name is brushed in
 function jadeDawn(n) {
-  if (!isJade() || stillMotion() || document.querySelector(".opening, .dawn")) return;
+  if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
   sweepAt = Date.now();
-  const W = innerWidth, H = innerHeight, size = Math.min(W * 0.26, H * 0.2), d = el("div", "dawn"); d.setAttribute("aria-hidden", "true");
-  d.innerHTML = `<svg viewBox="0 0 ${W} ${H}"><text class="op-word" x="${W / 2}" y="${H * 0.42}" text-anchor="middle" font-size="${size}">第${NUM_HAN[n] || n}天</text></svg>`;
-  document.body.append(d); setTimeout(() => d.remove(), 2300);
-  const t = d.querySelector("text"); t.style.strokeDasharray = 3000;
-  t.animate([{ strokeDashoffset: 3000, fill: "rgba(80,240,160,0)" }, { strokeDashoffset: 0, fill: "rgba(80,240,160,0)", offset: 0.7 }, { strokeDashoffset: 0, fill: "rgba(185,255,220,.85)" }], { duration: 1200, easing: "ease-in-out", fill: "forwards" });
-  // then the name settles into the page's own heading, and the page is back
+  if (jadeW) { jadeW.state.sun = 0.02; jadeW.vein = 1; }
+  const ok = groveSweep(1000, 1, 0.55);
   setTimeout(() => {
-    const to = $("#place"), a = t.getBoundingClientRect(); if (!to || !a.width) return;
-    const b = to.getBoundingClientRect(), k = b.height / a.height;
-    t.animate([{ transform: "none", opacity: 1 }, { transform: `translate(${b.left + b.width / 2 - (a.left + a.width / 2)}px, ${b.top + b.height / 2 - (a.top + a.height / 2)}px) scale(${k})`, opacity: 0.2 }], { duration: 650, easing: "cubic-bezier(.6,0,.3,1)", fill: "forwards" });
-  }, 1300);
+    pageIn($(".scene"), 1, ok ? 320 : 0, 420);
+    const p = $("#place"); if (p && p.animate) p.animate([{ clipPath: "inset(-20% 100% -20% 0)", filter: "drop-shadow(0 0 0 rgba(199,169,107,0))" }, { clipPath: "inset(-20% 0 -20% 0)", filter: "drop-shadow(0 0 16px rgba(199,169,107,.9))", offset: 0.65 }, { clipPath: "inset(-20% 0 -20% 0)", filter: "drop-shadow(0 0 0 rgba(199,169,107,0))" }], { duration: 1100, delay: ok ? 380 : 0, easing: "cubic-bezier(.5,0,.2,1)", fill: "backwards" });
+  });
 }
-// The opening: darkness, a heartbeat of jade light, the mountains, the sun, the dragon, and the world becomes the interface
+// A clean finish: a few leaves come loose from the canopy and drift down past you
+function jadeLeaves() {
+  if (jadeW) jadeW.vein = 1;
+  return grovePlay(4600, (k, e) => ({ cam: [0, 1.6, 0], yaw: 0, pitch: 0.32, t: performance.now() / 1000, sun: groveSun(), fall: 0.01 + e, alpha: 1, veil: 0, focal: 1.2, fogNear: 3, fogFar: 14 }));
+}
+// The opening, under four seconds: out of the dark, through the grove as it parts, into the peaks at sunrise
 function jadeOpening(force) {
   if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
-  if (!force) { try { if (sessionStorage.getItem("sm-opened") || (navigator.webdriver && !location.hash.includes("opening"))) return; sessionStorage.setItem("sm-opened", "1"); } catch {} }
-  if (jadeW) return jadeOpening3D();
-  const sc = $(".scenery"), wrap = $(".wrap"), W = innerWidth, H = innerHeight;
-  const op = el("div", "opening"); op.setAttribute("aria-hidden", "true");
-  op.innerHTML = `<div class="op-rays"></div><div class="op-sun"></div><div class="op-cloud l"></div><div class="op-cloud r"></div><div class="op-flash"></div>
-    <svg class="op-sky" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#0E5C3B"/><stop offset=".5" stop-color="#50F0A0"/><stop offset="1" stop-color="#d9ffe9"/></linearGradient></defs>
-      <path class="op-dragon glow" stroke="url(#dg)" stroke-width="4" opacity=".13"/><path class="op-dragon body" stroke="url(#dg)" stroke-width="7"/><path class="op-dragon spine" stroke="#eafff3" stroke-width="1.6" opacity=".8"/>
-      <text class="op-word" x="${W / 2}" y="${H * 0.47}" text-anchor="middle" font-size="${Math.min(W, H) * 0.22}">玉境</text></svg>
-    <div class="op-black top"></div><div class="op-black bot"></div><div class="op-line"></div><canvas></canvas>
-    <div class="op-title">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
-  document.body.append(op);
-  sc.classList.add("op-hidden"); wrap.classList.add("op-wait");
-  // The dragon's path: a long spiral through the peaks, ending where the title will be written
-  const pts = []; for (let i = 0; i <= 120; i++) { const k = i / 120, a = Math.PI * (0.85 + 2.9 * k), pull = Math.sin(Math.PI * Math.min(1, k * 1.15)); pts.push([W * 0.5 + Math.cos(a) * W * (0.5 - 0.24 * pull), H * 0.43 + Math.sin(a) * H * (0.44 - 0.2 * pull)]); }
-  const d = "M" + pts.map(p => p.map(v => v.toFixed(1)).join(" ")).join(" L");
-  const paths = [...op.querySelectorAll(".op-dragon")]; paths.forEach(p => { p.setAttribute("d", d); p.style.strokeDasharray = "0 100000"; });
-  const word = op.querySelector(".op-word"); word.style.opacity = 0;
-  const cv = op.querySelector("canvas"), cx = cv.getContext("2d"); cv.width = W; cv.height = H;
-  let parts = Array.from({ length: 70 }, () => ({ x: W / 2 + (Math.random() - 0.5) * W * 0.6, y: H / 2 + (Math.random() - 0.5) * 10, vy: -0.3 - Math.random() * 1.2, vx: (Math.random() - 0.5) * 0.3, r: Math.random() * 1.8 + 0.4, a: 1, tx: null }));
-  let phase = "awake", t0 = performance.now(), raf = 0, over = false, dragon = null;
-  // The dragon is drawn on the canvas: a translucent jade body that follows the spiral, with scales, a fin, horns and whiskers
-  function drawDragon(now) {
-    const k = Math.min(1, (now - dragon.t0) / dragon.dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, n = dragon.pts.length - 1;
-    const head = e * n, len = n * 0.3, seg = 56, R = Math.min(W, H) * 0.022, body = [];
-    for (let i = 0; i <= seg; i++) {
-      const s = Math.max(0, head - (i / seg) * len), a = s | 0, f = s - a, p0 = dragon.pts[a], p1 = dragon.pts[Math.min(n, a + 1)];
-      const x = p0[0] + (p1[0] - p0[0]) * f, y = p0[1] + (p1[1] - p0[1]) * f + Math.sin(now / 160 - i * 0.5) * R * 0.25;
-      const u = i / seg, r = R * (u < 0.12 ? 0.75 + u * 2 : Math.max(0.12, 1 - (u - 0.12) * 1.05));
-      body.push({ x, y, r });
-    }
-    body.forEach((b, i) => { const q = body[Math.min(seg, i + 1)], o = body[Math.max(0, i - 1)], dx = o.x - q.x, dy = o.y - q.y, m = Math.hypot(dx, dy) || 1; b.nx = -dy / m; b.ny = dx / m; b.dx = dx / m; b.dy = dy / m; });
-    dragon.body = body;
-    cx.save(); cx.globalAlpha = dragon.fade;
-    const outline = () => { cx.beginPath(); body.forEach((b, i) => cx[i ? "lineTo" : "moveTo"](b.x + b.nx * b.r, b.y + b.ny * b.r)); for (let i = seg; i >= 0; i--) { const b = body[i]; cx.lineTo(b.x - b.nx * b.r, b.y - b.ny * b.r); } cx.closePath(); };
-    cx.shadowColor = "#50F0A0"; cx.shadowBlur = 28; outline(); cx.fillStyle = "rgba(80,240,160,.28)"; cx.fill();
-    cx.shadowBlur = 8; cx.lineWidth = 1.4; cx.strokeStyle = "rgba(200,255,225,.85)"; cx.stroke();
-    // a dorsal fin along the back
-    cx.beginPath(); body.forEach((b, i) => { if (i < 4 || i > seg - 4) return; const up = b.r * (i % 2 ? 1.0 : 1.9); cx[i === 4 ? "moveTo" : "lineTo"](b.x + b.nx * (b.r + up), b.y + b.ny * (b.r + up)); }); cx.strokeStyle = "rgba(125,255,192,.55)"; cx.lineWidth = 1; cx.stroke();
-    // scales: little arcs down the spine
-    cx.shadowBlur = 0; cx.strokeStyle = "rgba(220,255,236,.45)"; cx.lineWidth = 0.9;
-    for (let i = 3; i < seg - 2; i += 2) { const b = body[i]; cx.beginPath(); cx.arc(b.x, b.y, b.r * 0.55, Math.atan2(b.ny, b.nx) - 1.2, Math.atan2(b.ny, b.nx) + 1.2); cx.stroke(); }
-    // the head: snout forward, two horns swept back, whiskers that trail and wave
-    const h = body[0], hx = h.dx, hy = h.dy, nx = h.nx, ny = h.ny, hr = R * 1.25;
-    cx.shadowColor = "#50F0A0"; cx.shadowBlur = 20; cx.fillStyle = "rgba(110,255,185,.55)"; cx.strokeStyle = "rgba(225,255,238,.95)"; cx.lineWidth = 1.4;
-    cx.beginPath(); cx.moveTo(h.x + nx * hr, h.y + ny * hr); cx.quadraticCurveTo(h.x + hx * hr * 1.4 + nx * hr * 0.9, h.y + hy * hr * 1.4 + ny * hr * 0.9, h.x + hx * hr * 2.3 + nx * hr * 0.2, h.y + hy * hr * 2.3 + ny * hr * 0.2);
-    cx.quadraticCurveTo(h.x + hx * hr * 1.6 - nx * hr * 0.7, h.y + hy * hr * 1.6 - ny * hr * 0.7, h.x - nx * hr * 0.8, h.y - ny * hr * 0.8); cx.closePath(); cx.fill(); cx.stroke();
-    cx.shadowBlur = 6; cx.lineWidth = 1.6;
-    [1, 0.4].forEach(side => { cx.beginPath(); cx.moveTo(h.x + nx * hr * side, h.y + ny * hr * side); cx.quadraticCurveTo(h.x - hx * hr * 1.4 + nx * hr * (1 + side), h.y - hy * hr * 1.4 + ny * hr * (1 + side), h.x - hx * hr * 2.6 + nx * hr * (1.6 + side), h.y - hy * hr * 2.6 + ny * hr * (1.6 + side)); cx.stroke(); });
-    cx.strokeStyle = "rgba(200,255,225,.6)"; cx.lineWidth = 1;
-    [1, -1].forEach(side => { const sx = h.x + hx * hr * 2 + nx * hr * 0.15 * side, sy = h.y + hy * hr * 2 + ny * hr * 0.15 * side, w = Math.sin(now / 140 + side) * hr * 0.6; cx.beginPath(); cx.moveTo(sx, sy); cx.bezierCurveTo(sx + nx * side * hr * 1.2, sy + ny * side * hr * 1.2, sx - hx * hr * 3 + nx * (side * hr * 1.4 + w), sy - hy * hr * 3 + ny * (side * hr * 1.4 + w), sx - hx * hr * 6 + nx * (side * hr * 0.8 - w), sy - hy * hr * 6 + ny * (side * hr * 0.8 - w)); cx.stroke(); });
-    cx.shadowColor = "#C7A96B"; cx.shadowBlur = 10; cx.fillStyle = "#e8cf8f"; cx.beginPath(); cx.arc(h.x + hx * hr * 0.9 + nx * hr * 0.45, h.y + hy * hr * 0.9 + ny * hr * 0.45, Math.max(1.5, hr * 0.16), 0, 7); cx.fill();
-    cx.restore();
-    // it sheds motes as it flies
-    if (dragon.fade > 0.5 && Math.random() < 0.7) { const b = body[(Math.random() * seg) | 0]; parts.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 0.6, vy: -0.4 - Math.random() * 0.8, r: Math.random() * 1.4 + 0.4, a: 1, tx: null, fade: true }); }
-  }
-  function draw(now) {
-    cx.clearRect(0, 0, W, H);
-    if (dragon) drawDragon(now);
-    parts.forEach(p => {
-      if (p.tx != null) { const k = Math.min(1, (now - p.t0) / p.dur), e = 1 - Math.pow(1 - k, 3); p.x = p.sx + (p.tx - p.sx) * e + Math.sin(k * Math.PI) * p.curve; p.y = p.sy + (p.ty - p.sy) * e; p.a = k < 0.85 ? 1 : (1 - k) / 0.15; }
-      else { p.x += p.vx; p.y += p.vy; if (p.fade) p.a -= 0.012; }
-      cx.globalAlpha = Math.max(0, p.a) * 0.9; cx.fillStyle = "#7dffc0"; cx.shadowColor = "#50F0A0"; cx.shadowBlur = 10; cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill();
-    });
-    if (parts.length > 600) parts = parts.filter(p => p.a > 0);
-    cx.shadowBlur = 0; if (!over) raf = requestAnimationFrame(draw);
-  }
-  raf = requestAnimationFrame(draw);
-  const at = (ms, fn) => setTimeout(() => { if (!over) fn(); }, ms);
-  // 1. The line splits open onto mountains deep in emerald fog, and the camera rushes forward
-  at(1350, () => { op.classList.add("ph-split"); sc.classList.add("op-far"); sc.classList.remove("op-hidden"); [...sc.querySelectorAll(".jw-layer")].forEach((l, i) => l.style.setProperty("--z", (2.6 - i * 0.35).toFixed(2))); });
-  at(1500, () => { op.classList.add("ph-rush"); sc.classList.add("op-rush"); requestAnimationFrame(() => sc.classList.remove("op-far")); });
-  // 2. Heaven breaks open: the clouds part with a wave of light and the sun rises behind the highest peak
-  at(3000, () => { op.classList.add("ph-heaven"); sc.classList.add("op-heaven"); });
-  // 3. The dragon spirals through the sky and writes 玉境
-  at(4300, () => {
-    op.classList.add("ph-dragon"); const L = paths[1].getTotalLength();
-    dragon = { t0: performance.now(), dur: 2300, fade: 1, pts: Array.from({ length: 241 }, (_, i) => { const q = paths[1].getPointAtLength(L * (0.06 + 0.94 * i / 240)); return [q.x, q.y]; }) };
-    // a faint trail of light where it has been, like a brushstroke drying
-    paths[0].style.strokeDasharray = `${L} ${L}`; paths[0].animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 2300, easing: "cubic-bezier(.45,.05,.55,.95)", fill: "forwards" });
-    const wl = 4000; word.style.opacity = 1; word.style.strokeDasharray = wl; word.animate([{ strokeDashoffset: wl, fill: "rgba(80,240,160,0)" }, { strokeDashoffset: 0, fill: "rgba(80,240,160,0)", offset: 0.75 }, { strokeDashoffset: 0, fill: "rgba(185,255,220,.9)" }], { duration: 1900, delay: 500, easing: "ease-in-out", fill: "forwards" });
-  });
-  // 4. The dragon dissolves into jade particles that sweep across and become the interface
-  at(6500, () => {
-    op.classList.add("ph-assemble"); sc.classList.remove("op-rush");
-    const p = paths[1], L = p.getTotalLength(), targets = [];
-    document.querySelectorAll(".wrap .scene, .wrap .rail > *, .wrap header.top > *").forEach(n => { const r = n.getBoundingClientRect(); if (r.width && r.top < H) targets.push(r); });
-    const wr = word.getBBox();
-    parts = Array.from({ length: Math.min(420, 160 + targets.length * 30) }, (_, i) => {
-      const db = dragon && dragon.body, from = i % 3 ? (db ? db[(Math.random() * db.length) | 0] : p.getPointAtLength(Math.random() * L)) : { x: wr.x + Math.random() * wr.width, y: wr.y + Math.random() * wr.height };
-      const r = targets[i % Math.max(1, targets.length)] || { left: W / 2, top: H / 2, width: 1, height: 1 }, e = Math.random() * 4 | 0;
-      const tx = e === 0 ? r.left + Math.random() * r.width : e === 1 ? r.left + r.width : e === 2 ? r.left + Math.random() * r.width : r.left;
-      const ty = e === 0 ? r.top : e === 1 ? r.top + Math.random() * r.height : e === 2 ? r.top + r.height : r.top + Math.random() * r.height;
-      return { sx: from.x, sy: from.y, x: from.x, y: from.y, tx, ty, t0: performance.now() + Math.random() * 250, dur: 900 + Math.random() * 500, curve: (Math.random() - 0.5) * 160, r: Math.random() * 1.6 + 0.6, a: 1 };
-    });
-    paths.forEach(x => x.animate([{ opacity: x.getAttribute("opacity") || 1 }, { opacity: 0 }], { duration: 500, fill: "forwards" }));
-    if (dragon) { const d0 = performance.now(); (function fade() { if (!dragon || over) return; dragon.fade = Math.max(0, 1 - (performance.now() - d0) / 350); if (dragon.fade > 0) requestAnimationFrame(fade); })(); }
-    word.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: "forwards" });
-    at(700, () => { wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); });
-    at(1700, finish);
-  });
-  function finish() {
-    if (over) return; over = true; cancelAnimationFrame(raf);
-    sc.classList.remove("op-hidden", "op-far", "op-rush"); setTimeout(() => sc.classList.remove("op-heaven"), 400); [...sc.querySelectorAll(".jw-layer")].forEach(l => l.style.removeProperty("--z"));
-    wrap.classList.remove("op-wait"); if (!wrap.classList.contains("op-in")) wrap.classList.add("op-in");
-    op.classList.add("ph-done"); setTimeout(() => { op.remove(); wrap.classList.remove("op-in"); }, 1000);
-    removeEventListener("keydown", skip, true); removeEventListener("pointerdown", skip, true);
-  }
-  const skip = () => finish();
-  op.querySelector(".op-skip").onclick = finish;
-  addEventListener("keydown", skip, true); addEventListener("pointerdown", skip, true);
-}
-// The opening in the 3D world. Darkness and a pulse of jade light; the line splits and the camera rushes
-// forward through the peaks; heaven breaks open as the sun rises; the jade dragon circles while 玉境 is
-// written; then it dissolves into particles that draw the interface.
-function jadeOpening3D() {
-  const w = jadeW, st = w.state, dr = w.dragon, wrap = $(".wrap"), W = innerWidth, H = innerHeight;
-  const op = el("div", "opening gl"); op.setAttribute("aria-hidden", "true");
-  op.innerHTML = `<div class="op-flash"></div>
-    <svg class="op-sky" viewBox="0 0 ${W} ${H}"><text class="op-word" x="${W / 2}" y="${H * 0.45}" text-anchor="middle" font-size="${Math.min(W, H) * 0.2}">玉境</text></svg>
-    <div class="op-black top"></div><div class="op-black bot"></div><div class="op-line"></div><canvas></canvas>
-    <div class="op-title">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
+  if (!force) { try { if (sessionStorage.getItem("sm-opened-3d") || (navigator.webdriver && !location.hash.includes("opening"))) return; sessionStorage.setItem("sm-opened-3d", "1"); } catch {} }
+  const g = jadeW && grove(), w = jadeW, wrap = $(".wrap");
+  const op = el("div", "opening" + (g ? " gl" : "")); op.setAttribute("aria-hidden", "true");
+  op.innerHTML = `<div class="op-black"></div><div class="op-word"><span>玉</span><span>境</span></div><div class="op-sub">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
   document.body.append(op); wrap.classList.add("op-wait");
-  const word = op.querySelector(".op-word"); word.style.opacity = 0;
-  const cv = op.querySelector("canvas"), cx = cv.getContext("2d"); cv.width = W; cv.height = H;
-  let parts = Array.from({ length: 70 }, () => ({ x: W / 2 + (Math.random() - 0.5) * W * 0.6, y: H / 2 + (Math.random() - 0.5) * 10, vy: -0.3 - Math.random() * 1.2, vx: (Math.random() - 0.5) * 0.3, r: Math.random() * 1.8 + 0.4, a: 1, tx: null }));
-  const Z = st.z, rest = { sun: w.goal.sun, reveal: w.goal.reveal };
-  w.show = true; Object.assign(st, { reveal: 0, sun: 0.05, lift: 12, pitch: -0.05, yaw: 0, z: Z - 55, flash: 0 }); dr.on = false; dr.dissolve = 0; dr.fade = 1;
-  const t0 = performance.now(); let raf = 0, over = false, assembled = false;
-  const ease = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+  const END = g ? 3.7 : 2.3, UI = END - 0.9;
+  let rest = null, Z = 0;
+  if (w) { const st = w.state; rest = { sun: w.goal.sun, reveal: w.goal.reveal }; Z = st.z; w.show = true; Object.assign(st, { sun: 0.04, z: Z - 26, lift: 3, pitch: 0, yaw: 0, reveal: 0.45, flash: 0 }); w.dragon.on = false; w.dragon.fade = 1; w.dragon.dissolve = 0; }
+  if (groveRun) groveRun.stop();
+  if (g) g.canvas.classList.add("on");
+  const t0 = performance.now(); let over = false, uiIn = false;
   const outCubic = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return 1 - Math.pow(1 - k, 3); };
   function tick(now) {
+    if (over) return;
     const e = (now - t0) / 1000;
-    // the camera: held in the dark, then a rush forward and down through the valley, then a slow glide
-    st.reveal = ease(1.35, 2.3, e);
-    st.z = Z - 55 + 55 * outCubic(1.35, 3.3, e) + Math.max(0, e - 3.3) * 1.2;
-    st.lift = 12 - 12 * outCubic(1.35, 3.3, e);
-    st.pitch = -0.05 + 0.05 * outCubic(1.35, 3.3, e) + 0.035 * ease(3.0, 4.0, e) - 0.035 * ease(6.2, 7.5, e);
-    // heaven breaks open: the sun climbs out of the cloud with a wave of light
-    st.sun = 0.05 + 0.95 * ease(3.0, 4.4, e) - (1 - rest.sun) * ease(6.8, 8.2, e);
-    st.flash = 0.28 * Math.max(0, 1 - Math.abs(e - 3.15) / 0.35);
-    st.vein = 1 + 1.5 * ease(3.0, 4.0, e);
-    // the dragon swims in, loops around the title, and turns to light
-    if (e > 4.0 && !dr.on && !assembled) dr.on = true;
-    dr.t = -2.6 + 4.4 * ease(4.0, 6.9, e);
-    // 玉境 is written stroke by stroke, then fills with light (driven by the clock, so a slow machine stays in step)
-    if (e > 4.6 && !assembled) { const k = ease(4.6, 6.0, e), f = ease(6.0, 6.6, e); word.style.opacity = 1; word.style.strokeDashoffset = 4000 * (1 - k); word.style.fill = `rgba(185,255,220,${(0.9 * f).toFixed(3)})`; }
-    if (e > 6.9 && !assembled) assemble();
-    if (e > 2.9 && !op.classList.contains("ph-heaven")) op.classList.add("ph-heaven");
-    if (e > 4.6 && !op.classList.contains("ph-dragon")) op.classList.add("ph-dragon");
-    cx.clearRect(0, 0, W, H);
-    parts.forEach(p => {
-      if (p.tx != null) { const k = Math.min(1, Math.max(0, (now - p.t0) / p.dur)), q = 1 - Math.pow(1 - k, 3); p.x = p.sx + (p.tx - p.sx) * q + Math.sin(k * Math.PI) * p.curve; p.y = p.sy + (p.ty - p.sy) * q; p.a = now < p.t0 ? 0 : k < 0.85 ? 1 : (1 - k) / 0.15; }
-      else { p.x += p.vx; p.vy -= 0.02; p.y += p.vy; p.a -= 0.012; }
-      cx.globalAlpha = Math.max(0, p.a) * 0.9; cx.fillStyle = "#7dffc0"; cx.shadowColor = "#50F0A0"; cx.shadowBlur = 10; cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill();
-    });
-    cx.shadowBlur = 0;
-    if (!over) raf = requestAnimationFrame(tick);
+    if (w) { // the world: a glide forward as the sun climbs, and the dragon crossing the sky
+      const st = w.state, dr = w.dragon;
+      st.z = Z - 26 + 26 * outCubic(0.2, END, e); st.lift = 3 - 3 * outCubic(0.2, END, e);
+      st.sun = 0.04 + (Math.max(rest.sun, 0.6) - 0.04) * smooth(0.6, 2.6, e);
+      st.reveal = 0.45 + (rest.reveal - 0.45) * smooth(0.8, 2.4, e); st.vein = 1 + 1.5 * smooth(1.6, 2.4, e);
+      st.flash = 0.18 * Math.max(0, 1 - Math.abs(e - 2.15) / 0.4);
+      if (g && e > 1.5) { dr.on = true; dr.t = -2.0 + 2.8 * smooth(1.5, END, e); dr.fade = 1 - smooth(END - 0.6, END, e); }
+    }
+    if (g) { // the grove: the camera pushes forward and the stalks lean aside to let you through
+      if (e < 2.7) g.draw({ cam: [0, 1.6, -1.5 + 19 * smooth(0, 2.7, e)], yaw: 0, pitch: 0.1 + 0.22 * smooth(1.2, 2.7, e), t: now / 1000, sun: Math.max(rest.sun, 0.55), wind: 0.6, part: 1, win: [0, 40, 13, 5],
+        alpha: 1 - smooth(2.1, 2.7, e), veil: 0.92 * (1 - smooth(0.5, 1.9, e)), focal: 1.15, fogNear: 2.5, fogFar: 20 });
+      else g.canvas.classList.remove("on");
+    }
+    if (!uiIn && e > UI) { uiIn = true; op.classList.add("ph-out"); wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); }
+    if (e > END) return finish();
+    requestAnimationFrame(tick);
   }
-  raf = requestAnimationFrame(tick);
-  const at = (ms, fn) => setTimeout(() => { if (!over) fn(); }, ms);
-  at(1350, () => op.classList.add("ph-split"));
-  at(1500, () => op.classList.add("ph-rush"));
-  word.style.strokeDasharray = 4000; word.style.strokeDashoffset = 4000;
-  // the dragon becomes the interface: its body breaks into light that flies to the edges of each panel
-  function assemble() {
-    op.classList.add("ph-assemble"); assembled = true;
-    const targets = []; document.querySelectorAll(".wrap .scene, .wrap .rail > *, .wrap header.top > *").forEach(n => { const r = n.getBoundingClientRect(); if (r.width && r.top < H) targets.push(r); });
-    const spine = dr.spine.map(p => dr.project(p)).filter(Boolean), wr = word.getBBox(), now = performance.now();
-    parts = Array.from({ length: Math.min(460, 180 + targets.length * 30) }, (_, i) => {
-      const from = i % 4 && spine.length ? spine[(Math.random() * spine.length) | 0] : [wr.x + Math.random() * wr.width, wr.y + Math.random() * wr.height];
-      const r = targets[i % Math.max(1, targets.length)] || { left: W / 2, top: H / 2, width: 1, height: 1 }, side = Math.random() * 4 | 0;
-      const tx = side === 1 ? r.left + r.width : side === 3 ? r.left : r.left + Math.random() * r.width;
-      const ty = side === 0 ? r.top : side === 2 ? r.top + r.height : r.top + Math.random() * r.height;
-      return { sx: from[0], sy: from[1], x: from[0], y: from[1], tx, ty, t0: now + Math.random() * 300, dur: 900 + Math.random() * 500, curve: (Math.random() - 0.5) * 160, r: Math.random() * 1.6 + 0.6, a: 0 };
-    });
-    const d0 = performance.now(); (function melt() { if (over) return; const k = Math.min(1, (performance.now() - d0) / 700); dr.dissolve = k; dr.fade = 1 - Math.max(0, k - 0.6) / 0.4; if (k < 1) requestAnimationFrame(melt); else dr.on = false; })();
-    word.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: "forwards" });
-    at(700, () => { wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); });
-    at(1900, finish);
-  }
+  requestAnimationFrame(tick);
   function finish() {
-    if (over) return; over = true; cancelAnimationFrame(raf);
-    dr.on = false; w.show = false; st.flash = 0; st.lift = 0; w.goal.reveal = rest.reveal; if (st.reveal < 0.3) st.reveal = 0.3;
-    wrap.classList.remove("op-wait"); if (!wrap.classList.contains("op-in")) wrap.classList.add("op-in");
-    op.classList.add("ph-done"); setTimeout(() => { op.remove(); wrap.classList.remove("op-in"); }, 1000);
+    if (over) return; over = true;
+    if (w) { const st = w.state; w.dragon.on = false; w.show = false; st.flash = 0; st.lift = 0; st.vein = 1; w.goal.reveal = rest.reveal; }
+    if (g) g.canvas.classList.remove("on");
+    wrap.classList.remove("op-wait"); if (!uiIn) wrap.classList.add("op-in");
+    op.classList.add("ph-done"); setTimeout(() => { op.remove(); wrap.classList.remove("op-in"); }, 600);
     removeEventListener("keydown", finish, true); removeEventListener("pointerdown", finish, true);
   }
   op.querySelector(".op-skip").onclick = finish;
