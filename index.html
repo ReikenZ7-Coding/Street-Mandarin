@@ -749,6 +749,11 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 /* your choices rise in one after another */
 :root[data-look="jade"] .opts > .opt { animation: emerge .26s cubic-bezier(.2, .7, .2, 1) both; }
 :root[data-look="jade"] .opts > .opt:nth-child(2) { animation-delay: .04s; } :root[data-look="jade"] .opts > .opt:nth-child(3) { animation-delay: .08s; } :root[data-look="jade"] .opts > .opt:nth-child(n+4) { animation-delay: .12s; }
+/* the end of a scene: the verdict, then the scorecard line by line; a clean run's verdict is in gold */
+:root[data-look="jade"] #move .move-head h3, :root[data-look="jade"] #move .score > * { animation: emerge .3s cubic-bezier(.2, .7, .2, 1) both; }
+:root[data-look="jade"] #move .score > :nth-child(-n+2) { animation-delay: .08s; } :root[data-look="jade"] #move .score > :nth-child(n+3):nth-child(-n+4) { animation-delay: .16s; }
+:root[data-look="jade"] #move .score > :nth-child(n+5):nth-child(-n+6) { animation-delay: .24s; } :root[data-look="jade"] #move .score > :nth-child(n+7) { animation-delay: .32s; }
+:root[data-look="jade"] #move .move-head.won h3 { color: var(--gold); text-shadow: 0 0 18px rgba(199, 169, 107, .45); }
 /* new lines and cards arrive quickly, without blur */
 :root[data-look="jade"] .ink { animation: emerge .28s cubic-bezier(.2, .7, .2, 1) both; }
 @keyframes emerge { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -839,7 +844,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal, :root:not([data-motion="on"]) .notes, :root:not([data-motion="on"]) .layout.menu-open .rail, :root:not([data-motion="on"]) .chat-typing::after, :root:not([data-motion="on"]) .opts > .opt { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal, :root:not([data-motion="on"]) .notes, :root:not([data-motion="on"]) .layout.menu-open .rail, :root:not([data-motion="on"]) .chat-typing::after, :root:not([data-motion="on"]) .opts > .opt, :root:not([data-motion="on"]) #move .move-head h3, :root:not([data-motion="on"]) #move .score > * { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -1809,6 +1814,7 @@ function renderEnd() {
   if (!runMisses.length && !cur._leaves) { cur._leaves = true; leafFall(); }
   const head = el("div", "move-head");
   head.append(el("h3", null, cur._rematch ? (runMisses.length ? "Rematch over, still a slip or two" : "Rematch won") : outcomes.length ? "You made it, at a price" : "You survived"));
+  head.classList.toggle("won", !runMisses.length); // a clean run is one of the few things that earns gold
   // A short scorecard: what it cost, what slipped, what surprised you, what you earned. One line each
   const res = el("dl", "score");
   const line = (k, ...v) => { const dd = el("dd"); dd.append(...v); res.append(el("dt", null, k), dd); };
@@ -5069,7 +5075,7 @@ const smooth = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a
 let restX = 0, restY = 0;
 addEventListener("pointermove", e => { restX = e.clientX / innerWidth - 0.5; restY = e.clientY / innerHeight - 0.5; }, { passive: true });
 function groveRest() {
-  const g = groveG; if (!g || groveRun || !isJade() || innerWidth <= 760) { if (g && !groveRun) g.canvas.classList.remove("rest"); return; }
+  const g = groveG; if (!g || groveRun || !isJade() || innerWidth <= 760 || jadeW.tooSlow > 2 || jadeW.state.scale <= 0.3) { if (g && !groveRun) g.canvas.classList.remove("rest"); return; } // on a struggling machine the world comes first
   const r = $(".wrap").getBoundingClientRect(), hole = (r.width / 2 - 24) / (innerWidth / 2);
   if (hole > 0.97) return g.canvas.classList.remove("rest"); // no room beside the page
   g.canvas.classList.add("rest");
