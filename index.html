@@ -755,6 +755,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 
 /* ---------- the living world behind the page ---------- */
 .jw { position: absolute; inset: 0; display: none; }
+.jw-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.jw.gl > :not(.jw-gl), .scenery.gl .sc-bamboo, .scenery.gl .sc-sun, .scenery.gl .sc-mts, .scenery.gl .sc-dusk { display: none !important; }
 :root[data-look="jade"] .jw { display: block; }
 :root[data-look="jade"] .sc-mts { display: none; }
 .jw-layer { position: absolute; left: -4%; right: -4%; bottom: 0; will-change: transform; }
@@ -4457,6 +4459,315 @@ function jadePeaks(seed, { n, minH, maxH, base, fill, rim, veins = 0, lamps = 0,
     <stop offset="0" stop-color="${rim || "#50F0A0"}" stop-opacity=".9"/><stop offset=".18" stop-color="${rim || "#50F0A0"}" stop-opacity=".25"/><stop offset=".45" stop-color="${rim || "#50F0A0"}" stop-opacity="0"/></linearGradient></defs>${shapes}${extra}</svg>
     ${live ? `<svg class="live" viewBox="0 0 ${W} ${base}" preserveAspectRatio="xMidYMax slice">${live}</svg>` : ""}`;
 }
+// 玉境 in 3D: a raymarched world of karst peaks rising from a sea of cloud.
+// One full-screen fragment shader. The page drives it with a few numbers (camera, sun, light) so the
+// opening can fly through it and the app can let it drift quietly behind the interface.
+const JADE_FRAG = `
+precision highp float;
+uniform vec2 uRes; uniform float uTime, uZ, uYaw, uPitch, uLift, uSun, uReveal, uVein, uFlash;
+#define S 10.0
+float h1(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float h3(vec3 p3) { p3 = fract(p3 * 0.1031); p3 += dot(p3, p3.zyx + 31.32); return fract((p3.x + p3.y) * p3.z); }
+float n3(vec3 p) {
+  vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h3(i), h3(i + vec3(1, 0, 0)), f.x), mix(h3(i + vec3(0, 1, 0)), h3(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(h3(i + vec3(0, 0, 1)), h3(i + vec3(1, 0, 1)), f.x), mix(h3(i + vec3(0, 1, 1)), h3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+float n2(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + vec2(1, 1)), f.x), f.y); }
+float fbm(vec3 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 4; i++) { s += a * n3(p); p = p * 2.03 + 3.1; a *= 0.5; } return s; }
+float fbm2(vec2 p) { float a = 0.5, s = 0.0; for (int i = 0; i < 5; i++) { s += a * n2(p); p = p * 2.02 + 1.7; a *= 0.5; } return s; }
+// the open valley the camera flies along
+float path(float z) { return sin(z * 0.045) * 7.0 + sin(z * 0.017 + 1.3) * 5.0; }
+// one cell's peak: where it stands, how wide and how tall (0 height = no peak here)
+vec4 peak(vec2 cell) {
+  float a = h1(cell), b = h1(cell + 17.3), c = h1(cell + 41.9), e = h1(cell + 7.7);
+  vec2 ctr = (cell + 0.5 + (vec2(a, b) - 0.5) * 0.55) * S;
+  float H = 6.0 + 24.0 * c * c * c + 4.0 * e;
+  float r = 1.7 + 2.2 * b;
+  if (e < 0.22 || abs(ctr.x - path(ctr.y)) < 6.0 + r) H = 0.0;
+  return vec4(ctr, r, H);
+}
+float sdPeak(vec3 p, vec4 k) {
+  if (k.w <= 0.0) return 1e3;
+  vec2 q = p.xz - k.xy; float y = p.y;
+  float t = clamp(y / k.w, 0.0, 1.0);
+  // karst: a fat base, steep sides, a little waist, a rounded top
+  q += vec2(sin(k.x * 3.1), cos(k.y * 2.3)) * t * t * k.z * 0.5; // a slight lean toward the top
+  q += (vec2(n3(vec3(k.xy, y * 0.16)), n3(vec3(k.yx + 9.0, y * 0.16))) - 0.5) * k.z * 0.9; // and a wandering, weathered silhouette
+  float r = k.z * (1.3 - 0.9 * pow(t, 1.6)) * (1.0 + 0.1 * sin(t * 6.0 + k.x)) + 2.2 * (1.0 - t) * (1.0 - t) * (1.0 - t);
+  float side = length(q) - r;
+  float top = length(vec3(q.x, (y - k.w + k.z * 0.3) * 0.75, q.y)) - k.z * 0.55;
+  float body = max(side, y - k.w);
+  return min(body, top) * 0.75;
+}
+float sid; vec2 sctr; float sH;
+float map(vec3 p) {
+  vec2 c = floor(p.xz / S);
+  float d = 1e3; sid = 0.0;
+  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) { // wide bases reach into the next cells
+    vec2 cc = c + vec2(float(i), float(j));
+    vec4 pk = peak(cc); if (pk.w <= 0.0 || (length(p.xz - pk.xy) - pk.z * 1.8 - 2.4) * 0.75 > d) continue; // too far to matter
+    float k = sdPeak(p, pk); if (k < d) { d = k; sid = h1(cc + 3.3) + 0.001; sctr = pk.xy; sH = pk.w; }
+  }
+  // the rock: strata and erosion
+  d += (fbm(p * vec3(1.1, 0.28, 1.1)) - 0.5) * 0.75 + (n3(p * vec3(2.6, 1.2, 2.6)) - 0.5) * 0.16;
+  float g = p.y + 5.0; if (g < d) sid = -1.0;
+  return min(d, g);
+}
+vec3 normal(vec3 p, float t) { vec2 e = vec2(0.02 + t * 0.0015, 0.0);
+  return normalize(vec3(map(p + e.xyy) - map(p - e.xyy), map(p + e.yxy) - map(p - e.yxy), map(p + e.yyx) - map(p - e.yyx))); }
+const vec3 OBS = vec3(0.027, 0.102, 0.075), IMP = vec3(0.055, 0.36, 0.23), FIRE = vec3(0.31, 0.94, 0.63), CLOUD = vec3(0.73, 0.85, 0.77), GOLD = vec3(0.78, 0.66, 0.42);
+vec3 sky(vec3 rd, vec3 sun) {
+  float y = max(rd.y, 0.02);
+  vec3 col = mix(mix(vec3(0.36, 0.55, 0.42), vec3(0.06, 0.24, 0.18), smoothstep(-0.05, 0.1, y)), OBS * 0.45, smoothstep(0.08, 0.45, y));
+  // aurora: slow ribbons high in the sky
+  float au = fbm2(vec2(rd.x * 2.2 + uTime * 0.012, y * 6.0 - uTime * 0.02));
+  float band = smoothstep(0.12, 0.35, y) * smoothstep(0.75, 0.35, y) * smoothstep(0.45, 0.8, au);
+  col += FIRE * band * 0.22 * (0.6 + 0.4 * sin(rd.x * 8.0 + uTime * 0.1));
+  // stars
+  vec2 sp = rd.xz / (rd.y + 0.35) * 70.0; vec2 si = floor(sp);
+  float st = step(0.985, h1(si)) * smoothstep(0.45, 0.0, length(fract(sp) - 0.5)) * smoothstep(0.08, 0.4, y);
+  col += vec3(0.8, 1.0, 0.9) * st * (0.5 + 0.5 * sin(uTime * 2.0 + h1(si + 3.0) * 30.0));
+  // the golden-green sun and its halo
+  float s = max(dot(rd, sun), 0.0);
+  col += mix(GOLD, vec3(0.9, 1.0, 0.7), 0.4) * (pow(s, 900.0) * 3.0 + pow(s, 40.0) * 0.35 + pow(s, 6.0) * 0.12) * uSun;
+  return col;
+}
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+  float z = uZ;
+  vec3 ro = vec3(path(z), 19.0 + uLift, z);
+  vec3 fw = normalize(vec3(path(z + 6.0) - ro.x + uYaw * 6.0, -0.42 + uPitch * 4.0, 6.0));
+  vec3 rt = normalize(cross(vec3(0, 1, 0), fw)), up = cross(fw, rt);
+  vec3 rd = normalize(fw * 1.6 + rt * uv.x + up * uv.y);
+  vec3 sun = normalize(vec3(0.12, -0.02 + 0.11 * uSun, 1.0));
+  vec3 col; float t = 0.0, hit = 0.0, id = 0.0; vec2 pc = vec2(0.0); float ph = 1.0;
+  for (int i = 0; i < 140; i++) {
+    vec3 p = ro + rd * t; float d = map(p);
+    if (d < 0.0012 * t) { hit = 1.0; id = sid; pc = sctr; ph = sH; break; }
+    t += d * 0.85; if (t > 190.0) break;
+  }
+  vec3 bg = sky(rd, sun);
+  if (hit > 0.0) {
+    vec3 p = ro + rd * t, n = normal(p, t);
+    float dif = clamp(dot(n, sun), 0.0, 1.0) * 0.5 + clamp(dot(n, normalize(vec3(-0.6, 0.7, -0.3))), 0.0, 1.0) * 0.45;
+    float rim = pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 4.0);
+    float green = smoothstep(0.35, 0.9, n.y + fbm(p * 1.3) * 0.5); // moss and trees settle where the rock is flatter
+    float trees = n3(p * 3.5) * 0.6 + 0.4;
+    vec3 alb = mix(vec3(0.06, 0.15, 0.12), vec3(0.06, 0.36, 0.19) * trees, green);
+    float ao = clamp(0.4 + 0.6 * smoothstep(0.0, 18.0, p.y), 0.0, 1.0);
+    col = alb * (0.18 + 1.6 * dif) * ao + IMP * 0.1 * (0.5 + 0.5 * n.y);
+    col += mix(FIRE, GOLD, 0.25) * rim * (0.35 + 0.65 * pow(max(dot(rd, sun), 0.0), 3.0)) * 0.55;
+    // veins of light running down some peaks
+    // veins of light: thin rivers running down the faces of a few peaks
+    vec2 dq = p.xz - pc; float ang = atan(dq.y, dq.x) / 3.14159;
+    float v = abs(fract(ang * 3.5 + id * 7.0 + (n3(vec3(dq * 0.3, p.y * 0.12)) - 0.5) * 1.2) - 0.5);
+    float vein = smoothstep(0.03, 0.0, v) * step(0.62, id) * smoothstep(ph * 0.95, ph * 0.6, p.y) * smoothstep(1.0, 5.0, p.y) * (0.35 + 0.65 * pow(0.5 + 0.5 * sin(p.y * 0.9 + uTime * 1.6 + id * 20.0), 3.0));
+    col += FIRE * vein * 0.9 * uVein;
+    // gold lamps: a few small windows of light on the higher ledges
+    vec3 lp = floor(p * 1.2); float lamp = step(0.994, h1(lp.xz + lp.y * 7.1)) * step(6.0, p.y) * smoothstep(0.2, 0.05, length(fract(p * 1.2) - 0.5));
+    col += GOLD * 2.6 * lamp * (0.65 + 0.35 * sin(uTime * 1.3 + lp.x));
+    // the rock sinks into the cloud sea: low on each peak it fades into mist, so there is no hard waterline
+    float sink = smoothstep(8.5, 2.0, p.y + (n3(p * 0.35) - 0.5) * 3.5);
+    col = mix(col, CLOUD * (0.42 + 0.25 * uSun), sink * 0.9);
+    if (id < 0.0) col = CLOUD * 0.5;
+  }
+  // atmosphere: distance fog that glows toward the sun
+  float sunAmt = pow(max(dot(rd, sun), 0.0), 5.0);
+  vec3 fogc = mix(sky(normalize(vec3(rd.x, 0.015, rd.z)), sun) * 0.92, mix(GOLD, CLOUD, 0.5) * 1.05, sunAmt * uSun * 0.7); // haze matches the horizon
+  float fog = hit > 0.0 ? 1.0 - exp(-max(t - 22.0, 0.0) * 0.013) : 1.0;
+  col = hit > 0.0 ? mix(col, mix(fogc, bg, 0.5), fog) : bg;
+  // the sea of cloud, filling the valleys: three soft layers so it has thickness
+  for (int L = 0; L < 3; L++) {
+    float ch = 5.5 - float(L) * 1.6;
+    if (rd.y >= -0.005) break;
+    float tc = (ch - ro.y) / rd.y; vec3 cp = ro + rd * tc;
+    if (tc > 0.0 && (hit < 0.5 || tc < t)) {
+      float dens = fbm2(cp.xz * (0.05 + 0.02 * float(L)) + vec2(uTime * 0.008, uTime * 0.02) + float(L) * 7.0);
+      float cl = smoothstep(0.42 - 0.08 * float(L), 0.78, dens) * smoothstep(0.0, 25.0, tc);
+      float lit = 0.55 + 0.45 * smoothstep(0.4, 0.8, dens);
+      vec3 cc = mix(CLOUD * 0.62 * lit, mix(CLOUD, GOLD, 0.3) * 1.2, (sunAmt * 1.4 + 0.15) * uSun * lit);
+      cl *= hit > 0.5 && id >= 0.0 ? smoothstep(0.0, 7.0, t - tc) : 1.0; // no hard edge where the cloud meets rock
+      col = mix(col, mix(cc, fogc, 1.0 - exp(-tc * 0.009)), cl * (0.55 + 0.15 * float(L)));
+    }
+  }
+  // a band of haze along the horizon, so the far cloud sea melts into the sky
+  col = mix(col, fogc, exp(-abs(rd.y + 0.01) * 18.0) * 0.45);
+  // low drifting mist in front
+  float mist = fbm2(vec2(uv.x * 2.0 + uTime * 0.03, uv.y * 5.0)) * smoothstep(0.05, -0.45, uv.y);
+  col = mix(col, CLOUD * 0.4, mist * 0.35);
+  // light shafts from the sun
+  vec2 sunUv = vec2(dot(sun, rt), dot(sun, up)) / dot(sun, fw) * 1.6;
+  float ang = atan(uv.y - sunUv.y, uv.x - sunUv.x);
+  float rays = pow(max(n2(vec2(ang * 9.0, uTime * 0.05)), 0.0), 3.0) * smoothstep(1.4, 0.0, length(uv - sunUv));
+  col += mix(GOLD, FIRE, 0.4) * rays * 0.18 * uSun * (hit > 0.0 ? 0.25 + 0.75 * fog : 1.0);
+  col += FIRE * uFlash;
+  col = mix(vec3(dot(col, vec3(0.3, 0.55, 0.15))), col, 1.25);
+  col = col / (1.0 + col * 0.35); // soft tone map
+  col = pow(col, vec3(0.92));
+  float vig = smoothstep(1.25, 0.25, length(uv * vec2(0.85, 1.0)));
+  gl_FragColor = vec4(col * mix(0.55, 1.0, vig) * uReveal, 1.0);
+}`;
+// The dragon: a translucent jade body as a real mesh (rings of vertices along a moving spine), lit with
+// fresnel edges and drawn scale by scale in its fragment shader, then blended onto the world.
+const DRAGON_VERT = `
+attribute vec3 aPos; attribute vec3 aNrm; attribute vec2 aUv;
+uniform vec3 uRo, uFw, uRt, uUp; uniform float uAspect;
+varying vec3 vN, vV; varying vec2 vUv; varying float vZ;
+void main() {
+  vec3 v = aPos - uRo; float x = dot(v, uRt), y = dot(v, uUp), z = dot(v, uFw);
+  vN = aNrm; vV = normalize(-v); vUv = aUv; vZ = z;
+  gl_Position = vec4(x * 1.6 * 2.0 / uAspect, y * 1.6 * 2.0, (z - 2.0) / 200.0 * z, z);
+}`;
+const DRAGON_FRAG = `
+precision highp float;
+varying vec3 vN, vV; varying vec2 vUv; varying float vZ;
+uniform float uTime, uFade, uDissolve; uniform vec3 uSunDir;
+float h(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+void main() {
+  vec3 n = normalize(vN); float fr = pow(1.0 - abs(dot(n, vV)), 2.2);
+  float s = vUv.x, a = vUv.y; // s: head 0 to tail 1, a: around the body 0..1 (0.5 = belly)
+  // scales: offset rows of rounded plates, each with a bright edge
+  vec2 g = vec2(s * 150.0, a * 14.0); g.y += mod(floor(g.x), 2.0) * 0.5;
+  vec2 f = fract(g) - vec2(0.3, 0.5);
+  float plate = length(f * vec2(1.0, 1.25));
+  float edge = smoothstep(0.42, 0.5, plate) * (1.0 - smoothstep(0.5, 0.56, plate));
+  float belly = smoothstep(0.32, 0.5, a) * smoothstep(0.68, 0.5, a);
+  vec3 core = mix(vec3(0.03, 0.3, 0.18), vec3(0.6, 0.85, 0.7), belly * 0.6);
+  vec3 col = core * (0.35 + 0.65 * max(dot(n, uSunDir), 0.0));
+  col += vec3(0.31, 0.94, 0.63) * (fr * 1.4 + edge * 0.55 * (1.0 - belly));
+  // a pulse of light travelling down the body
+  col += vec3(0.5, 1.0, 0.75) * pow(0.5 + 0.5 * sin(s * 30.0 - uTime * 6.0), 8.0) * 0.35;
+  // the eyes, in antique gold
+  float eye = smoothstep(0.03, 0.0, length(vec2((s - 0.035) * 3.0, abs(a - 0.5) - 0.32)));
+  col = mix(col, vec3(1.0, 0.85, 0.45) * 2.0, eye);
+  // dissolving into particles of light: scales go first, from the tail up
+  float k = h(floor(g)) * 0.7 + s * 0.3;
+  if (k < uDissolve * 1.15 - 0.1) discard;
+  float glowEdge = smoothstep(uDissolve * 1.15 - 0.1 + 0.08, uDissolve * 1.15 - 0.1, k) * step(0.001, uDissolve);
+  col += vec3(0.6, 1.0, 0.8) * glowEdge * 2.0;
+  float alpha = (0.38 + 0.55 * fr + 0.25 * edge + eye) * uFade;
+  gl_FragColor = vec4(col * alpha, alpha);
+}`;
+function dragonMesh(N, M) {
+  // the body's thickness from snout (0) to tail (1): snout, skull, neck, chest, then a long taper
+  const radius = s => s < 0.03 ? 0.26 + s / 0.03 * 0.5 : s < 0.06 ? 0.76 + Math.sin((s - 0.03) / 0.03 * Math.PI) * 0.32 : s < 0.09 ? 0.76 - (s - 0.06) / 0.03 * 0.14 : s < 0.25 ? 0.62 + (s - 0.09) / 0.16 * 0.48 : Math.max(0.04, 1.1 * Math.pow(1 - (s - 0.25) / 0.75, 1.25));
+  const idx = []; for (let i = 0; i < N - 1; i++) for (let j = 0; j < M; j++) { const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  return { N, M, radius, pos: new Float32Array(N * (M + 1) * 3), nrm: new Float32Array(N * (M + 1) * 3), uv: new Float32Array(N * (M + 1) * 2), idx: new Uint16Array(idx) };
+}
+const V3 = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+};
+// the same camera as the shader's, so the dragon sits in the same world
+const jadePath = z => Math.sin(z * 0.045) * 7.0 + Math.sin(z * 0.017 + 1.3) * 5.0;
+function jadeCamera(st) {
+  const ro = [jadePath(st.z), 19.0 + st.lift, st.z];
+  const fw = V3.norm([jadePath(st.z + 6) - ro[0] + st.yaw * 6, -0.42 + st.pitch * 4, 6]);
+  const rt = V3.norm(V3.cross([0, 1, 0], fw)), up = V3.cross(fw, rt);
+  return { ro, fw, rt, up };
+}
+function jadeGL(canvas, opts = {}) {
+  const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
+  if (!gl) return null;
+  // without a graphics chip the 3D world would only slow the page down, so the drawn layers are used instead
+  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"); if (/swiftshader|llvmpipe|software|basic render/i.test(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "")) return null; } catch {}
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const prog = (vs, fs) => { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); return p; };
+  const pr = prog("attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }", JADE_FRAG);
+  const tri = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, tri); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const U = {}; ["uRes", "uTime", "uZ", "uYaw", "uPitch", "uLift", "uSun", "uReveal", "uVein", "uFlash"].forEach(n => (U[n] = gl.getUniformLocation(pr, n)));
+  const state = { z: 0, yaw: 0, pitch: 0, lift: 0, sun: 1, reveal: 1, vein: 1, flash: 0, scale: opts.scale || 0.5 };
+  // the dragon
+  const dp = prog(DRAGON_VERT, DRAGON_FRAG), DU = {};
+  ["uRo", "uFw", "uRt", "uUp", "uAspect", "uTime", "uFade", "uDissolve", "uSunDir"].forEach(n => (DU[n] = gl.getUniformLocation(dp, n)));
+  const DA = { pos: gl.getAttribLocation(dp, "aPos"), nrm: gl.getAttribLocation(dp, "aNrm"), uv: gl.getAttribLocation(dp, "aUv") };
+  const dragon = { on: false, t: 0, fade: 1, dissolve: 0, size: 0.95, dist: 36, spine: [] };
+  const parts = [dragonMesh(200, 18), dragonMesh(14, 6), dragonMesh(14, 6), dragonMesh(36, 5), dragonMesh(36, 5)];
+  const legs = [0.17, 0.24, 0.5, 0.57].map(() => ({ leg: dragonMesh(12, 8), claws: [0, 1, 2].map(() => dragonMesh(6, 4)) }));
+  const spikes = Array.from({ length: 16 }, () => dragonMesh(5, 5)), mane = Array.from({ length: 6 }, () => dragonMesh(24, 5));
+  legs.forEach(l => parts.push(l.leg, ...l.claws)); parts.push(...spikes, ...mane);
+  parts.forEach(m => { m.bp = gl.createBuffer(); m.bn = gl.createBuffer(); m.bu = gl.createBuffer(); m.bi = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.bi); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.idx, gl.STATIC_DRAW); });
+  // where the body is: a long loop around a point ahead of the camera, rippling as it swims
+  function spineAt(s, T, cam) {
+    const R = 10, a = T - s * 4.8, D = dragon.dist;
+    const x = Math.cos(a) * R * 1.3 + Math.cos(s * 11 - T * 2.4) * 0.6;
+    const y = Math.sin(a) * R * 0.42 - 0.5 + Math.sin(s * 14 - T * 3.2) * 0.9;
+    const z = D - Math.sin(a + 0.6) * R * 0.85;
+    return V3.add(V3.add(V3.add(cam.ro, V3.mul(cam.rt, x)), V3.mul(cam.up, y)), V3.mul(cam.fw, z));
+  }
+  // fill one tube's vertices along a list of points, with a thickness for each
+  function tube(m, pts, rad, s0, s1, upRef) {
+    const N = m.N, M = m.M;
+    for (let i = 0; i < N; i++) {
+      const P = pts[i], T = V3.norm(V3.sub(pts[Math.min(N - 1, i + 1)], pts[Math.max(0, i - 1)]));
+      const side = V3.norm(V3.cross(T, upRef)), upv = V3.cross(side, T), r = rad(i / (N - 1));
+      for (let j = 0; j <= M; j++) {
+        const an = j / M * Math.PI * 2, d = V3.add(V3.mul(upv, Math.cos(an)), V3.mul(side, Math.sin(an))), k = (i * (M + 1) + j);
+        const v = V3.add(P, V3.mul(d, r));
+        m.pos.set(v, k * 3); m.nrm.set(d, k * 3); m.uv[k * 2] = s0 + (s1 - s0) * i / (N - 1); m.uv[k * 2 + 1] = j / M;
+      }
+    }
+  }
+  function buildDragon(time, cam) {
+    const T = dragon.t, body = parts[0], sz = dragon.size, pts = [];
+    for (let i = 0; i < body.N; i++) pts.push(spineAt(i / (body.N - 1), T, cam));
+    dragon.spine = pts;
+    tube(body, pts, s => body.radius(s) * sz, 0, 1, cam.up);
+    // horns sweep back from the skull, whiskers trail from the snout and wave
+    const head = pts[3], fwd = V3.norm(V3.sub(pts[0], pts[6])), side = V3.norm(V3.cross(fwd, cam.up)), upv = V3.cross(side, fwd);
+    [1, -1].forEach((sg, k) => {
+      const hp = [], wp = [];
+      for (let i = 0; i < 14; i++) { const u = i / 13; hp.push(V3.add(head, V3.add(V3.mul(upv, (0.6 + u * 1.1 - u * u * 0.4) * sz), V3.add(V3.mul(fwd, -u * 3.0 * sz), V3.mul(side, sg * (0.35 + u * 0.5) * sz))))); }
+      const snout = pts[0];
+      for (let i = 0; i < 36; i++) { const u = i / 35, w = Math.sin(u * 7 - time * 4 + k) * u * 1.2; wp.push(V3.add(snout, V3.add(V3.mul(fwd, -u * 8 * sz), V3.add(V3.mul(side, sg * (0.3 + u * 2.4 + w * 0.4) * sz), V3.mul(upv, (w - u * 1.2) * sz))))); }
+      tube(parts[1 + k], hp, u => (0.16 - u * 0.13) * sz, 0.6, 0.62, cam.up);
+      tube(parts[3 + k], wp, u => (0.07 - u * 0.05) * sz, 0.6, 0.62, cam.up);
+    });
+    // a ring's frame at body position s: forward, side, up, and the body's thickness there
+    const frame = s => { const i = Math.round(s * (body.N - 1)), P = pts[i], f = V3.norm(V3.sub(pts[Math.max(0, i - 1)], pts[Math.min(body.N - 1, i + 1)])), sd = V3.norm(V3.cross(f, cam.up)); return { P, f, sd, u: V3.cross(sd, f), r: body.radius(s) * sz }; };
+    // four legs, bent at the knee, each with three claws
+    [0.17, 0.24, 0.5, 0.57].forEach((s, k) => {
+      const F = frame(s), sg = k % 2 ? 1 : -1, sw = Math.sin(time * 3 + k * 1.7) * 0.4, lp = [];
+      const hip = V3.add(F.P, V3.add(V3.mul(F.sd, sg * F.r * 0.8), V3.mul(F.u, -F.r * 0.3)));
+      const knee = V3.add(hip, V3.add(V3.mul(F.sd, sg * 1.2 * sz), V3.add(V3.mul(F.u, -0.9 * sz), V3.mul(F.f, (0.5 + sw) * sz))));
+      const foot = V3.add(knee, V3.add(V3.mul(F.u, -1.1 * sz), V3.mul(F.f, (-0.4 + sw) * sz)));
+      for (let i = 0; i < 12; i++) { const u = i / 11; lp.push(u < 0.5 ? V3.add(hip, V3.mul(V3.sub(knee, hip), u * 2)) : V3.add(knee, V3.mul(V3.sub(foot, knee), u * 2 - 1))); }
+      tube(legs[k].leg, lp, u => (0.3 - u * 0.14) * sz, 0.6, 0.62, cam.up);
+      legs[k].claws.forEach((c, j) => { const dir = V3.norm(V3.add(V3.mul(F.f, 0.6), V3.add(V3.mul(F.sd, (j - 1) * 0.6 * sg), V3.mul(F.u, -0.5)))), cp = []; for (let i = 0; i < 6; i++) { const u = i / 5; cp.push(V3.add(foot, V3.add(V3.mul(dir, u * 0.7 * sz), V3.mul(F.u, -u * u * 0.4 * sz)))); } tube(c, cp, u => (0.12 - u * 0.11) * sz, 0.6, 0.62, cam.up); });
+    });
+    // a ridge of spines down the back
+    spikes.forEach((m, k) => { const s = 0.1 + k * 0.045, F = frame(s), base = V3.add(F.P, V3.mul(F.u, F.r * 0.85)), sp = []; const h = F.r * (1.1 + 0.4 * Math.sin(k * 1.3)); for (let i = 0; i < 5; i++) { const u = i / 4; sp.push(V3.add(base, V3.add(V3.mul(F.u, u * h), V3.mul(F.f, -u * h * 0.6)))); } tube(m, sp, u => (1 - u) * F.r * 0.32 + 0.01, 0.6, 0.62, cam.up); });
+    // a flowing mane behind the head
+    mane.forEach((m, k) => { const F = frame(0.065), mp = [], sg = k % 2 ? 1 : -1; for (let i = 0; i < 24; i++) { const u = i / 23, w = Math.sin(u * 6 - time * 3.5 + k) * u; mp.push(V3.add(F.P, V3.add(V3.mul(F.f, -u * (5.5 + k * 0.6) * sz), V3.add(V3.mul(F.u, (F.r * 0.8 + u * (0.5 + k * 0.12) + w * 0.45) * sz), V3.mul(F.sd, sg * (0.3 + u * (0.6 + k * 0.1) + w * 0.5) * sz))))); } tube(m, mp, u => (0.13 - u * 0.11) * sz, 0.6, 0.62, cam.up); });
+  }
+  // the dragon's spine on screen, for the particles it dissolves into
+  dragon.project = (p) => { const cam = jadeCamera(state), v = V3.sub(p, cam.ro), z = V3.dot(v, cam.fw); return z <= 0.1 ? null : [canvas.clientWidth / 2 + V3.dot(v, cam.rt) * 1.6 / z * canvas.clientHeight, canvas.clientHeight / 2 - V3.dot(v, cam.up) * 1.6 / z * canvas.clientHeight]; };
+  function draw(time) {
+    const w = Math.max(2, Math.round(canvas.clientWidth * state.scale)), h = Math.max(2, Math.round(canvas.clientHeight * state.scale));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    gl.viewport(0, 0, w, h); gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST);
+    gl.useProgram(pr); gl.bindBuffer(gl.ARRAY_BUFFER, tri);
+    for (let i = 0; i < 8; i++) gl.disableVertexAttribArray(i);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uTime, time); gl.uniform1f(U.uZ, state.z); gl.uniform1f(U.uYaw, state.yaw); gl.uniform1f(U.uPitch, state.pitch);
+    gl.uniform1f(U.uLift, state.lift); gl.uniform1f(U.uSun, state.sun); gl.uniform1f(U.uReveal, state.reveal); gl.uniform1f(U.uVein, state.vein); gl.uniform1f(U.uFlash, state.flash);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (!dragon.on || dragon.fade <= 0) return;
+    const cam = jadeCamera(state); buildDragon(time, cam);
+    gl.useProgram(dp); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.uniform3fv(DU.uRo, cam.ro); gl.uniform3fv(DU.uFw, cam.fw); gl.uniform3fv(DU.uRt, cam.rt); gl.uniform3fv(DU.uUp, cam.up); gl.uniform1f(DU.uAspect, w / h);
+    gl.uniform1f(DU.uTime, time); gl.uniform1f(DU.uFade, dragon.fade * state.reveal); gl.uniform1f(DU.uDissolve, dragon.dissolve); gl.uniform3fv(DU.uSunDir, V3.norm([0.12, -0.02 + 0.11 * state.sun, 1]));
+    parts.forEach(m => {
+      [[m.bp, m.pos, DA.pos, 3], [m.bn, m.nrm, DA.nrm, 3], [m.bu, m.uv, DA.uv, 2]].forEach(([b, data, loc, n]) => { gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, n, gl.FLOAT, false, 0, 0); });
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.bi); gl.drawElements(gl.TRIANGLES, m.idx.length, gl.UNSIGNED_SHORT, 0);
+    });
+  }
+  return { state, dragon, draw, gl };
+}
 function jadeWorld(sc) {
   const jw = el("div", "jw");
   jw.innerHTML = `<canvas class="jw-stars"></canvas><div class="jw-aurora a1"></div><div class="jw-aurora a2"></div><div class="jw-shaft"></div><div class="jw-glow"></div>
@@ -4467,7 +4778,8 @@ function jadeWorld(sc) {
   <svg class="jw-layer jw-mist" data-depth="0.5" style="height:26vh;animation-duration:110s;animation-delay:-40s" viewBox="0 0 1600 200" preserveAspectRatio="none"><ellipse cx="800" cy="120" rx="900" ry="70" fill="url(#jwm)"/></svg>
   <div class="jw-layer" data-depth="0.7" style="height:30vh">${jadePeaks(37, { n: 6, minH: 70, maxH: 190, base: 240, fill: "#06160f", rim: "#50F0A0", veins: 3 })}</div>`;
   sc.prepend(jw);
-  // Stars, and motes of light drifting upward as if gravity had turned around
+  if (jadeLive(jw, sc)) return;
+  // Without WebGL: the drawn layers below. Stars, and motes of light drifting upward as if gravity had turned around
   const cv = jw.querySelector(".jw-stars"), cx = cv.getContext("2d");
   let stars = [], motes = [], last = 0;
   const size = () => { cv.width = innerWidth; cv.height = innerHeight; stars = Array.from({ length: Math.round(innerWidth * innerHeight / 9000) }, () => ({ x: Math.random() * cv.width, y: Math.random() * cv.height * 0.55, r: Math.random() * 1.1 + 0.2, t: Math.random() * 6 })); };
@@ -4494,6 +4806,48 @@ function jadeWorld(sc) {
     addEventListener("scroll", queue, { passive: true });
     addEventListener("pointermove", e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; glow.style.setProperty("--cx", e.clientX + "px"); glow.style.setProperty("--cy", e.clientY + "px"); queue(); }, { passive: true });
   }
+}
+// The living 3D world behind the app: it drifts slowly through the peaks, leans toward the cursor, rises as
+// you scroll, keeps the story's time of day, and gives way to the full show during the opening.
+let jadeW = null;
+function jadeLive(jw, sc) {
+  const cv = el("canvas", "jw-gl"); jw.prepend(cv);
+  let w; try { w = jadeGL(cv, { scale: 0.5 }); } catch (e) { w = null; }
+  if (!w) { cv.remove(); return false; }
+  jw.classList.add("gl"); sc.classList.add("gl"); jadeW = w;
+  const st = w.state, still = stillMotion(), t0 = performance.now();
+  st.reveal = 0.78; st.z = 30 + Math.random() * 400; // a different stretch of the valley each visit
+  let mx = 0, my = 0, last = 0, slow = 0, fast = 0;
+  const timeSun = () => ({ morning: 0.55, out: 1, evening: 0.12 })[sc.dataset.time] ?? 0.8;
+  w.goal = { sun: timeSun(), reveal: 0.78 }; st.sun = w.goal.sun;
+  w.vein = 0; // a surge of light through the veins (a clean run)
+  new MutationObserver(() => { w.goal.sun = timeSun(); if (sc.classList.contains("gust")) w.vein = 1; }).observe(sc, { attributes: true, attributeFilter: ["data-time", "class"] });
+  addEventListener("pointermove", e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; }, { passive: true });
+  function frame(now) {
+    if (!isJade()) { last = 0; return requestAnimationFrame(frame); }
+    if (document.hidden) return requestAnimationFrame(frame);
+    const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+    if (last && now - last < 31 && !w.show) return requestAnimationFrame(frame); // about 30 frames a second at rest
+    last = now;
+    if (!w.show) { // at rest: drift, follow the cursor and the scroll, ease toward the time of day
+      st.z += dt * 0.55;
+      st.yaw += (mx * 0.05 - st.yaw) * Math.min(1, dt * 2); st.pitch += (-my * 0.02 - Math.min(1, scrollY / 3000) * 0.03 - st.pitch) * Math.min(1, dt * 2);
+      st.lift += (Math.min(1, scrollY / 3000) * -3 - st.lift) * Math.min(1, dt * 2);
+      st.sun += (w.goal.sun - st.sun) * Math.min(1, dt * 0.6); st.reveal += (w.goal.reveal - st.reveal) * Math.min(1, dt * 1.5);
+      w.vein = Math.max(0, w.vein - dt * 0.5); st.vein = 1 + w.vein * 2.5;
+    }
+    const t = performance.now(); w.draw((now - t0) / 1000);
+    // keep it smooth: render fewer pixels on a slower machine, more on a fast one
+    const cost = performance.now() - t;
+    if (cost > 14) { if (++slow > 8 && st.scale > 0.3) { st.scale = Math.max(0.3, st.scale - 0.08); slow = 0; } } else slow = 0;
+    if (cost < 4) { if (++fast > 60 && st.scale < 0.7) { st.scale = Math.min(0.7, st.scale + 0.05); fast = 0; } } else fast = 0;
+    if (cost > 70 && st.scale <= 0.3) w.tooSlow = (w.tooSlow || 0) + 1;
+    if (!still && !(w.tooSlow > 5 && !w.show)) requestAnimationFrame(frame);
+  }
+  w.redraw = () => requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
+  if (still) { st.scale = 0.6; addEventListener("resize", w.redraw); new MutationObserver(() => setTimeout(w.redraw, 50)).observe(sc, { attributes: true, attributeFilter: ["data-time"] }); }
+  return true;
 }
 // Liquid jade: a ring spreads from wherever you press a button, an answer or a card
 document.addEventListener("pointerdown", e => {
@@ -4538,6 +4892,7 @@ function jadeDawn(n) {
 function jadeOpening(force) {
   if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
   if (!force) { try { if (sessionStorage.getItem("sm-opened") || (navigator.webdriver && !location.hash.includes("opening"))) return; sessionStorage.setItem("sm-opened", "1"); } catch {} }
+  if (jadeW) return jadeOpening3D();
   const sc = $(".scenery"), wrap = $(".wrap"), W = innerWidth, H = innerHeight;
   const op = el("div", "opening"); op.setAttribute("aria-hidden", "true");
   op.innerHTML = `<div class="op-rays"></div><div class="op-sun"></div><div class="op-cloud l"></div><div class="op-cloud r"></div><div class="op-flash"></div>
@@ -4646,6 +5001,85 @@ function jadeOpening(force) {
   const skip = () => finish();
   op.querySelector(".op-skip").onclick = finish;
   addEventListener("keydown", skip, true); addEventListener("pointerdown", skip, true);
+}
+// The opening in the 3D world. Darkness and a pulse of jade light; the line splits and the camera rushes
+// forward through the peaks; heaven breaks open as the sun rises; the jade dragon circles while 玉境 is
+// written; then it dissolves into particles that draw the interface.
+function jadeOpening3D() {
+  const w = jadeW, st = w.state, dr = w.dragon, wrap = $(".wrap"), W = innerWidth, H = innerHeight;
+  const op = el("div", "opening gl"); op.setAttribute("aria-hidden", "true");
+  op.innerHTML = `<div class="op-flash"></div>
+    <svg class="op-sky" viewBox="0 0 ${W} ${H}"><text class="op-word" x="${W / 2}" y="${H * 0.45}" text-anchor="middle" font-size="${Math.min(W, H) * 0.2}">玉境</text></svg>
+    <div class="op-black top"></div><div class="op-black bot"></div><div class="op-line"></div><canvas></canvas>
+    <div class="op-title">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
+  document.body.append(op); wrap.classList.add("op-wait");
+  const word = op.querySelector(".op-word"); word.style.opacity = 0;
+  const cv = op.querySelector("canvas"), cx = cv.getContext("2d"); cv.width = W; cv.height = H;
+  let parts = Array.from({ length: 70 }, () => ({ x: W / 2 + (Math.random() - 0.5) * W * 0.6, y: H / 2 + (Math.random() - 0.5) * 10, vy: -0.3 - Math.random() * 1.2, vx: (Math.random() - 0.5) * 0.3, r: Math.random() * 1.8 + 0.4, a: 1, tx: null }));
+  const Z = st.z, rest = { sun: w.goal.sun, reveal: w.goal.reveal };
+  w.show = true; Object.assign(st, { reveal: 0, sun: 0.05, lift: 12, pitch: -0.05, yaw: 0, z: Z - 55, flash: 0 }); dr.on = false; dr.dissolve = 0; dr.fade = 1;
+  const t0 = performance.now(); let raf = 0, over = false, assembled = false;
+  const ease = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+  const outCubic = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return 1 - Math.pow(1 - k, 3); };
+  function tick(now) {
+    const e = (now - t0) / 1000;
+    // the camera: held in the dark, then a rush forward and down through the valley, then a slow glide
+    st.reveal = ease(1.35, 2.3, e);
+    st.z = Z - 55 + 55 * outCubic(1.35, 3.3, e) + Math.max(0, e - 3.3) * 1.2;
+    st.lift = 12 - 12 * outCubic(1.35, 3.3, e);
+    st.pitch = -0.05 + 0.05 * outCubic(1.35, 3.3, e) + 0.035 * ease(3.0, 4.0, e) - 0.035 * ease(6.2, 7.5, e);
+    // heaven breaks open: the sun climbs out of the cloud with a wave of light
+    st.sun = 0.05 + 0.95 * ease(3.0, 4.4, e) - (1 - rest.sun) * ease(6.8, 8.2, e);
+    st.flash = 0.28 * Math.max(0, 1 - Math.abs(e - 3.15) / 0.35);
+    st.vein = 1 + 1.5 * ease(3.0, 4.0, e);
+    // the dragon swims in, loops around the title, and turns to light
+    if (e > 4.0 && !dr.on && !assembled) dr.on = true;
+    dr.t = -2.6 + 4.4 * ease(4.0, 6.9, e);
+    // 玉境 is written stroke by stroke, then fills with light (driven by the clock, so a slow machine stays in step)
+    if (e > 4.6 && !assembled) { const k = ease(4.6, 6.0, e), f = ease(6.0, 6.6, e); word.style.opacity = 1; word.style.strokeDashoffset = 4000 * (1 - k); word.style.fill = `rgba(185,255,220,${(0.9 * f).toFixed(3)})`; }
+    if (e > 6.9 && !assembled) assemble();
+    if (e > 2.9 && !op.classList.contains("ph-heaven")) op.classList.add("ph-heaven");
+    if (e > 4.6 && !op.classList.contains("ph-dragon")) op.classList.add("ph-dragon");
+    cx.clearRect(0, 0, W, H);
+    parts.forEach(p => {
+      if (p.tx != null) { const k = Math.min(1, Math.max(0, (now - p.t0) / p.dur)), q = 1 - Math.pow(1 - k, 3); p.x = p.sx + (p.tx - p.sx) * q + Math.sin(k * Math.PI) * p.curve; p.y = p.sy + (p.ty - p.sy) * q; p.a = now < p.t0 ? 0 : k < 0.85 ? 1 : (1 - k) / 0.15; }
+      else { p.x += p.vx; p.vy -= 0.02; p.y += p.vy; p.a -= 0.012; }
+      cx.globalAlpha = Math.max(0, p.a) * 0.9; cx.fillStyle = "#7dffc0"; cx.shadowColor = "#50F0A0"; cx.shadowBlur = 10; cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill();
+    });
+    cx.shadowBlur = 0;
+    if (!over) raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+  const at = (ms, fn) => setTimeout(() => { if (!over) fn(); }, ms);
+  at(1350, () => op.classList.add("ph-split"));
+  at(1500, () => op.classList.add("ph-rush"));
+  word.style.strokeDasharray = 4000; word.style.strokeDashoffset = 4000;
+  // the dragon becomes the interface: its body breaks into light that flies to the edges of each panel
+  function assemble() {
+    op.classList.add("ph-assemble"); assembled = true;
+    const targets = []; document.querySelectorAll(".wrap .scene, .wrap .rail > *, .wrap header.top > *").forEach(n => { const r = n.getBoundingClientRect(); if (r.width && r.top < H) targets.push(r); });
+    const spine = dr.spine.map(p => dr.project(p)).filter(Boolean), wr = word.getBBox(), now = performance.now();
+    parts = Array.from({ length: Math.min(460, 180 + targets.length * 30) }, (_, i) => {
+      const from = i % 4 && spine.length ? spine[(Math.random() * spine.length) | 0] : [wr.x + Math.random() * wr.width, wr.y + Math.random() * wr.height];
+      const r = targets[i % Math.max(1, targets.length)] || { left: W / 2, top: H / 2, width: 1, height: 1 }, side = Math.random() * 4 | 0;
+      const tx = side === 1 ? r.left + r.width : side === 3 ? r.left : r.left + Math.random() * r.width;
+      const ty = side === 0 ? r.top : side === 2 ? r.top + r.height : r.top + Math.random() * r.height;
+      return { sx: from[0], sy: from[1], x: from[0], y: from[1], tx, ty, t0: now + Math.random() * 300, dur: 900 + Math.random() * 500, curve: (Math.random() - 0.5) * 160, r: Math.random() * 1.6 + 0.6, a: 0 };
+    });
+    const d0 = performance.now(); (function melt() { if (over) return; const k = Math.min(1, (performance.now() - d0) / 700); dr.dissolve = k; dr.fade = 1 - Math.max(0, k - 0.6) / 0.4; if (k < 1) requestAnimationFrame(melt); else dr.on = false; })();
+    word.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: "forwards" });
+    at(700, () => { wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); });
+    at(1900, finish);
+  }
+  function finish() {
+    if (over) return; over = true; cancelAnimationFrame(raf);
+    dr.on = false; w.show = false; st.flash = 0; st.lift = 0; w.goal.reveal = rest.reveal; if (st.reveal < 0.3) st.reveal = 0.3;
+    wrap.classList.remove("op-wait"); if (!wrap.classList.contains("op-in")) wrap.classList.add("op-in");
+    op.classList.add("ph-done"); setTimeout(() => { op.remove(); wrap.classList.remove("op-in"); }, 1000);
+    removeEventListener("keydown", finish, true); removeEventListener("pointerdown", finish, true);
+  }
+  op.querySelector(".op-skip").onclick = finish;
+  addEventListener("keydown", finish, true); addEventListener("pointerdown", finish, true);
 }
 // The look: 玉境 Jade (the default) or Paper (the light bamboo one)
 function setLook(look) {
