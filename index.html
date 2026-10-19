@@ -782,6 +782,17 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 /* ---------- the living world behind the page ---------- */
 .jw { position: absolute; inset: 0; display: none; }
 .jw-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* the filmed world: two players dissolve one shot into the next, graded toward the jade palette and the time of day */
+.jw-film { position: absolute; inset: -3%; transform: scale(1.06); transition: transform 1.2s cubic-bezier(.2, .7, .2, 1); background: var(--obsidian, #071A13); }
+.jw-film video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: saturate(.8) brightness(.74) contrast(1.06); }
+.jw-film video.on { opacity: 1; }
+.scenery[data-time="morning"] .jw-film video { filter: saturate(.85) brightness(.8) contrast(1.04) sepia(.1); }
+.scenery[data-time="evening"] .jw-film video { filter: saturate(.65) brightness(.5) contrast(1.1); }
+.jw-grade { position: absolute; inset: 0; z-index: 3; background: radial-gradient(120% 90% at 50% 38%, transparent 35%, rgba(7, 26, 19, .6) 100%), linear-gradient(rgba(7, 26, 19, .45), rgba(7, 26, 19, .12) 38%, rgba(7, 26, 19, .55) 75%, rgba(7, 26, 19, .85)); }
+.jw-grade::after { content: ""; position: absolute; inset: 0; background: #0E5C3B; mix-blend-mode: color; opacity: .22; }
+.jw.film > :not(.jw-film) { display: none !important; }
+.film-pass { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 75; pointer-events: none; opacity: 0; filter: saturate(.85) brightness(.82) contrast(1.06); }
+:root:not([data-look="jade"]) .film-pass { display: none; }
 .jw.gl > :not(.jw-gl), .scenery.gl .sc-bamboo, .scenery.gl .sc-sun, .scenery.gl .sc-mts, .scenery.gl .sc-dusk { display: none !important; }
 :root[data-look="jade"] .jw { display: block; }
 :root[data-look="jade"] .sc-mts { display: none; }
@@ -906,6 +917,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 <script src="daily.js"></script>
 <script src="journey.js"></script>
 <script src="people.js"></script>
+<script src="films.js"></script>
 <script>
 const S = window.SCENES;
 // Who writes the AI parts, as the page says it: Claude, or your own model when the app runs on your computer
@@ -1054,6 +1066,7 @@ function addMe(h, p, e, kind) {
   scrollLog();
 }
 function addFeedback(kind, note, fix, extra) {
+  if (kind === "good" && jadeF) jadeF.lift();
   if (kind === "good" && jadeW && !stillMotion()) jadeW.vein = Math.max(jadeW.vein || 0, 0.45); // a right answer sends a little light through the mountain's veins
   const box = el("div", "fb " + kind);
   const seal = el("div", "seal", extra && extra.seal || (kind === "wrong" ? "错" : kind === "okay" ? "差不多" : "对"));
@@ -3913,7 +3926,7 @@ function renderFoot() {
   [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
   if (isJade() && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => jadeOpening(true); look.append(re); }
   // say plainly when the full world can't play, so a quiet screen is never a mystery
-  if (isJade()) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
+  if (isJade()) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeF ? `Filmed world on${jadeF.credit ? ` (${jadeF.credit})` : ""}.` : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
   // the device setting wins by default, but it's your app: you can ask for the motion anyway
   const asked = document.documentElement.dataset.motion === "on";
   if (asked || stillMotion()) { const mo = el("button", "linkish", asked ? "Use less motion again" : "Play the motion anyway"); mo.onclick = () => { try { asked ? localStorage.removeItem("sm-motion") : localStorage.setItem("sm-motion", "on"); sessionStorage.removeItem("sm-opened-3d"); } catch {} location.reload(); }; look.append(mo); }
@@ -4974,7 +4987,11 @@ function jadeWorld(sc) {
   <svg class="jw-layer jw-mist" data-depth="0.5" style="height:26vh;animation-duration:110s;animation-delay:-40s" viewBox="0 0 1600 200" preserveAspectRatio="none"><ellipse cx="800" cy="120" rx="900" ry="70" fill="url(#jwm)"/></svg>
   <div class="jw-layer" data-depth="0.7" style="height:30vh">${jadePeaks(37, { n: 6, minH: 70, maxH: 190, base: 240, fill: "#06160f", rim: "#50F0A0", veins: 3 })}</div>`;
   sc.prepend(jw);
+  if (jadeFilm(jw, sc, () => jadeLive(jw, sc) || jadeDrawn(jw))) return;
   if (jadeLive(jw, sc)) return;
+  jadeDrawn(jw);
+}
+function jadeDrawn(jw) {
   // Without WebGL: the drawn layers below. Stars, and motes of light drifting upward as if gravity had turned around
   const cv = jw.querySelector(".jw-stars"), cx = cv.getContext("2d");
   let stars = [], motes = [], last = 0;
@@ -5050,6 +5067,87 @@ function jadeLive(jw, sc) {
   if (still) { st.scale = 0.6; addEventListener("resize", w.redraw); new MutationObserver(() => setTimeout(w.redraw, 50)).observe(sc, { attributes: true, attributeFilter: ["data-time"] }); }
   return true;
 }
+// ---------- the filmed world: clips made for the app (films.js), graded into the jade palette ----------
+// Each shot drifts behind the page and dissolves into the next. Moving to another page cuts to a new shot, a new day
+// passes through the bamboo into the morning, and the opening is the grove giving way to the peaks. Playing video costs
+// the graphics chip very little, so this stays smooth where drawing the world in code lagged.
+let jadeF = null;
+function jadeFilm(jw, sc, fallback) {
+  const F = window.FILMS, probe = document.createElement("video");
+  if (!F || !F.peaks || !F.peaks.length || !probe.canPlayType('video/webm; codecs="vp9"')) return false;
+  const still = stillMotion(), shots = F.peaks.slice();
+  const box = el("div", "jw-film"), mk = () => { const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.disablePictureInPicture = true; return v; };
+  const vids = [mk(), mk()]; box.append(...vids, el("div", "jw-grade"));
+  jw.prepend(box); jw.classList.add("film"); sc.classList.add("gl");
+  let cur = null, n = 0, played = false, failed = false, pass = null;
+  const f = jadeF = { box, shot: null, credit: F.credit || "" };
+  const fail = () => { if (failed) return; failed = true; jadeF = null; box.remove(); pass && pass.remove(); jw.classList.remove("film"); sc.classList.remove("gl"); fallback(); renderFoot(); };
+  // another shot for the time of day you're looking at; when there's only the one, another moment of it
+  const fits = (s, t) => s && (!s.time || s.time === (t || sc.dataset.time)), any = c => c[Math.floor(Math.random() * c.length)];
+  const pick = want => {
+    const c = shots.filter(s => s !== f.shot && fits(s, want));
+    if (c.length) return any(c);
+    if (fits(f.shot, want)) return f.shot;
+    const o = shots.filter(s => s !== f.shot); return o.length ? any(o) : f.shot || shots[0];
+  };
+  const load = (v, s) => { v.shot = s; v.leaving = false; v.src = s.src; if (s.poster) v.poster = s.poster; v.load(); };
+  vids.forEach(v => {
+    v.addEventListener("error", () => { if (!played) return fail(); const i = shots.indexOf(v.shot); if (i >= 0 && shots.length > 1) shots.splice(i, 1); if (v === cur) cut(400); });
+    // a moment before a shot ends, the next one dissolves in over it
+    v.addEventListener("timeupdate", () => { if (v === cur && !v.leaving && !still && v.duration && v.currentTime > v.duration - 1.5) cut(1300); });
+  });
+  // cut to another shot: ms is the dissolve; want is a shot, or a time of day to choose one for
+  function cut(ms, want) {
+    if (failed) return;
+    const v = cur === vids[0] ? vids[1] : vids[0], old = cur, id = ++n;
+    const s = want && typeof want === "object" ? want : !want && v.shot && v.shot !== f.shot && fits(v.shot) ? v.shot : pick(want), same = s === f.shot;
+    if (v.shot !== s) load(v, s);
+    if (old) old.leaving = true;
+    f.shot = s; cur = v;
+    const start = () => {
+      if (id !== n) return;
+      played = true; v.leaving = false;
+      try { v.currentTime = still ? Math.min(1, (v.duration || 2) / 2) : same ? Math.random() * Math.max(0, (v.duration || 0) - 2.5) : 0; } catch {}
+      if (!still) v.play().catch(() => {});
+      v.style.zIndex = 2; if (old) old.style.zIndex = 1;
+      v.classList.add("on");
+      if (ms && v.animate) { v.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease" }); v.animate([{ transform: "scale(1.07)" }, { transform: "none" }], { duration: ms + 1400, easing: "cubic-bezier(.2,.7,.2,1)" }); }
+      if (old) setTimeout(() => { if (id !== n) return; old.classList.remove("on"); old.pause(); if (!still) load(old, pick()); }, ms + 60); // the next shot waits, ready, in the other player
+    };
+    if (v.readyState >= 2) start(); else v.addEventListener("loadeddata", start, { once: true });
+  }
+  f.cut = (ms, want) => { if (!still) cut(ms, want); };
+  // resolves once the shot on screen (and the bamboo) can show their first frames, or after a moment regardless
+  f.ready = () => Promise.race([new Promise(r => setTimeout(r, 1600)), Promise.all([cur, pass].map(v => !v || v.readyState >= 2 ? 0 : new Promise(r => { v.addEventListener("loadeddata", r, { once: true }); v.addEventListener("error", r, { once: true }); })))]);
+  cut(still ? 0 : 700);
+  // the bamboo: a real pass through the grove, played in front of the page for a new day and the opening
+  if (F.grove && !still) { pass = mk(); pass.className = "film-pass"; pass.setAttribute("aria-hidden", "true"); pass.src = F.grove.src; pass.load(); document.body.append(pass); pass.onerror = () => { pass.remove(); pass = null; }; }
+  f.pass = pass;
+  f.through = (ms, after) => { // one pass through the bamboo; the world behind changes while it covers the page
+    if (!pass || pass.readyState < 2) return false;
+    const d = pass.duration || 5; try { pass.currentTime = Math.random() * Math.max(0, d - ms / 1000 - 0.3); } catch {}
+    pass.play().catch(() => {});
+    pass.animate([{ opacity: 0, transform: "scale(1.12)" }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.55 }, { opacity: 0, transform: "none" }], { duration: ms, easing: "cubic-bezier(.45,0,.3,1)" }).onfinish = () => pass.pause();
+    setTimeout(after, ms * 0.4);
+    return true;
+  };
+  // a right answer: the light in the valley lifts for a moment
+  f.lift = () => { const g = box.querySelector(".jw-grade"); if (g.animate && !still) g.animate([{ opacity: 1 }, { opacity: 0.55, offset: 0.3 }, { opacity: 1 }], { duration: 1200, easing: "ease-out" }); };
+  let time = sc.dataset.time; // the light changes with the story's time of day
+  new MutationObserver(() => { if (sc.dataset.time === time) return; time = sc.dataset.time; if (!fits(f.shot)) f.cut(1500, time); }).observe(sc, { attributes: true, attributeFilter: ["data-time"] });
+  // the camera leans toward the cursor and rises as you scroll
+  let mx = 0, my = 0, queued = false;
+  const place = () => { queued = false; box.style.transform = `translate3d(${(-mx * 16).toFixed(1)}px, ${(-my * 9 - Math.min(1, scrollY / 3000) * 24).toFixed(1)}px, 0) scale(1.06)`; };
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(place); } };
+  if (!still) {
+    addEventListener("pointermove", e => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; queue(); }, { passive: true });
+    addEventListener("scroll", queue, { passive: true });
+  }
+  // nothing plays where nobody's looking
+  f.sync = () => { if (!cur || still) return; if (document.hidden || !isJade()) { cur.pause(); } else cur.play().catch(() => {}); };
+  document.addEventListener("visibilitychange", f.sync);
+  return true;
+}
 // ---------- motion in 玉境: a 3D bamboo grove passes in front of the page, and the world behind it answers ----------
 // Pointer light: buttons, answers and cards catch a soft jade light where the pointer is
 let litEl = null;
@@ -5104,6 +5202,7 @@ function jadeSweep(key) {
   if (first || !isJade() || stillMotion() || key === sweepKey || document.querySelector(".opening")) { sweepKey = key; return; }
   sweepKey = key; if (Date.now() - sweepAt < 700) return; sweepAt = Date.now();
   const dir = /^home/.test(key) ? -1 : 1, sc = $(mode === "notebook" ? ".notebook" : ".scene");
+  if (jadeF) { jadeF.cut(450); pageIn(sc, dir, 40, 320); brushIn($("#place"), 100, 480); return; } // filmed: a cut to another shot, the page settles in front
   const ok = groveSweep(680, dir, groveSun());
   pageIn(sc, dir, ok ? 240 : 0, ok ? 380 : 240); brushIn($("#place"), ok ? 330 : 60, 520);
 }
@@ -5115,6 +5214,13 @@ function brushIn(node, delay, ms) {
 function jadeDawn(n) {
   if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
   sweepAt = Date.now();
+  if (jadeF) { // filmed: through the bamboo, out into the morning
+    const dawn = (window.FILMS || {}).dawn || "morning";
+    if (!jadeF.through(1100, () => jadeF.cut(0, dawn))) jadeF.cut(700, dawn);
+    pageIn($(".scene"), 1, 420, 380);
+    const p = $("#place"); if (p && p.animate) p.animate([{ clipPath: "inset(-20% 100% -20% 0)", filter: "drop-shadow(0 0 0 rgba(199,169,107,0))" }, { clipPath: "inset(-20% 0 -20% 0)", filter: "drop-shadow(0 0 16px rgba(199,169,107,.9))", offset: 0.65 }, { clipPath: "inset(-20% 0 -20% 0)", filter: "drop-shadow(0 0 0 rgba(199,169,107,0))" }], { duration: 1000, delay: 480, easing: "cubic-bezier(.5,0,.2,1)", fill: "backwards" });
+    return;
+  }
   if (jadeW) { jadeW.state.sun = 0.02; jadeW.vein = 1; }
   const ok = groveSweep(1000, 1, 0.55);
   setTimeout(() => {
@@ -5131,11 +5237,11 @@ function jadeLeaves() {
 function jadeOpening(force) {
   if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
   if (!force) { try { if (sessionStorage.getItem("sm-opened-3d") || (navigator.webdriver && !location.hash.includes("opening"))) return; sessionStorage.setItem("sm-opened-3d", "1"); } catch {} }
-  const g = jadeW && grove(), w = jadeW, wrap = $(".wrap");
-  const op = el("div", "opening" + (g ? " gl" : "")); op.setAttribute("aria-hidden", "true");
+  const g = jadeW && grove(), w = jadeW, wrap = $(".wrap"), fl = !w && jadeF, pv = fl && fl.pass;
+  const op = el("div", "opening" + (g || fl ? " gl" : "")); op.setAttribute("aria-hidden", "true");
   op.innerHTML = `<div class="op-black"></div><div class="op-word"><span>玉</span><span>境</span></div><div class="op-sub">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
   document.body.append(op); wrap.classList.add("op-wait");
-  const END = g ? 3.8 : 2.3, UI = END - 0.8;
+  const END = g || fl ? 3.8 : 2.3, UI = END - 0.8;
   let rest = null, Z = 0;
   if (w) { const st = w.state; rest = { sun: w.goal.sun, reveal: w.goal.reveal }; Z = st.z; w.show = true; Object.assign(st, { sun: 0.04, z: Z - 26, lift: 3, pitch: 0, yaw: 0, reveal: 0.45, flash: 0 }); w.dragon.on = false; w.dragon.fade = 1; w.dragon.dissolve = 0; }
   if (groveRun) groveRun.stop();
@@ -5159,13 +5265,22 @@ function jadeOpening(force) {
         alpha: 1 - smooth(2.1, 2.7, e), veil: 0.92 * (1 - smooth(0.5, 1.9, e)), focal: 1.15, fogNear: 2.5, fogFar: 20 });
       else g.canvas.classList.remove("on");
     }
+    if (fl) { // filmed: the grove plays in front, then thins away into the peaks as the light comes up
+      if (pv) pv.style.opacity = 1 - smooth(1.5, 2.5, e);
+      fl.box.style.filter = `brightness(${(0.3 + 0.7 * smooth(0.8, 2.8, e)).toFixed(3)})`;
+    }
     if (!uiIn && e > UI) { uiIn = true; op.classList.add("ph-out"); wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); }
     if (e > END) return finish();
     requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  if (fl) { // wait (briefly) for the first frames, behind the dark, so the film doesn't start half loaded
+    fl.cut(0, (window.FILMS || {}).dawn || "morning");
+    if (pv) pv.style.opacity = 1;
+    fl.ready().then(() => { if (over) return; if (pv) { try { pv.currentTime = 0; } catch {} pv.play().catch(() => {}); } requestAnimationFrame(tick); });
+  } else requestAnimationFrame(tick);
   function finish() {
     if (over) return; over = true;
+    if (fl) { if (pv) { pv.style.opacity = ""; pv.pause(); } fl.box.style.filter = ""; }
     if (w) { const st = w.state; w.dragon.on = false; w.show = false; st.flash = 0; st.lift = 0; st.vein = 1; w.goal.reveal = rest.reveal; }
     if (g) g.canvas.classList.remove("on");
     wrap.classList.remove("op-wait"); if (!uiIn) wrap.classList.add("op-in");
@@ -5178,7 +5293,7 @@ function jadeOpening(force) {
 // The look: 玉境 Jade (the default) or Paper (the light bamboo one)
 function setLook(look) {
   document.documentElement.dataset.look = look; try { localStorage.setItem("sm-look", look); } catch {}
-  renderFoot(); setSky();
+  renderFoot(); setSky(); jadeF && jadeF.sync();
 }
 scenery();
 jadeWorld($(".scenery"));

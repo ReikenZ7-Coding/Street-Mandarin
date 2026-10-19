@@ -12,7 +12,10 @@ import { priceOf } from "./config.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(here, "../..");
 // Only these files are served: never the server's code, the repo's history or anything else in it
-const APP_FILES = ["index.html", "client.js", "scenes.js", "why.js", "voices.js", "daily.js", "journey.js", "people.js"];
+const APP_FILES = ["index.html", "client.js", "scenes.js", "why.js", "voices.js", "daily.js", "journey.js", "people.js", "films.js"];
+// The filmed world's clips and posters (made by tools/make-films.js), served from films/ by name only
+const FILMS_DIR = path.join(APP_ROOT, "films"), FILM_RE = /^[a-z0-9-]{1,40}\.(webm|jpg)$/;
+const FILM_TYPES = { ".webm": "video/webm", ".jpg": "image/jpeg" };
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
 
 const COOKIE = "sm_session";
@@ -276,6 +279,23 @@ export function createApp({ db, config, ai: aiIn = {} }) {
   /* ---------- the app itself ---------- */
   app.get("/health", c => c.text("ok"));
   app.get("/", c => c.body(files.get("index.html"), 200, { "Content-Type": TYPES[".html"], "Cache-Control": "no-cache" }));
+  // Clips are sent in pieces when the browser asks for a range, so it can start playing and loop without fetching it all again
+  app.get("/films/:name", c => {
+    const name = c.req.param("name");
+    if (!FILM_RE.test(name)) return c.notFound();
+    const file = path.join(FILMS_DIR, name);
+    let size; try { size = fs.statSync(file).size; } catch { return c.notFound(); }
+    const head = { "Content-Type": FILM_TYPES[path.extname(name)], "Accept-Ranges": "bytes", "Cache-Control": "public, max-age=86400" };
+    const m = /^bytes=(\d*)-(\d*)$/.exec(c.req.header("range") || "");
+    if (m && (m[1] || m[2])) {
+      let start = m[1] ? +m[1] : Math.max(0, size - +m[2]), end = m[1] && m[2] ? Math.min(+m[2], size - 1) : size - 1;
+      if (start >= size || start > end) return c.body(null, 416, { "Content-Range": `bytes */${size}` });
+      const buf = Buffer.alloc(end - start + 1), fd = fs.openSync(file, "r");
+      try { fs.readSync(fd, buf, 0, buf.length, start); } finally { fs.closeSync(fd); }
+      return c.body(buf, 206, { ...head, "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(buf.length) });
+    }
+    return c.body(fs.readFileSync(file), 200, { ...head, "Content-Length": String(size) });
+  });
   app.get("/:file", c => {
     const f = c.req.param("file");
     if (!files.has(f)) return c.notFound();

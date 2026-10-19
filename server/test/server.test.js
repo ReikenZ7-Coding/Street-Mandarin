@@ -58,6 +58,23 @@ test("serves the app with client.js added, and nothing else from the repo", asyn
   for (const p of ["/README.md", "/server/src/app.js", "/.git/config", "/..%2Fpackage.json", "/package.json"]) assert.equal((await b("GET", p)).status, 404, p);
 });
 
+test("serves the filmed world's clips, in ranges when asked, and nothing else from films/", async () => {
+  const fs = await import("node:fs"), path = await import("node:path"), { fileURLToPath } = await import("node:url");
+  const file = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../films/zz-test.webm");
+  fs.writeFileSync(file, Buffer.from("0123456789"));
+  try {
+    const whole = await app.request("http://sm.test/films/zz-test.webm");
+    assert.equal(whole.status, 200); assert.equal(whole.headers.get("content-type"), "video/webm"); assert.equal(await whole.text(), "0123456789");
+    const part = await app.request("http://sm.test/films/zz-test.webm", { headers: { range: "bytes=2-5" } });
+    assert.equal(part.status, 206); assert.equal(part.headers.get("content-range"), "bytes 2-5/10"); assert.equal(await part.text(), "2345");
+    const tail = await app.request("http://sm.test/films/zz-test.webm", { headers: { range: "bytes=-3" } });
+    assert.equal(await tail.text(), "789");
+    assert.equal((await app.request("http://sm.test/films/zz-test.webm", { headers: { range: "bytes=20-" } })).status, 416);
+    for (const p of ["/films/.gitkeep", "/films/..%2Fpackage.json", "/films/zz-test.mp4", "/films/missing.webm"]) assert.equal((await app.request("http://sm.test" + p)).status, 404, p);
+    assert.equal((await app.request("http://sm.test/films.js")).status, 200);
+  } finally { fs.unlinkSync(file); }
+});
+
 test("sign up, sign out, sign in", async () => {
   const b = browser(app);
   assert.equal((await b("GET", "/api/account")).json.signedIn, false);

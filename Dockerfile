@@ -3,7 +3,8 @@ FROM node:22-slim
 WORKDIR /app
 COPY server/package.json server/package-lock.json server/
 RUN cd server && npm ci --omit=dev
-COPY index.html client.js scenes.js why.js voices.js daily.js journey.js people.js ./
+COPY index.html client.js scenes.js why.js voices.js daily.js journey.js people.js films.js ./
+COPY films films
 COPY server/src server/src
 ENV NODE_ENV=production PORT=8080
 EXPOSE 8080
