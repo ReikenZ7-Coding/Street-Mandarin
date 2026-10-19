@@ -777,9 +777,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 @keyframes drawpeak { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0 0; } }
 /* the bamboo grove: a 3D canvas that passes in front of the page between places */
 .grove { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 75; pointer-events: none; display: none; }
-.grove.rest { display: block; z-index: 0; } /* at rest: a few stalks beside the page, between the world and the interface */
 .grove.on { display: block; z-index: 75; }
-@media (max-width: 760px) { .grove.rest { display: none; } }
 
 /* ---------- the living world behind the page ---------- */
 .jw { position: absolute; inset: 0; display: none; }
@@ -3915,7 +3913,7 @@ function renderFoot() {
   [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
   if (isJade() && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => jadeOpening(true); look.append(re); }
   // say plainly when the full world can't play, so a quiet screen is never a mystery
-  if (isJade()) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? "3D world on." : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
+  if (isJade()) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
   // the device setting wins by default, but it's your app: you can ask for the motion anyway
   const asked = document.documentElement.dataset.motion === "on";
   if (asked || stillMotion()) { const mo = el("button", "linkish", asked ? "Use less motion again" : "Play the motion anyway"); mo.onclick = () => { try { asked ? localStorage.removeItem("sm-motion") : localStorage.setItem("sm-motion", "on"); sessionStorage.removeItem("sm-opened-3d"); } catch {} location.reload(); }; look.append(mo); }
@@ -4686,12 +4684,14 @@ function jadeCamera(st) {
   const rt = V3.norm(V3.cross([0, 1, 0], fw)), up = V3.cross(fw, rt);
   return { ro, fw, rt, up };
 }
-let jadeWhy = "";
+let jadeWhy = "", jadeGPU = "";
+// "ANGLE (NVIDIA, NVIDIA GeForce RTX 5070 Ti Laptop GPU (0x2F58) Direct3D11 vs_5_0 ps_5_0, D3D11)" → "NVIDIA GeForce RTX 5070 Ti Laptop GPU"
+const gpuName = r => (String(r || "").replace(/^ANGLE \(/, "").split(",").find((x, i, a) => i === (a.length > 1 ? 1 : 0)) || "").replace(/\s*\(0x[0-9a-f]+\)|\s*Direct3D.*$|\s*\(R\)|\(TM\)/gi, "").trim();
 function jadeGL(canvas, opts = {}) {
   const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
   if (!gl) { jadeWhy = "this browser has WebGL turned off"; return null; }
   // without a graphics chip the 3D world would only slow the page down, so the drawn layers are used instead
-  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"); if (/swiftshader|llvmpipe|software|basic render/i.test(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : "")) { jadeWhy = "no graphics chip found"; return null; } } catch {}
+  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"), r = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ""; jadeGPU = gpuName(r); if (/swiftshader|llvmpipe|software|basic render/i.test(r)) { jadeWhy = "no graphics chip found"; return null; } } catch {}
   const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   const prog = (vs, fs) => { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); return p; };
   const pr = prog("attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }", JADE_FRAG);
@@ -4939,7 +4939,7 @@ function jadeGroveGL(canvas) {
   const A = [["aPos", 3, 0], ["aNrm", 3, 3], ["aUv", 2, 6], ["aMeta", 4, 8], ["aBase", 2, 12]].map(([n, k, o]) => [gl.getAttribLocation(pg, n), k, o]);
   // state: cam position, yaw (0 looks across the path, π/2 along it), pitch, time, alpha, veil, window [centre, half width], sun, wind
   function draw(st) {
-    const dpr = Math.min(devicePixelRatio || 1, 1.5), W = Math.max(1, Math.round(canvas.clientWidth * dpr)), H = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    const dpr = Math.min(devicePixelRatio || 1, 1), W = Math.max(1, Math.round(canvas.clientWidth * dpr)), H = Math.max(1, Math.round(canvas.clientHeight * dpr));
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
     gl.viewport(0, 0, W, H); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -5035,11 +5035,13 @@ function jadeLive(jw, sc) {
       st.sun += (w.goal.sun - st.sun) * Math.min(1, dt * 0.6); st.reveal += (w.goal.reveal - st.reveal) * Math.min(1, dt * 1.5);
       w.vein = Math.max(0, w.vein - dt * 0.5); st.vein = 1 + w.vein * 2.5;
     }
-    const t = performance.now(); w.draw((now - t0) / 1000); if (w.rest && !w.show) w.rest(now);
-    // keep it smooth: render fewer pixels on a slower machine, more on a fast one
-    const cost = performance.now() - t;
-    if (cost > 14) { if (++slow > 8 && st.scale > 0.3) { st.scale = Math.max(0.3, st.scale - 0.08); slow = 0; } } else slow = 0;
-    if (cost < 4) { if (++fast > 60 && st.scale < 0.7) { st.scale = Math.min(0.7, st.scale + 0.05); fast = 0; } } else fast = 0;
+    const t = performance.now(); w.draw((now - t0) / 1000);
+    // keep it smooth: render fewer pixels on a slower machine, more on a fast one. The time a draw call takes on the CPU
+    // says little about the graphics chip, so this also watches whether frames actually arrive on time.
+    const cost = performance.now() - t, gap = w.prev ? now - w.prev : 0, want = w.show ? 17 : idle ? 64 : 33; w.prev = now;
+    const behind = cost > 14 || gap > want * 1.7;
+    if (behind) { if (++slow > 5 && st.scale > 0.3) { st.scale = Math.max(0.3, st.scale - 0.08); slow = 0; } } else slow = 0;
+    if (cost < 4 && gap && gap < want * 1.25) { if (++fast > 90 && st.scale < 0.7) { st.scale = Math.min(0.7, st.scale + 0.04); fast = 0; } } else fast = 0;
     if (cost > 70 && st.scale <= 0.3) w.tooSlow = (w.tooSlow || 0) + 1;
     if (!still && !(w.tooSlow > 5 && !w.show)) requestAnimationFrame(frame);
   }
@@ -5065,22 +5067,12 @@ function grove() {
   groveG = null; if (!jadeW) return null;
   const cv = el("canvas", "grove"); cv.setAttribute("aria-hidden", "true"); document.body.append(cv);
   try { groveG = jadeGroveGL(cv); groveG && groveG.draw({ cam: [0, 1.6, 0], yaw: 0, pitch: 0, t: 0, sun: 1, alpha: 0, veil: 0.01 }); } catch (e) { groveG = null; console.warn("竹林:", e); } // one hidden draw, so the graphics chip has the shaders ready before the first real pass
-  if (!groveG) cv.remove(); else jadeW.rest = groveRest;
+  if (!groveG) cv.remove();
   return groveG;
 }
 if (!stillMotion()) (window.requestIdleCallback || setTimeout)(() => isJade() && grove(), { timeout: 2500 });
 const groveSun = () => (jadeW && jadeW.goal ? jadeW.goal.sun : 1);
 const smooth = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
-// at rest, the grove frames the page from its edges and leans a little with the pointer (drawn with the world, at its pace)
-let restX = 0, restY = 0;
-addEventListener("pointermove", e => { restX = e.clientX / innerWidth - 0.5; restY = e.clientY / innerHeight - 0.5; }, { passive: true });
-function groveRest() {
-  const g = groveG; if (!g || groveRun || !isJade() || innerWidth <= 760 || jadeW.tooSlow > 2 || jadeW.state.scale <= 0.3) { if (g && !groveRun) g.canvas.classList.remove("rest"); return; } // on a struggling machine the world comes first
-  const r = $(".wrap").getBoundingClientRect(), hole = (r.width / 2 - 24) / (innerWidth / 2);
-  if (hole > 0.97) return g.canvas.classList.remove("rest"); // no room beside the page
-  g.canvas.classList.add("rest");
-  g.draw({ cam: [restX * 0.35, 1.6, -0.4], yaw: restX * 0.03, pitch: 0.1 - restY * 0.04, t: performance.now() / 1000, sun: groveSun(), wind: 0, alpha: 0.95, veil: 0, hole: Math.max(0.05, hole), focal: 1.2, fogNear: 2, fogFar: 20 });
-}
 // play one pass of the grove: frame(k 0..1, seconds) returns what to draw
 function grovePlay(ms, frame) {
   const g = grove(); if (!g) return null;
