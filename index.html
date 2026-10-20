@@ -190,9 +190,9 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .help-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .help-row .seg button { line-height: 18px; } .tsize button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
 /* the help dial shows only where it changes something: the places, Long Story, Mistakes and the pocket */
-.help.help-off :is(.help-label, #help-seg, .help-desc) { display: none; } .help.help-off { align-self: center; }
+.help.help-off #help-seg { display: none; } .help.help-off { align-self: center; }
 @media (max-width: 760px) { .help, .help.help-off { flex-direction: column; align-items: flex-start; align-self: auto; } .help-row { justify-content: flex-start; } .help-row .tsize { order: 2; } }
-.help.pop :is(.help-label, #help-seg, .help-desc) { animation: help-pop .35s cubic-bezier(.2, .9, .3, 1.3) both; }
+.help.pop #help-seg { animation: help-pop .35s cubic-bezier(.2, .9, .3, 1.3) both; }
 @keyframes help-pop { from { opacity: 0; transform: translateY(4px) scale(.94); } }
 .seg button:disabled { opacity: .35; cursor: default; }
 @media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .help-desc { display: none; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
@@ -269,6 +269,9 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .me .say { color: inherit; opacity: 0.75; }
 .say svg { width: 18px; height: 18px; }
 body.no-py .py { display: none; }
+body.no-en .tr { display: none; }
+body:is(.no-py, .no-en) .tap-rv { cursor: pointer; }
+body.no-py .tap-rv.rv-open .py, body.no-en .tap-rv.rv-open .tr { display: revert; } /* a tapped line shows its pinyin and English */
 
 /* Feedback cards: a seal stamp + what happened */
 .fb { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 12px 14px; align-items: start; border-radius: 12px; padding: 12px 14px; border: 1px solid; max-width: 640px; }
@@ -898,12 +901,10 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
     <div class="nt-body"></div>
   </aside>
     <div class="help">
-      <span class="help-label" id="help-label">How much help</span>
       <div class="help-row">
         <div class="seg tsize" id="ts-seg" role="group" aria-label="Text size"><button type="button" data-d="-1" aria-label="Smaller text">A−</button><button type="button" data-d="0" class="ts-val" title="Back to normal size">100%</button><button type="button" data-d="1" aria-label="Larger text">A+</button></div>
-        <div class="seg" id="help-seg" role="group" aria-labelledby="help-label"></div>
+        <div class="seg" id="help-seg" role="group" aria-label="What to show with the Chinese"></div>
       </div>
-      <span class="help-desc" id="help-desc"></span>
     </div>
   </header>
 
@@ -993,6 +994,8 @@ function practised() {
   renderStreak();
 }
 let prefs = Object.assign({ py: true, hint: false, listen: false, how: "pick" }, store.get("sm-prefs", {}));
+if (prefs.en === undefined) prefs.en = !!prefs.hint; // from the old help dial: its English level had English on
+prefs.listen = false; prefs.hint = prefs.en;
 if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 
 /* ---------- state ---------- */
@@ -1056,8 +1059,8 @@ function bubbleContent(h, p, e, revealEn) {
   const tools = el("div", "b-tools");
   if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(h); tools.append(b); }
   if (e) {
-    const en = el("div", "en-line", e);
-    if (!revealEn) { en.hidden = true; const r = el("button", "reveal", "What does that mean?"); r.onclick = () => { en.hidden = false; r.remove(); }; tools.append(r); }
+    const en = el("div", "en-line tr", e);
+    if (!prefs.en || !prefs.py) { const r = el("button", "reveal", prefs.en ? "Show pinyin" : "What does that mean?"); r.onclick = () => { const b = r.closest(".bubble, .lt") || r.parentNode.parentNode; b.classList.add("tap-rv", "rv-open"); r.remove(); }; tools.append(r); }
     frag.append(tools, en);
   } else frag.append(tools);
   return frag;
@@ -1242,7 +1245,7 @@ function renderRail() {
   const ut = tool("随便聊", "Unscripted", unread ? `${plural(unread, "new message")}` : nChats ? `${plural(nChats, "chat")} going` : `Chat with ${PEOPLE.length} people you meet`, mode === "chat", () => startChats());
   ut.id = "tool-chat"; rail.append(ut);
   $(".layout").classList.toggle("nb-view", mode === "notebook"); applyTextSize();
-  const hb = $(".help"), off = mode === "home" || mode === "chat"; // the day page has no answers to help with, and Unscripted has its own switches
+  const hb = $(".help"), off = mode === "chat"; // Unscripted has its own switches
   if (hb.classList.contains("help-off") && !off) { hb.classList.remove("pop"); void hb.offsetWidth; hb.classList.add("pop"); }
   hb.classList.toggle("help-off", off);
   // Pages you read (not conversations) get the full height instead of a scroll box
@@ -1381,7 +1384,7 @@ function heardRows(s, box) {
     if (!t.npc) return;
     const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]));
     ((VOICES[s.id] || {})[ti] || []).forEach(v => r.append(el("span", "han alt", "or " + v[0])));
-    r.append(el("span", "en-line", t.npc[2])); box.append(r);
+    r.classList.add("tap-rv"); r.append(el("span", "en-line tr", t.npc[2])); box.append(r);
   });
 }
 function beginTurn() {
@@ -1715,7 +1718,7 @@ function tileFallback(w) {
 }
 // A tile shows its pinyin underneath while the help dial is on English or Pinyin
 function tileBtn(w, cls, scene) {
-  const b = el("button", cls), py = helpLevel() <= 1 && scene ? tilePyFor(scene)[w] || (/[\u4e00-\u9fff]/.test(w) ? tileFallback(w) : "") : "";
+  const b = el("button", cls), py = prefs.py && scene ? tilePyFor(scene)[w] || (/[\u4e00-\u9fff]/.test(w) ? tileFallback(w) : "") : "";
   b.append(el("span", "tw", w)); if (py) b.append(el("span", "tp", py));
   return b;
 }
@@ -1880,9 +1883,9 @@ function renderEnd() {
     line(lastGained.includes("clean") ? "You can now" : "Next", marksEl(cur.id), " " + msg);
   }
   if (rush) line("Rush hour", rushLate ? `You kept people waiting ${rushLate === 1 ? "once" : rushLate === 2 ? "twice" : rushLate + " times"}. Next time, say the first thing that fits; a short answer beats a perfect late one.` : "You kept up. Nobody had to wait.");
-  if (!runMisses.length && !cur._rematch && helpLevel() < 2) {
-    const up = el("button", "linkish", `Try ${HELP[helpLevel() + 1].label.toLowerCase()}`); up.onclick = () => { setHelp(helpLevel() + 1); start(cur.id); };
-    line("Help", "Clean with " + HELP[helpLevel()].label.toLowerCase() + " on. Ready for less? ", up);
+  if (!runMisses.length && !cur._rematch && (prefs.en || prefs.py)) {
+    const k = prefs.en ? "en" : "py", up = el("button", "linkish", `Turn ${k === "en" ? "English" : "pinyin"} off`); up.onclick = () => { setShow(k); start(cur.id); };
+    line("Help", `Clean with ${k === "en" ? "English" : "pinyin"} on. Ready for less? `, up);
   }
   if (twistNote) { line("New here", twistNote.replace(/^Something new can now happen here: /, "")); twistNote = ""; }
   // The person you just met adds you on WeChat: the conversation can carry on in Unscripted
@@ -2852,8 +2855,8 @@ function wordsForToday(day) {
   const grid = el("div", "daily-grid");
   DAILY_KINDS.forEach(([k, en, zh]) => {
     const x = (k === "word" && lsMorningWord()) || dailyPick(k, dailyShift, ids); if (!x) return;
-    const c = el("div", "daily-card");
-    c.append(el("span", "dc-kind", `${en} ${zh}`), el("span", "dc-han", x.h), el("span", "dc-py", x.p), el("span", "dc-en", x.e), el("p", "dc-use", x.use));
+    const c = el("div", "daily-card tap-rv");
+    c.append(el("span", "dc-kind", `${en} ${zh}`), el("span", "dc-han", x.h), el("span", "dc-py py", x.p), el("span", "dc-en tr", x.e), el("p", "dc-use", x.use));
     const row = el("div", "say-back"), out = el("span", "sb-out");
     if (canSpeak) { const h = el("button", "linkish", "Hear it"); h.onclick = () => speak(x.h.replace(/^AA$/, "AA制")); row.append(h); }
     if (SR && !micBroken && /[一-鿿]/.test(x.h)) { const m = el("button", "linkish", "Say it back"); m.onclick = () => sayBack(m, x.h, out); row.append(m); }
@@ -2961,9 +2964,9 @@ function lsNarr(text, pre) {
     const m = part.match(/^\[\[([^|\]]+)\|([^|\]]*)\|([^\]]*)\]\]$/);
     if (!m) { if (part) p.append(part); return; }
     const [, h, py, en] = m, w = LS.words[h] || { seen: 0, tapped: 0 }, seen = pre && h in pre ? pre[h] : w.seen;
-    const fresh = seen <= 2 || w.tapped >= 2 || helpLevel() === 0;
+    const fresh = seen <= 2 || w.tapped >= 2 || prefs.en, short = [prefs.py && py, prefs.en && en].filter(Boolean).join(" · ");
     const b = el("button", "lw", h); b.title = `${py} · ${en}`;
-    const gloss = el("span", "lw-gloss", fresh ? `${prefs.py ? py + " · " : ""}${en}` : "");
+    const gloss = el("span", "lw-gloss", fresh ? short : "");
     b.onclick = () => {
       if (gloss.dataset.open) { gloss.textContent = fresh ? gloss.dataset.short : ""; delete gloss.dataset.open; return; }
       gloss.dataset.short = gloss.textContent; gloss.textContent = `${py} · ${en}`; gloss.dataset.open = "1";
@@ -3289,7 +3292,7 @@ function lsWordsEl() {
   wrap.append(head);
   if (lsWordsOpen && all.length) {
     const ul = el("ul", "ls-words");
-    all.forEach(([h, w]) => { const li = el("li"); li.append(el("span", "han", h), el("span", "py", w.p), el("span", "en-line", w.e), el("span", "lw-n", w.seen >= 3 && w.tapped < 2 ? "In Chinese now" : `Met ${w.seen === 1 ? "once" : w.seen + " times"}`)); ul.append(li); });
+    all.forEach(([h, w]) => { const li = el("li"); li.classList.add("tap-rv"); li.append(el("span", "han", h), el("span", "py", w.p), el("span", "en-line tr", w.e), el("span", "lw-n", w.seen >= 3 && w.tapped < 2 ? "In Chinese now" : `Met ${w.seen === 1 ? "once" : w.seen + " times"}`)); ul.append(li); });
     const sv = el("button", "linkish", "Save the list to notes"); sv.onclick = () => { const n = noteNew(`Words from ${LS.bible.title_english}\n` + all.map(([h, w]) => `${h}  ${w.p}  ${w.e}`).join("\n") + "\n"); toast(`Saved to “${noteTitle(n)}”`); sv.textContent = "Saved"; sv.disabled = true; };
     wrap.append(ul, el("p", "cd-note", "A word stays glossed until you've met it in three chapters. Tap it in the story and it stays glossed a bit longer. "), sv);
   }
@@ -4083,8 +4086,8 @@ function renderFieldMove() {
 let pbQuery = "";
 function phraseRow(o, reply) {
   const row = el("div", "pb-row");
-  const txt = el("div");
-  txt.append(el("div", "han", o.h), el("div", "py", o.p), el("div", "en-line", o.e));
+  const txt = el("div", "tap-rv");
+  txt.append(el("div", "han", o.h), el("div", "py", o.p), el("div", "en-line tr", o.e));
   row.append(txt);
   const tools = el("div", "pb-tools");
   if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(o.h); tools.append(b); }
@@ -4365,15 +4368,14 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
 
 /* ---------- toggles ---------- */
 // The help dial: each step takes one crutch away. The last one is how the street actually works: you hear it first
-const HELP = [
-  { id: "english", label: "English", desc: "Pinyin and English on every answer.", py: true, hint: true, listen: false },
-  { id: "pinyin", label: "Pinyin", desc: "Pinyin on answers; tap a line for its English.", py: true, hint: false, listen: false },
-  { id: "chars", label: "Characters", desc: "Characters only, like the street. Tap \"What does that mean?\" when stuck.", py: false, hint: false, listen: false },
-  { id: "ears", label: "Ears", desc: "Hear each line first. The text shows after you answer.", py: true, hint: false, listen: true }
-];
-const helpLevel = () => prefs.listen ? 3 : !prefs.py ? 2 : prefs.hint ? 0 : 1;
-function setHelp(i) { const h = HELP[i]; prefs.py = h.py; prefs.hint = h.hint; prefs.listen = h.listen; store.set("sm-prefs", prefs); applyPrefs(); if (mode === "scene" && !finished) renderMove();
-  lsRedraw(); }
+// Two switches, the same as in Unscripted: pinyin and English under the Chinese, everywhere. Off, a line still
+// shows them when you tap it ("What does that mean?" on what people say to you).
+function setShow(k) {
+  prefs[k] = !prefs[k]; prefs.hint = prefs.en; store.set("sm-prefs", prefs); applyPrefs();
+  if (mode === "scene" && !finished) renderMove();
+  if (mode === "home") startHome(); else if (mode === "trip") renderTrip(); else if (mode === "phrases") renderPhrases();
+  lsRedraw();
+}
 // Text size: each part of the app keeps its own (larger for reading Long Story, say). It scales the whole page, characters and all.
 const TS_STEPS = [0.85, 1, 1.15, 1.3, 1.5, 1.75, 2];
 const tsMax = () => innerWidth < 600 ? 1.3 : innerWidth < 1000 ? 1.5 : 2; // a phone has no room for the biggest sizes
@@ -4401,14 +4403,13 @@ function stepTextSize(d) {
 }
 function applyPrefs() {
   document.body.classList.toggle("no-py", !prefs.py);
-  document.body.classList.toggle("hint-off", !prefs.hint);
+  document.body.classList.toggle("no-en", !prefs.en);
+  document.body.classList.toggle("hint-off", !prefs.en);
   const seg = $("#help-seg"); seg.textContent = "";
-  HELP.forEach((h, i) => {
-    if (h.listen && !canSpeak) return;
-    const b = el("button", null, h.label); b.setAttribute("aria-pressed", i === helpLevel() ? "true" : "false"); b.title = h.desc;
-    b.onclick = () => setHelp(i); seg.append(b);
+  [["拼音 Pinyin", "py", "Pinyin under the Chinese"], ["English", "en", "English under the Chinese"]].forEach(([l, k, t]) => {
+    const b = el("button", null, l); b.type = "button"; b.setAttribute("aria-pressed", prefs[k] ? "true" : "false"); b.title = t + (prefs[k] ? ": on" : ": off. Tap a line to see it.");
+    b.onclick = () => setShow(k); seg.append(b);
   });
-  $("#help-desc").textContent = HELP[helpLevel()].desc;
 }
 $("#menu-btn").onclick = () => setMenu(!$(".layout").classList.contains("menu-open"));
 
@@ -5390,6 +5391,8 @@ applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
 $("#ts-seg").onclick = e => { const b = e.target.closest("button"); if (b) stepTextSize(+b.dataset.d); };
 addEventListener("resize", () => applyTextSize(), { passive: true });
+// with pinyin or English switched off, tapping a line shows them for that line (as in Unscripted)
+document.addEventListener("click", e => { const t = e.target.closest(".tap-rv"); if (t && !e.target.closest("button, a, input, textarea, summary") && document.body.matches(".no-py, .no-en")) t.classList.toggle("rv-open"); });
 $("#notes-btn").onclick = () => notesShown() ? closeNotes() : openNotes();
 $("#notes-close").onclick = () => closeNotes();
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !ev.isComposing && notesShown()) closeNotes(); });
