@@ -1234,7 +1234,7 @@ function renderRail() {
   if (active > lastActive && lastActive >= 0) rv.classList.add("bump");
   lastActive = active;
   const ear = tool("耳朵", "Train your ear", "Prices, phone numbers, times, sound-alikes", ["drill", "reader", "ears"].includes(mode), () => startDrill());
-  const today = trip.day === dayKey() && trip.ids.length;
+  tripSync(); const today = trip.ids.length;
   const pk = tool("口袋", "Your pocket", today ? `Ready for ${plural(trip.ids.length, "place")} today` : "Lines that work, ready for today", mode === "trip" || mode === "phrases" || (mode === "pattern" && !pPat), () => startTrip());
   rail.append(rv, ear, pk);
   // Long Story: the novel you read in the evenings. (Wander's job, making things up, now lives here.)
@@ -1387,7 +1387,7 @@ function heardRows(s, box) {
   });
 }
 function beginTurn() {
-  const t = cur.turns[turn];
+  const t = cur.turns[turn]; bState = null; // a new moment starts with fresh tiles
   const alt = t.npcAlt && Object.keys(t.npcAlt).find(f => flags[f]);
   if (t.npc) addNpc(alt ? t.npcAlt[alt] : t.npc);
   // A surprise counts as met once you actually reach it, not when it's dealt
@@ -1654,7 +1654,7 @@ function judgeOffline(text, good, opt = {}) {
   if (/(什么|哪|几|多少|谁|怎么)/.test(h) && /吗$/.test(h)) hit("okay", "A question word like 什么 or 多少 already makes it a question, so drop the 吗 ma at the end.");
   // A number this moment doesn't have is a real mistake; leaving one out is just a shorter answer
   const nGood = factNums(good.h + "，" + (opt.also || "")), nSaid = factNums(text), odd = nSaid.filter(n => !numFits(n, nGood));
-  if (odd.length) hit("wrong", `Check the number: ${odd[0].replace(/^(\d+)/, "$1 ").trim()} isn't right here. Numbers are where small slips cost real money.`);
+  if (odd.length && !opt.real) hit("wrong", `Check the number: ${odd[0].replace(/^(\d+)/, "$1 ").trim()} isn't right here. Numbers are where small slips cost real money.`);
   // Same words with the yes and no flipped, or before for after, says the opposite
   const content = [...new Set(g)].filter(c => !"我你他她是很了的吧吗啊呢呀哦嗯个一请谢好".includes(c));
   const shared = content.filter(c => h.includes(c)).length;
@@ -1723,7 +1723,7 @@ function tileBtn(w, cls, scene) {
 }
 let bState = null; // { key, ans, tiles, chosen }
 function builder(t, good) {
-  const key = cur.id + ":" + turn;
+  const key = cur.id + ":" + turn + ":" + good.b; // the answer too: a rematch or a surprise can put another moment at this number
   if (!bState || bState.key !== key) {
     const ans = good.b.split("|");
     const pool = [...new Set(cur.turns.flatMap(x => x.opts.filter(o => o.b).flatMap(o => o.b.split("|"))))].filter(w => !ans.includes(w));
@@ -1807,8 +1807,9 @@ function advance() {
   if (turn >= cur.turns.length) finish(false); else beginTurn();
 }
 
+let endCut = false; // the last run ended early, on a slip that stopped it
 function finish(cutShort) {
-  finished = true;
+  finished = true; endCut = !!cutShort;
   if (!cutShort) {
     const alt = cur.endAlt && Object.keys(cur.endAlt).find(f => flags[f]);
     addNpc(alt ? cur.endAlt[alt] : cur.end); addNarr(cur.endNote);
@@ -1867,13 +1868,15 @@ function renderEnd() {
   else line("It cost you", "Nothing. No slip had a lasting price.");
   const kinds = {}; runMissTags.forEach(t => kinds[t] = (kinds[t] || 0) + 1);
   const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
+  // a stop cut short only counts (and only names surprises from) the moments you actually reached
+  const played = endCut ? Math.min(turn + 1, cur.turns.length) : cur.turns.length, metHere = surprises.filter(x => cur.turns.slice(0, played).some(t => t._cb === x.key));
   if (runMisses.length) {
-    const parts = [`${runMisses.length} of ${cur.turns.length} moments`];
+    const parts = [`${runMisses.length} of ${plural(played, "moment")}`];
     if (pat) { const go = el("button", "linkish", "Drill that"); go.onclick = () => startPattern(pat.id); parts.push(`, mostly ${pat.en.toLowerCase()}. `, go, " across every place."); }
     line("Slips", ...parts);
   } else line("Slips", "None. A clean run.");
   const base = S.find(x => x.id === cur.id), poolN = (base.curveballs || []).length + twistPool(cur.id).length, met = (seenCb[cur.id] || []).length;
-  if (!cur._rematch && poolN) line("Surprises", (surprises.length ? surprises.map(x => x.cb.what).join(" and ").replace(/^./, c => c.toUpperCase()) + ". " : "None this time. ") + `You've met ${Math.min(met, poolN)} of ${poolN} that can happen here${sample ? ", and more keep appearing" : ""}.`);
+  if (!cur._rematch && poolN) line("Surprises", (metHere.length ? metHere.map(x => x.cb.what).join(" and ").replace(/^./, c => c.toUpperCase()) + ". " : "None this time. ") + `You've met ${Math.min(met, poolN)} of ${poolN} that can happen here${sample ? ", and more keep appearing" : ""}.`);
   const mk = mastery[cur.id] || {};
   if (!cur._rematch) {
     const can = CAN[cur.id] ? lcFirst(CAN[cur.id]) : "do this";
@@ -2023,7 +2026,7 @@ function renderNotebook() {
 let rq = [], ri = 0, rRight = 0, rLearned = 0, rAnswered = false, rReveal = false;
 // Each time a mistake comes back it asks a little more of you: pick it, then build it, then say it with nothing on screen
 const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "Type it", "type it from memory"]];
-let rHow = "pick", rGood = null, rTiles = null, rHeld = false, rAgain = new Set();
+let rHow = "pick", rGood = null, rTiles = null, rHeld = false, rAgain = new Set(), rTotal = 0; // rTotal: the round as it started; misses come back after it
 // A miss comes back once more at the end of the round, so you produce the fix while it's fresh
 function again(n) { if (!rAgain.has(n)) { rAgain.add(n); rq.push(n); } }
 function startReview(early) {
@@ -2032,7 +2035,7 @@ function startReview(early) {
   const seenAt = new Set();
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0))
     .filter(n => { const k = n.sid + (n.turn != null ? "t" + n.turn : n.cb != null ? "c" + n.cb : "s" + n.said); if (seenAt.has(k)) return false; seenAt.add(k); return true; }).slice(0, 10);
-  ri = 0; rRight = 0; rLearned = 0; rAgain = new Set();
+  ri = 0; rRight = 0; rLearned = 0; rAgain = new Set(); rTotal = rq.length;
   setHead("复习", "fùxí", "Your mistakes, back again", "This round: ", rq.length ? `${plural(rq.length, "mistake")}, oldest first.` : "nothing yet.");
   $("#log").textContent = "";
   renderRail();
@@ -2084,7 +2087,7 @@ function reviewChoose(o) {
   if (o.k === "wrong" && o.r) addNpc(o.r);
   markReviewed(n, right || close, hold);
   if (n.learned) leafFall(); // learned for good
-  if (right && rHeld !== "again") { rRight++; if (n.learned) rLearned++; }
+  if (right && rHeld !== "again") { if (ri < rTotal) rRight++; if (n.learned) rLearned++; }
   if (o.k === "wrong") again(n);
   const rung = `${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.`;
   const msg = o.k === "wrong" ? o.note
@@ -2144,7 +2147,7 @@ function reviewMiss(said, why) {
 function selfGrade(right) {
   const n = rq[ri];
   rAnswered = true; markReviewed(n, right);
-  if (right) { rRight++; if (n.learned) rLearned++; }
+  if (right) { if (ri < rTotal) rRight++; if (n.learned) rLearned++; }
   addNarr(right ? (n.learned ? "Learned. It leaves Mistakes." : `${whenText(n)}.`) : "It returns tomorrow.");
   renderReviewMove();
 }
@@ -2153,13 +2156,13 @@ function renderReviewMove() {
   const head = el("div", "move-head");
   if (!rq.length || ri >= rq.length) {
     head.append(el("h3", null, rq.length ? "Round done" : "Nothing to review"));
-    if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
+    if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rTotal} right first time${rLearned ? `, ${rLearned} learned for good` : ""}.`));
     const row = el("div", "endcard");
     const nb = el("button", "btn ghost", "Mistakes"); nb.onclick = () => openNotebook();
     row.append(backBtn(true), nb); m.append(head, row); return;
   }
   const n = rq[ri];
-  head.append(el("h3", null, `Mistake ${ri + 1} of ${rq.length}`));
+  head.append(el("h3", null, ri < rTotal ? `Mistake ${ri + 1} of ${rTotal}` : "One more try"));
   m.append(head);
   if (rAnswered) {
     const row = el("div", "endcard");
@@ -2294,7 +2297,7 @@ function tabRow(label, tabs, on) {
   return row;
 }
 const earTabs = on => tabRow("What to listen for", [["Prices", "price", () => startDrill("price")], ["Phone numbers", "phone", () => startDrill("phone")], ["Times", "time", () => startDrill("time")], ["Sound-alikes", "ears", () => startEars()]], on);
-const pocketTabs = on => tabRow("Your pocket", [["Today", "today", () => startTrip()], ["Every line", "all", () => startPhrasebook()]], on);
+const pocketTabs = on => tabRow("Your pocket", [["Today", "today", () => startTrip()], ["Every line", "all", () => { pbQuery = ""; startPhrasebook(); }]], on);
 function renderDrillMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
@@ -2646,17 +2649,23 @@ function renderReaderMove() {
     if (r.notes.length) addFeedback("okay", r.notes.join(" "), null, { label: "Watch for", seal: "注" });
     if (canSpeak) speak(r.zh.replace(/ /g, "，"));
   };
-  const back = el("button", "btn ghost", "Back to the price drill"); back.onclick = () => startDrill();
+  const back = el("button", "btn ghost", `Back to ${{ phone: "phone numbers", time: "times" }[dKind] || "prices"} by ear`); back.onclick = () => startDrill();
   const row = el("div", "endcard"); row.append(back);
   m.append(head, chips, form, row);
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
 }
 /* ---------- heading out: prep the places you're actually going to today ---------- */
 let trip = store.get("sm-trip", { ids: [], day: "" }), tripEditing = false;
+// The pocket follows your day: a new date, or moving on to the next day, brings that day's stops,
+// unless you picked the places yourself (then they stay until tomorrow)
+function tripSync() {
+  if (trip.day === dayKey() && !(trip.auto && trip.dayIdx !== curDay())) return;
+  trip = { day: dayKey(), ids: DAYS[curDay()].stops.map(x => x.id), auto: true, dayIdx: curDay() }; store.set("sm-trip", trip); tripEditing = false;
+}
 function startTrip() {
   mode = "trip"; busy = false; cur = { who: "出门", whoEn: "you" };
   // A new day starts on that day's stops, the same as opening it from your day; "Change places" picks others
-  if (trip.day !== dayKey()) { trip = { day: dayKey(), ids: DAYS[curDay()].stops.map(x => x.id) }; store.set("sm-trip", trip); tripEditing = false; }
+  tripSync();
   setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Where you're going today, as a cheat sheet, a warm-up and big text to show people. Every line has what worked everywhere you've been.");
   renderTrip(); renderRail(); renderMove();
 }
@@ -2671,7 +2680,7 @@ function renderTrip() {
       grid.append(el("div", "trip-group", g.name));
       list.forEach(s => {
         const c = el("button", "chip", `${s.place} ${s.en}`); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false");
-        c.onclick = () => { trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false"); renderMove(); };
+        c.onclick = () => { trip.auto = false; trip.ids = trip.ids.includes(s.id) ? trip.ids.filter(x => x !== s.id) : trip.ids.concat(s.id); c.setAttribute("aria-pressed", trip.ids.includes(s.id) ? "true" : "false"); renderMove(); };
         grid.append(c);
       });
     });
@@ -2784,7 +2793,7 @@ function startHome(day) {
   const am = el("div", "today");
   if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One slip is back" : `${due} slips are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview(dueItems().length ? null : early) }, true));
   am.append(homeCard({ kind: "Your pocket", han: "口袋", title: stops.length === 1 ? "Lines for today's stop" : `Lines for today's ${stops.length === 2 ? "two" : "three"} stops`, why: "What to say, what you'll hear and the traps, including your own. Read it, or warm up.",
-    go: () => { trip = { day: dayKey(), ids: stops.map(s => s.id) }; store.set("sm-trip", trip); tripEditing = false; startTrip(); } }));
+    go: () => { trip = { day: dayKey(), ids: stops.map(s => s.id), auto: homeDay === curDay(), dayIdx: homeDay }; store.set("sm-trip", trip); tripEditing = false; startTrip(); } }));
   // A note you pinned comes with you every morning, like the page you keep open in a paper notebook
   const pinned = NOTES.find(x => x.pin);
   if (pinned) am.append(homeCard({ kind: "Your pinned note", han: "笔记", title: noteTitle(pinned), why: pinned.body.split("\n").filter(l => l.trim()).slice(1, 3).join(" · ") || "Open it to add to it.", go: () => openNotes(pinned.id) }));
@@ -2909,6 +2918,7 @@ function renderHomeMove() {
     const n = back || early.length, r = el("button", "btn", n === 1 ? "Review your slip first" : `Review ${n} slips first`);
     r.onclick = () => startReview(back ? null : early); row.append(r); // the stop itself is the next card down, so no second button for it
   } else if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
+  else if (homeDay < DAYS.length - 1 && dayDone(homeDay + 1)) { const c = curDay(), go = el("button", "btn", dayDone(c) ? "Back to day 10" : `Back to day ${c + 1}: ${DAYS[c].title}`); go.onclick = () => startHome(c); row.append(go); } // looking back: the next day's already done
   else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => { cranes(); jadeDawn(homeDay + 2); startHome(homeDay + 1); }; row.append(go); }
   // One button: the next thing to do. Any other place is in the list (on a phone, behind "Places and practice").
   if (row.children.length) m.append(row);
@@ -3914,13 +3924,13 @@ Return JSON only: {"items": [{"h": "汉字", "p": "pīnyīn", "e": "meaning"}]}`
 }
 
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-textsize", "sm-grown", "sm-notes", "sm-chats", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
+const KEYS = ["sm-textsize", "sm-grown", "sm-look", "sm-chat-nudge", "sm-notes", "sm-chats", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 }
 function loadProgress(code) {
-  const m = String(code).trim().match(/^SM1:([A-Za-z0-9+/=]+)$/); if (!m) return false;
+  const m = String(code).replace(/\s+/g, "").match(/^SM1:([A-Za-z0-9+/=]+)$/); if (!m) return false;
   let o; try { o = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch { return false; }
   if (!o || typeof o !== "object") return false;
   KEYS.forEach(k => { try { if (typeof o[k] === "string") localStorage.setItem(k, o[k]); else localStorage.removeItem(k); } catch {} });
@@ -4013,7 +4023,7 @@ function fieldSaid(s, text) {
   const goods = opts.filter(x => x.o.k === "good"), isHan = /[\u4e00-\u9fff]/.test(text);
   const share = o => isHan ? [...new Set(normHan(text))].filter(c => normHan(o.h).includes(c)).length : 0;
   const ranked = goods.map(x => [x.o, share(x.o)]).sort((a, b) => b[1] - a[1]);
-  const g = ranked[0] && ranked[0][1] >= 2 ? ranked[0][0] : (closest(text, goods, x => x.o.h, x => x.o.p) || { x: goods[0] }).x.o, judged = judgeOffline(text, g, { strict: true });
+  const g = ranked[0] && ranked[0][1] >= 2 ? ranked[0][0] : (closest(text, goods, x => x.o.h, x => x.o.p) || { x: goods[0] }).x.o, judged = isHan ? judgeOffline(text, g, { strict: true, real: true }) : null; // with no Chinese in it, there's nothing to check
   if (!judged) {
     // Nothing to learn from a guess, so it isn't filed: show the nearest line and let them try again
     addFeedback("okay", `That's not a line the app knows for “${s.en}”, so it won't guess what went wrong or file it. The nearest line it knows is below. If it was a different place, pick it above and try again.`, [g.h, g.p], { seal: "?", label: "Not sure" });
@@ -4132,6 +4142,7 @@ function renderPhrases() {
     }
     shown += rows.length; log.append(sec);
   });
+  const hc = $("#pb-count"); if (hc) hc.textContent = q ? `${plural(shown, "line")} found` : hc.dataset.all; // the count follows the search
   if (q && !shown && !hardHits.length) addNarr(`Nothing matches "${pbQuery}" yet. Survive more places to fill the phrasebook.`);
   log.scrollTop = 0;
 }
@@ -4162,14 +4173,15 @@ function renderPhrasesMove() {
   const n = S.filter(s => done[s.id]).reduce((a, s) => a + s.turns.reduce((b, t) => b + t.opts.filter(o => o.k === "good").length, 0), 0);
   const head = el("div", "move-head");
   setTabs(pocketTabs("all"));
-  head.append(el("h3", null, plural(n, "phrase")), el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
+  const hc = el("h3", null, plural(n, "phrase")); hc.id = "pb-count"; hc.dataset.all = hc.textContent;
+  head.append(hc, el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
   const form = el("form", "free");
   const inp = el("input"); inp.type = "search"; inp.autocomplete = "off"; inp.value = pbQuery;
   inp.placeholder = "Find a line: \"toilet\", \"duoshao\", 谢谢…"; inp.setAttribute("aria-label", "Search the phrasebook");
   inp.oninput = () => { pbQuery = inp.value; renderPhrases(); };
   form.onsubmit = ev => ev.preventDefault();
   form.append(inp);
-  m.append(head, form);
+  m.append(head, form); if (pbQuery) renderPhrases(); // the count, when a search from the side list opened it
 }
 
 /* ---------- live: a Short Story place, unscripted, somewhere like it (Claude plays it) ---------- */
