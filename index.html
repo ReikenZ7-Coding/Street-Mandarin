@@ -788,7 +788,12 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .jw-film video.on { opacity: 1; }
 .scenery[data-time="morning"] .jw-film video { filter: saturate(.85) brightness(.8) contrast(1.04) sepia(.1); }
 .scenery[data-time="evening"] .jw-film video { filter: saturate(.65) brightness(.5) contrast(1.1); }
-.jw-grade { position: absolute; inset: 0; z-index: 3; background: radial-gradient(120% 90% at 50% 38%, transparent 35%, rgba(7, 26, 19, .6) 100%), linear-gradient(rgba(7, 26, 19, .45), rgba(7, 26, 19, .12) 38%, rgba(7, 26, 19, .55) 75%, rgba(7, 26, 19, .85)); }
+.jw-haze { position: absolute; inset: -10% -30%; z-index: 3; pointer-events: none; background: radial-gradient(38% 16% at 28% 72%, rgba(185, 216, 196, .14), transparent 70%), radial-gradient(32% 13% at 74% 60%, rgba(185, 216, 196, .1), transparent 70%); animation: haze 70s ease-in-out infinite alternate; }
+.jw-haze.h2 { background: radial-gradient(45% 20% at 60% 86%, rgba(185, 216, 196, .12), transparent 72%); animation-duration: 47s; animation-delay: -20s; animation-direction: alternate-reverse; }
+@keyframes haze { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
+.jw-leaves { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.jw-leaves i { position: absolute; top: -40px; border-radius: 0 100% 0 100%; background: linear-gradient(120deg, #3f7a58, #1d4a35); opacity: .8; animation: fall linear forwards; }
+.jw-grade { position: absolute; inset: 0; z-index: 4; background: radial-gradient(120% 90% at 50% 38%, transparent 35%, rgba(7, 26, 19, .6) 100%), linear-gradient(rgba(7, 26, 19, .45), rgba(7, 26, 19, .12) 38%, rgba(7, 26, 19, .55) 75%, rgba(7, 26, 19, .85)); }
 .jw-grade::after { content: ""; position: absolute; inset: 0; background: #0E5C3B; mix-blend-mode: color; opacity: .22; }
 .jw.film > :not(.jw-film) { display: none !important; }
 .film-pass { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 75; pointer-events: none; opacity: 0; filter: saturate(.85) brightness(.82) contrast(1.06); }
@@ -852,7 +857,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .look-pick { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
-@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .jw-haze, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal, :root:not([data-motion="on"]) .notes, :root:not([data-motion="on"]) .layout.menu-open .rail, :root:not([data-motion="on"]) .chat-typing::after, :root:not([data-motion="on"]) .opts > .opt, :root:not([data-motion="on"]) #move .move-head h3, :root:not([data-motion="on"]) #move .score > * { animation: none !important; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
@@ -5077,7 +5082,8 @@ function jadeFilm(jw, sc, fallback) {
   if (!F || !F.peaks || !F.peaks.length || !probe.canPlayType('video/webm; codecs="vp9"')) return false;
   const still = stillMotion(), shots = F.peaks.slice();
   const box = el("div", "jw-film"), mk = () => { const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.disablePictureInPicture = true; return v; };
-  const vids = [mk(), mk()]; box.append(...vids, el("div", "jw-grade"));
+  const vids = [mk(), mk()], leaves = el("div", "jw-leaves");
+  box.append(...vids, el("div", "jw-haze h1"), el("div", "jw-haze h2"), leaves, el("div", "jw-grade")); // live mist and leaves drift over the film
   jw.prepend(box); jw.classList.add("film"); sc.classList.add("gl");
   let cur = null, n = 0, played = false, failed = false, pass = null;
   const f = jadeF = { box, shot: null, credit: F.credit || "" };
@@ -5131,8 +5137,16 @@ function jadeFilm(jw, sc, fallback) {
     setTimeout(after, ms * 0.4);
     return true;
   };
-  // a right answer: the light in the valley lifts for a moment
-  f.lift = () => { const g = box.querySelector(".jw-grade"); if (g.animate && !still) g.animate([{ opacity: 1 }, { opacity: 0.55, offset: 0.3 }, { opacity: 1 }], { duration: 1200, easing: "ease-out" }); };
+  // now and then a bamboo leaf comes down through the shot, some near (larger, softer) and some far
+  const leaf = () => {
+    const l = el("i"), near = Math.random() < 0.3, w = near ? 34 + Math.random() * 16 : 14 + Math.random() * 10;
+    l.style.cssText = `left:${5 + Math.random() * 85}%;width:${w}px;height:${w / 3.2}px;animation-duration:${(near ? 5 : 8) + Math.random() * 4}s;${near ? "filter:blur(2px);" : ""}`;
+    l.style.setProperty("--dx", (40 + Math.random() * 160) * (Math.random() < 0.5 ? -1 : 1) + "px"); l.style.setProperty("--rot", (Math.random() * 540 - 270) + "deg");
+    leaves.append(l); setTimeout(() => l.remove(), 14000);
+  };
+  if (!still) (function drift() { if (!document.hidden && isJade()) leaf(); setTimeout(drift, 6000 + Math.random() * 9000); })();
+  // a right answer: the light in the valley lifts for a moment and a few leaves come loose
+  f.lift = () => { if (still) return; const g = box.querySelector(".jw-grade"); if (g.animate) g.animate([{ opacity: 1 }, { opacity: 0.55, offset: 0.3 }, { opacity: 1 }], { duration: 1200, easing: "ease-out" }); for (let i = 0; i < 3; i++) setTimeout(leaf, i * 260); };
   let time = sc.dataset.time; // the light changes with the story's time of day
   new MutationObserver(() => { if (sc.dataset.time === time) return; time = sc.dataset.time; if (!fits(f.shot)) f.cut(1500, time); }).observe(sc, { attributes: true, attributeFilter: ["data-time"] });
   // the camera leans toward the cursor and rises as you scroll
