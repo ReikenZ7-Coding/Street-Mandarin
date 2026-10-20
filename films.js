@@ -34,5 +34,5 @@ window.FILMS = {
   "poster": "films/dawn.jpg",
   "time": "morning"
  },
- "credit": "made on your laptop with Wan 2.2"
+ "credit": "made with Wan 2.2"
 };

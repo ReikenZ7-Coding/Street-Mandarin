@@ -75,7 +75,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .today { display: grid; gap: 10px; }
 .today-card { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 2px 14px; align-items: baseline; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
 .today-card:hover, .today-card:focus-visible { border-color: var(--jade); }
-.today-card.first { border-left: 4px solid var(--jade); }
+.today-card.first { border-left: 4px solid var(--jade); padding-left: 11px; } /* the thicker edge doesn't push its words out of line */
 .today-card .tc-han { grid-row: span 3; line-height: 1.2; overflow-wrap: anywhere; /* a long title wraps inside its column instead of running into the English */ font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
 .today-card .tc-title { font-weight: 700; font-size: 16px; }
 .today-card .tc-why { font-size: 14px; color: var(--muted); }
@@ -142,7 +142,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .ls-person .lp-n { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .ls-prev { border-left: 3px solid var(--line); padding: 4px 0 4px 12px; font-size: 14px; color: var(--muted); display: grid; gap: 2px; font-style: italic; }
 .ls-meanwhile { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
-.ls-narr .lw-gloss::before { content: "("; } .ls-narr .lw-gloss::after { content: ")"; }
+.ls-narr .lw-gloss:empty { display: none; } .ls-narr .lw-gloss::before { content: "("; } .ls-narr .lw-gloss::after { content: ")"; }
 .ls-fb { border-left: 3px solid var(--ochre); padding: 4px 0 4px 12px; font-size: 14px; display: grid; gap: 2px; }
 .ls-toc, .ls-cast { display: grid; gap: 8px; margin-top: 18px; }
 .ls-cast { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
@@ -188,10 +188,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .help-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .help-row .seg button { line-height: 18px; } .tsize button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
 /* the help dial shows only where it changes something: the places, Long Story, Mistakes and the pocket */
-.help.help-off #help-seg { display: none; }
-@media (max-width: 760px) { .help, .help.help-off { flex-direction: column; align-items: flex-start; align-self: auto; } .help-row { justify-content: flex-start; } .help-row .tsize { order: 2; } }
-.help.pop #help-seg { animation: help-pop .35s cubic-bezier(.2, .9, .3, 1.3) both; }
-@keyframes help-pop { from { opacity: 0; transform: translateY(4px) scale(.94); } }
+@media (max-width: 760px) { .help { flex-direction: column; align-items: flex-start; align-self: auto; } .help-row { justify-content: flex-start; } .help-row .tsize { order: 2; } }
 .seg button:disabled { opacity: .35; cursor: default; }
 @media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .help-desc { display: none; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
@@ -222,7 +219,6 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .menu-btn { display: none; }
 @media (max-width: 760px) {
   .menu-btn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; }
-  .menu-btn .mb-han { font-family: var(--f-han); font-weight: 900; font-size: 22px; }
   .menu-btn .mb-name { font-weight: 600; flex: 1; min-width: 0; }
   .menu-btn .mb-act { font-size: 13px; color: var(--muted); }
   .layout:not(.menu-open) .rail { display: none; }
@@ -247,6 +243,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 
 .log { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; max-height: calc(min(62vh, 620px) / var(--tz, 1)); min-height: 220px; overflow-y: auto; }
 .scene.page .log { max-height: none; }
+.log > * { flex-shrink: 0; } /* a long log scrolls; it never squashes a card (the "didn't land" note was being cut to a sliver) */
 .narr { color: var(--muted); font-style: italic; font-size: 14px; max-width: 60ch; }
 .row { display: flex; gap: 10px; align-items: flex-end; }
 .row.me { justify-content: flex-end; }
@@ -269,6 +266,9 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 body.no-py .py { display: none; }
 body.no-en .tr { display: none; }
 body:is(.no-py, .no-en) .tap-rv { cursor: pointer; }
+.rv-btn, .rv-btn .rv-py, .rv-open .rv-btn { display: none; }
+body:is(.no-py, .no-en) .rv-btn:not(.rv-open .rv-btn) { display: revert; }
+body.no-py:not(.no-en) .rv-btn .rv-py { display: revert; } body.no-py:not(.no-en) .rv-btn .rv-en { display: none; }
 body.no-py .tap-rv.rv-open .py, body.no-en .tap-rv.rv-open .tr { display: revert; } /* a tapped line shows its pinyin and English */
 
 /* Feedback cards: a seal stamp + what happened */
@@ -398,6 +398,7 @@ body.hint-off .opt .en-line { display: none; }
 .pb-row .han { font-size: 18px; }
 .pb-tools { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
 .pb.hard .pb-title { color: var(--cinnabar); }
+.pb-why { font-size: 13px; color: var(--cinnabar); margin-top: 2px; }
 .trip-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
 .pb-heard.mine .han:first-child { color: var(--cinnabar); }
 .pb-heard .han.alt { font-weight: 400; font-size: 15px; color: var(--muted); }
@@ -460,7 +461,6 @@ body.hint-off .opt .en-line { display: none; }
 .cr-dot { position: absolute; left: 50px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--cinnabar); border: 2px solid var(--surface); }
 .scene.chatting .log { max-height: calc(min(68vh, 720px) / var(--tz, 1)); background: var(--surface-2); }
 .chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
-.chat-sw { display: flex; gap: 6px; }
 .chat-reset { margin-left: auto; color: var(--muted); }
 .chat-warn { flex-basis: 100%; font-size: 13px; color: var(--cinnabar); }
 .row.chat .who { border-radius: 8px; background: var(--jade); color: var(--surface); font-size: 17px; font-weight: 900; }
@@ -688,7 +688,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 }
 :root[data-look="jade"] body { background: radial-gradient(120% 80% at 50% 0%, #0b2a1f 0%, #071A13 55%, #040e0a 100%) fixed; }
 /* serif headlines, clean sans-serif UI */
-:root[data-look="jade"] .scene-head h2, :root[data-look="jade"] #place-en, :root[data-look="jade"] .day-part .dp-en, :root[data-look="jade"] .tc-title, :root[data-look="jade"] .daily-title { font-family: var(--f-han); font-weight: 600; letter-spacing: .01em; }
+:root[data-look="jade"] .scene-head h2, :root[data-look="jade"] #place-en, :root[data-look="jade"] .notebook .place-en, :root[data-look="jade"] .day-part .dp-en, :root[data-look="jade"] .tc-title, :root[data-look="jade"] .daily-title { font-family: var(--f-han); font-weight: 600; letter-spacing: .01em; }
 :root[data-look="jade"] .brand h1::after { background: linear-gradient(90deg, var(--gold), var(--dragonfire)); opacity: .8; }
 :root[data-look="jade"] .brand h1 { text-shadow: 0 0 24px rgba(80, 240, 160, .25); }
 /* panels are stone tablets: dark jade, a fine luminous edge, lit faintly from above */
@@ -698,10 +698,10 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 }
 :root[data-look="jade"] .scene-head { background: linear-gradient(180deg, rgba(14, 92, 59, .35), rgba(14, 92, 59, .08)); border-bottom: 1px solid rgba(80, 240, 160, .14); }
 :root[data-look="jade"] .scene-head::after { background: linear-gradient(180deg, rgba(80, 240, 160, .35), rgba(14, 92, 59, .2)); opacity: .5; }
-:root[data-look="jade"] #place { color: var(--cloud); text-shadow: 0 0 30px rgba(80, 240, 160, .3); }
+:root[data-look="jade"] #place, :root[data-look="jade"] .notebook .place { color: var(--cloud); text-shadow: 0 0 30px rgba(80, 240, 160, .3); }
 /* the place's name reads as carved jade: pale at the top, deepening into green, lit from above */
 @supports (-webkit-background-clip: text) or (background-clip: text) {
-  :root[data-look="jade"] #place { background: linear-gradient(180deg, #f0fff6 0%, #c6ecd6 38%, #7fd1a7 72%, #3fa877 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 0 18px rgba(80, 240, 160, .22)); }
+  :root[data-look="jade"] #place, :root[data-look="jade"] .notebook .place { background: linear-gradient(180deg, #f0fff6 0%, #c6ecd6 38%, #7fd1a7 72%, #3fa877 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 0 18px rgba(80, 240, 160, .22)); }
 }
 :root[data-look="jade"] .today-card, :root[data-look="jade"] .daily-card, :root[data-look="jade"] .scn, :root[data-look="jade"] .opt, :root[data-look="jade"] .bubble, :root[data-look="jade"] .cando, :root[data-look="jade"] .foot, :root[data-look="jade"] .menu-btn {
   background: linear-gradient(180deg, rgba(22, 48, 38, .9), rgba(12, 30, 23, .92)); border-color: rgba(80, 240, 160, .14);
@@ -876,7 +876,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .wrap.op-in header.top > *:nth-child(2) { animation-delay: .05s; } .wrap.op-in .rail > *:nth-child(n+2) { animation-delay: .08s; } .wrap.op-in .rail > *:nth-child(n+5) { animation-delay: .14s; } .wrap.op-in .scene { animation-delay: .1s; }
 @keyframes tablet { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .look-note { color: var(--muted); font-size: 12px; margin-left: 8px; }
-.look-pick { display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
+.look-pick { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-left: auto; }
+.look-pick > button { white-space: nowrap; }
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .jw-haze, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
@@ -992,8 +993,9 @@ function practised() {
   renderStreak();
 }
 let prefs = Object.assign({ py: true, hint: false, listen: false, how: "pick" }, store.get("sm-prefs", {}));
-if (prefs.en === undefined) prefs.en = store.get("sm-prefs", null) ? !!prefs.hint : true; // from the old help dial its English level means on; someone new starts with it on
-prefs.listen = false; prefs.hint = prefs.en;
+// From the old help dial: its English level, or a Long Story read in English, means English on. Someone new starts with it on.
+if (prefs.en === undefined) { const ols = store.get("sm-long", null); prefs.en = store.get("sm-prefs", null) ? !!prefs.hint || !!(ols && !ols.zh) : true; }
+delete prefs.listen; delete prefs.hint;
 if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 
 /* ---------- state ---------- */
@@ -1050,16 +1052,17 @@ function speak(text, rate = mode === "scene" && rush ? 1.05 : 0.85) { // at rush
 const SPEAK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
 
 /* ---------- rendering ---------- */
-function bubbleContent(h, p, e, revealEn) {
+function bubbleContent(h, p, e) {
   const frag = document.createDocumentFragment();
   frag.append(el("div", "han", h));
   if (p) frag.append(el("div", "py", p));
   const tools = el("div", "b-tools");
   if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(h); tools.append(b); }
   if (e) {
-    const en = el("div", "en-line tr", e);
-    if (!prefs.en || !prefs.py) { const r = el("button", "reveal", prefs.en ? "Show pinyin" : "What does that mean?"); r.onclick = () => { const b = r.closest(".bubble, .lt") || r.parentNode.parentNode; b.classList.add("tap-rv", "rv-open"); r.remove(); }; tools.append(r); }
-    frag.append(tools, en);
+    // Always there, shown only while a switch hides something, so flipping a switch mid-conversation still leaves a way to see it
+    const r = el("button", "reveal rv-btn"); r.append(el("span", "rv-en", "What does that mean?"), el("span", "rv-py", "Show pinyin"));
+    r.onclick = () => { const b = r.closest(".bubble, .lt") || r.parentNode.parentNode; b.classList.add("tap-rv", "rv-open"); };
+    tools.append(r); frag.append(tools, el("div", "en-line tr", e));
   } else frag.append(tools);
   return frag;
 }
@@ -1067,9 +1070,9 @@ function addNpc(line, forceListen) {
   const row = el("div", "row npc");
   const who = el("div", "who", cur.who.slice(0, 2)); who.title = cur.whoEn;
   const b = el("div", "bubble");
-  if ((prefs.listen || forceListen) && canSpeak) {
+  if (forceListen && canSpeak) {
     // Listening mode: audio first, text only once you've answered (or asked for it)
-    const txt = el("div", "lt"); txt.hidden = true; txt.append(bubbleContent(line[0], line[1], line[2], false));
+    const txt = el("div", "lt"); txt.hidden = true; txt.append(bubbleContent(line[0], line[1], line[2]));
     const ear = el("div", "ear");
     const play = el("button", "btn small", "Play"); play.onclick = () => speak(line[0]);
     const slow = el("button", "btn ghost small", "Slower"); slow.onclick = () => speak(line[0], 0.55);
@@ -1077,7 +1080,7 @@ function addNpc(line, forceListen) {
     ear.append(el("span", "ear-label", "Listen"), play, slow, show);
     b.append(ear, txt);
     speak(line[0]);
-  } else b.append(bubbleContent(line[0], line[1], line[2], false));
+  } else b.append(bubbleContent(line[0], line[1], line[2]));
   row.append(who, b); $("#log").append(row);
   transcript.push({ who: "npc", text: line[0] });
   scrollLog();
@@ -1089,7 +1092,7 @@ function revealHeard() {
 function addMe(h, p, e, kind) {
   revealHeard();
   const row = el("div", "row me" + (kind && kind !== "good" ? " " + kind : ""));
-  const b = el("div", "bubble"); b.append(bubbleContent(h, p, e, true));
+  const b = el("div", "bubble"); b.append(bubbleContent(h, p, e));
   row.append(b); $("#log").append(row);
   transcript.push({ who: "me", text: h });
   practised();
@@ -1243,9 +1246,6 @@ function renderRail() {
   const ut = tool("随便聊", "Unscripted", unread ? `${plural(unread, "new message")}` : nChats ? `${plural(nChats, "chat")} going` : `Chat with ${PEOPLE.length} people you meet`, mode === "chat", () => startChats());
   ut.id = "tool-chat"; rail.append(ut);
   $(".layout").classList.toggle("nb-view", mode === "notebook"); applyTextSize();
-  const hb = $(".help"), off = mode === "chat"; // Unscripted has its own switches
-  if (hb.classList.contains("help-off") && !off) { hb.classList.remove("pop"); void hb.offsetWidth; hb.classList.add("pop"); }
-  hb.classList.toggle("help-off", off);
   // Pages you read (not conversations) get the full height instead of a scroll box
   $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field", "long"].includes(mode) || mode === "chat" && !chatWho);
   $("#scene").classList.toggle("chatting", mode === "chat" && !!chatWho);
@@ -1298,11 +1298,10 @@ function renderRail() {
   placesBox.querySelectorAll(".scn").forEach(b => b.addEventListener("click", () => setMenu(false)));
   };
   renderPlaces();
-  // On a phone the list folds away: the button names where you are, and picking anything folds it again
-  const mb = $("#menu-btn"), open = $(".layout").classList.contains("menu-open"), on = rail.querySelector('.scn[aria-current="true"]');
+  // On a phone the list folds away behind one button (the page's own heading, right below, says where you are), and picking anything folds it again
+  const mb = $("#menu-btn"), open = $(".layout").classList.contains("menu-open");
   mb.textContent = ""; mb.setAttribute("aria-expanded", open ? "true" : "false");
-  if (open) mb.append(el("span", "mb-name", "Places and practice"), el("span", "mb-act", "Close"));
-  else mb.append(el("span", "mb-han", on ? on.querySelector(".han").textContent : mode === "home" ? `第${NUM_HAN[homeDay + 1] || homeDay + 1}天` : "街头"), el("span", "mb-name", on ? on.querySelector(".name").textContent : mode === "home" ? `Day ${homeDay + 1}` : "Street Mandarin"), el("span", "mb-act", "Places and practice"));
+  mb.append(el("span", "mb-name", "Places and practice"), el("span", "mb-act", open ? "Close" : "Open"));
   rail.querySelectorAll(".scn.tool").forEach(b => b.addEventListener("click", () => setMenu(false)));
 }
 
@@ -1315,7 +1314,7 @@ function armRush() {
   clearRush();
   const t = cur.turns[turn], chars = t.npc ? [...normHan(t.npc[0])].length : 0;
   // Roughly what a real person gives you: a few seconds, a bit more after a long sentence or if you type
-  const ms = Math.min(9000, 4500 + chars * 150) * (prefs.how === "type" ? 1.8 : prefs.how === "build" ? 1.5 : 1) + (prefs.listen ? 1500 : 0);
+  const ms = Math.min(9000, 4500 + chars * 150) * (prefs.how === "type" ? 1.8 : prefs.how === "build" ? 1.5 : 1);
   rushEnd = Date.now() + ms;
   const at = turn, id = cur.id;
   rushTimer = setTimeout(() => {
@@ -2012,7 +2011,7 @@ function renderNotebook() {
   }
   const c = $("#nb-clear"); c.textContent = "";
   if (notebook.length) {
-    const b = el("button", "btn ghost small", confirmClear ? "Tap again to clear everything" : "Clear notebook");
+    const b = el("button", "btn ghost small", confirmClear ? "Tap again to clear everything" : "Clear Mistakes");
     b.onclick = () => { if (confirmClear) { notebook = []; store.set("sm-notebook", notebook); confirmClear = false; renderRail(); } else confirmClear = true; renderNotebook(); };
     c.append(b);
   }
@@ -2032,7 +2031,7 @@ function startReview(early) {
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0))
     .filter(n => { const k = n.sid + (n.turn != null ? "t" + n.turn : n.cb != null ? "c" + n.cb : "s" + n.said); if (seenAt.has(k)) return false; seenAt.add(k); return true; }).slice(0, 10);
   ri = 0; rRight = 0; rLearned = 0; rAgain = new Set();
-  setHead("复习", "fùxí", "Your mistakes, back again", "How it works: ", "Each time one comes back it asks a bit more: pick it, then build it, then type it from memory. Three right and it leaves your notebook.");
+  setHead("复习", "fùxí", "Your mistakes, back again", "This round: ", rq.length ? `${plural(rq.length, "mistake")}, oldest first.` : "nothing yet.");
   $("#log").textContent = "";
   renderRail();
   if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
@@ -2050,7 +2049,7 @@ function reviewItem() {
     cur = LISTENER;
     const said = pair.a[0] === n.fix ? pair.a : pair.b, other = said === pair.a ? pair.b : pair.a;
     addNarr("A sound-alike that caught you out. Listen again.");
-    addNpc(canSpeak ? [said[0], said[1], ""] : ["…", said[1], ""], true);
+    addNpc(canSpeak ? [said[0], said[1], ""] : [said[1], "", ""], true); // with no voice, the pinyin is the clue, so it shows whatever the switch says
     order = shuffle([
       { h: said[2], p: "", e: "", k: "good" },
       { h: other[2], p: "", e: "", k: "wrong", note: pair.why, fix: [said[0], said[1]] }
@@ -2089,7 +2088,7 @@ function reviewChoose(o) {
   const msg = o.k === "wrong" ? o.note
     : o._close === "slip" ? (n.learned ? "Close enough, with one small slip, and that's the third time. It's learned." : `Close enough, with one small slip. ${whenText(n)}${n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`)
     : close ? `${o._close ? "Most of it, but not the whole line" : o.note + " Close enough"}, so it stays where it was. ${rung}`
-    : n.learned ? "Third time right. It's learned and leaves your notebook."
+    : n.learned ? "Third time right. It's learned and leaves Mistakes."
     : rHeld ? `${rHeld === "again" ? "Got it this time." : "Right, with the choices on screen."} ${rung}`
     : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`;
   addFeedback(close ? "okay" : o.k, msg, close || o.k === "wrong" ? (o.fix || (rGood ? [rGood.h, rGood.p] : null)) : null, o.k === "wrong" ? { label: "Still tricky", cost: "Back to the start: it returns tomorrow." } : close ? { label: "Close enough" } : null);
@@ -2143,14 +2142,14 @@ function selfGrade(right) {
   const n = rq[ri];
   rAnswered = true; markReviewed(n, right);
   if (right) { rRight++; if (n.learned) rLearned++; }
-  addNarr(right ? (n.learned ? "Learned. It leaves your notebook." : `${whenText(n)}.`) : "It returns tomorrow.");
+  addNarr(right ? (n.learned ? "Learned. It leaves Mistakes." : `${whenText(n)}.`) : "It returns tomorrow.");
   renderReviewMove();
 }
 function renderReviewMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
   if (!rq.length || ri >= rq.length) {
-    head.append(el("h3", null, "Round done"));
+    head.append(el("h3", null, rq.length ? "Round done" : "Nothing to review"));
     if (rq.length) head.append(el("span", "prompt", `${rRight} of ${rq.length} right${rLearned ? `, ${rLearned} learned for good` : ""}.`));
     const row = el("div", "endcard");
     const nb = el("button", "btn ghost", "Mistakes"); nb.onclick = () => openNotebook();
@@ -2375,7 +2374,7 @@ function startEars() {
 function earsItem() {
   eAnswered = false; ePick = null;
   const it = eq[ei];
-  addNpc(canSpeak ? [it.said[0], it.said[1], ""] : ["…", it.said[1], ""], true);
+  addNpc(canSpeak ? [it.said[0], it.said[1], ""] : [it.said[1], "", ""], true);
   renderMove();
 }
 function renderEarsMove() {
@@ -2719,6 +2718,7 @@ function renderTripMove() {
 function startTripWarmup() {
   mode = "pattern"; busy = false; transcript = []; pPat = null;
   pq = []; tripPlaces().forEach(s => s.turns.forEach((t, i) => pq.push({ sid: s.id, turn: i, cb: null })));
+  if (!pq.length) return startHome(); // nothing left on today's trip to warm up for
   pi = 0; pRight = 0; pAgain = () => startTripWarmup();
   setHead("出门", "chūmén", "Warm-up for today", "Places: ", tripPlaces().map(s => s.en).join(", ") + ".");
   $("#log").textContent = "";
@@ -2802,8 +2802,8 @@ function startHome(day) {
     const slips = notebook.filter(x => ids.includes(x.sid) && !x.learned), kinds = {};
     slips.forEach(x => { const g = tagOf(x); if (g) kinds[g] = (kinds[g] || 0) + 1; });
     const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
-    if (!slips.length) pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: "No slips open from today", why: "Nothing to bring back tomorrow. Your notebook has everything else.", go: () => openNotebook() }));
-    else pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: `${plural(slips.length, "slip")} from today`, why: "They're in your notebook, and they come back tomorrow morning.", go: () => openNotebook() }));
+    if (!slips.length) pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: "No slips open from today", why: "Nothing to bring back tomorrow. Older ones wait in Mistakes.", go: () => openNotebook() }));
+    else pm.append(homeCard({ kind: "Today's slips", han: "错题本", title: `${plural(slips.length, "slip")} from today`, why: "They're in Mistakes, and they come back tomorrow morning.", go: () => openNotebook() }));
     if (pat) pm.append(homeCard({ kind: "Tonight's drill", han: pat.zh, title: `Mostly ${pat.en.toLowerCase()}`, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
     // Without AI, the evening keeps to what works: no story or chat that would stop at "needs AI"
     if (sample || LS) pm.append(lsTonight());
@@ -2962,7 +2962,7 @@ function lsNarr(text, pre) {
     const m = part.match(/^\[\[([^|\]]+)\|([^|\]]*)\|([^\]]*)\]\]$/);
     if (!m) { if (part) p.append(part); return; }
     const [, h, py, en] = m, w = LS.words[h] || { seen: 0, tapped: 0 }, seen = pre && h in pre ? pre[h] : w.seen;
-    const fresh = seen <= 2 || w.tapped >= 2 || prefs.en, short = [prefs.py && py, prefs.en && en].filter(Boolean).join(" · ");
+    const fresh = seen <= 2 || w.tapped >= 2, short = [prefs.py && py, prefs.en && en].filter(Boolean).join(" · ");
     const b = el("button", "lw", h); b.title = `${py} · ${en}`;
     const gloss = el("span", "lw-gloss", fresh ? short : "");
     b.onclick = () => {
@@ -2971,7 +2971,7 @@ function lsNarr(text, pre) {
       if (LS.words[h]) { LS.words[h].tapped++; lsSave(); }
       if (canSpeak) speak(h);
     };
-    p.append(b); if (gloss.textContent) p.append(gloss);
+    p.append(b, gloss); // empty until tapped, once the word is yours
   });
   return p;
 }
@@ -2980,13 +2980,7 @@ function lsLine(b) {
   const row = el("div", "row npc");
   const who = el("div", "who", (c && c.address || name).slice(-2)); who.title = c ? `${c.name_hanzi} ${c.name_pinyin}, ${c.role}` : name;
   const bub = el("div", "bubble");
-  if (prefs.listen && canSpeak) {
-    // Ears: hear each line before you see it, the same as in Short Story
-    const txt = el("div", "lt"); txt.hidden = true; txt.append(bubbleContent(b.h, b.p, b.e, false));
-    const ear = el("div", "ear"), play = el("button", "btn small", "Play"), slow = el("button", "btn ghost small", "Slower"), show = el("button", "reveal", "Show text");
-    play.onclick = () => speak(b.h); slow.onclick = () => speak(b.h, 0.55); show.onclick = () => { txt.hidden = false; ear.remove(); };
-    ear.append(el("span", "ear-label", "Listen"), play, slow, show); bub.append(ear, txt);
-  } else bub.append(bubbleContent(b.h, b.p, b.e, false));
+  bub.append(bubbleContent(b.h, b.p, b.e));
   row.append(who, bub); return row;
 }
 
@@ -3071,7 +3065,8 @@ const lsZhMode = () => !prefs.en, zhNow = () => !!document.querySelector("#log .
 // Redraw the chapter you're on without losing your place or your answer
 function lsRedraw() {
   if (mode !== "long" || lsView !== "read" || !lsAt || !lsCh(lsAt.v, lsAt.c)) return;
-  const r = lsReady, y = scrollY; lsRead(lsAt.v, lsAt.c); lsReady = r; renderMove(); window.scrollTo(0, y);
+  const r = lsReady, y = scrollY, fb = [...$("#log").querySelectorAll(".fb")].pop(); // the note on your answer stays
+  lsRead(lsAt.v, lsAt.c); lsReady = r; if (fb && !$("#log .fb")) $("#log").append(fb); renderMove(); window.scrollTo(0, y);
 }
 
 /* the two things Claude writes: the plan for the whole story, and each chapter as you reach it */
@@ -3341,7 +3336,7 @@ function lsRead(v, c) {
   });
   if (ch.said && ch.said.k !== "end") {
     // Read again: what you said, and how it went
-    const row = el("div", "row me" + (ch.said.k === "good" || ch.said.k === "own" ? "" : " " + ch.said.k)); const bub = el("div", "bubble"); bub.append(bubbleContent(ch.said.h, ch.said.p || "", ch.said.e || "", true)); row.append(bub); log.append(row);
+    const row = el("div", "row me" + (ch.said.k === "good" || ch.said.k === "own" ? "" : " " + ch.said.k)); const bub = el("div", "bubble"); bub.append(bubbleContent(ch.said.h, ch.said.p || "", ch.said.e || "")); row.append(bub); log.append(row);
     if (ch.said.r) log.append(lsLine({ who: lsLastWho(ch), h: ch.said.r[0], p: ch.said.r[1], e: ch.said.r[2] }));
   }
   lsMoment = ch.moment && !ch.said ? Object.assign({}, ch.moment, { npc: last }) : null;
@@ -3504,7 +3499,7 @@ let lsNew = false;
 // your landlady, texting you like anyone in China would. Endless, it remembers you, and whatever you write
 // that wouldn't land gets a quiet note under your message and comes back in Mistakes.
 const PEOPLE = window.PEOPLE || [];
-let CHATS = store.get("sm-chats", {}), chatPrefs = Object.assign({ py: true, en: false }, store.get("sm-chat-prefs", {}));
+let CHATS = store.get("sm-chats", {});
 let chatInked = {}, chatWho = null, chatPending = new Set(), chatErrs = {}, chatReset = false, chatHow = null, chatDraft = "";
 const personOf = id => PEOPLE.find(p => p.id === id);
 const chatOf = id => CHATS[id] || (CHATS[id] = { msgs: [], about: "" });
@@ -3567,23 +3562,16 @@ function startChat(id) {
   renderRail(); chatDraw(); renderMove();
   if (innerWidth < 760) $("#scene").scrollIntoView({ block: "start" }); // on a phone, the chat fills the screen
 }
-// The two switches, plus a way back and a fresh start
+// A way back and a fresh start (Pinyin and English are the same switches as everywhere else, up top)
 function chatBar() {
   const bar = el("div", "chat-bar");
   const back = el("button", "linkish", "‹ All chats"); back.onclick = () => startChats();
-  const sw = el("div", "chat-sw"); sw.setAttribute("role", "group"); sw.setAttribute("aria-label", "What to show under each message");
-  [["拼音 Pinyin", "py"], ["English", "en"]].forEach(([l, k]) => {
-    const b = el("button", "chip", l); b.setAttribute("aria-pressed", chatPrefs[k] ? "true" : "false");
-    b.onclick = () => { chatPrefs[k] = !chatPrefs[k]; store.set("sm-chat-prefs", chatPrefs); b.setAttribute("aria-pressed", chatPrefs[k] ? "true" : "false"); chatDraw(true); };
-    sw.append(b);
-  });
   const reset = el("button", "linkish chat-reset", chatReset ? "Yes, clear it" : "Reset chat");
   reset.onclick = () => {
     if (!chatReset) { chatReset = true; setTabs(chatBar()); return; }
     chatReset = false; CHATS[chatWho] = { msgs: [], about: "" }; saveChats(); startChat(chatWho);
   };
-  const nb = el("button", "linkish", "笔记 Notes"); nb.onclick = () => notesShown() ? closeNotes() : openNotes();
-  bar.append(back, sw, nb, reset);
+  bar.append(back, reset);
   if (chatReset) bar.append(el("span", "chat-warn", "This clears the messages and everything they remember about you. Slips stay in Mistakes."));
   return bar;
 }
@@ -3604,7 +3592,7 @@ function chatMsg(m, p, i) {
   const row = el("div", "row chat " + (m.me ? "me" : "npc"));
   if (!m.me) row.append(el("div", "who t" + (PEOPLE.indexOf(p) % 6), p.av));
   const bub = el("div", "bubble");
-  const showPy = chatPrefs.py || m.open, showEn = chatPrefs.en || m.open;
+  const showPy = prefs.py || m.open, showEn = prefs.en || m.open;
   if (m.voice && !m.shown && canSpeak) {
     // A voice message, like the real thing: listen first; 转文字 shows the words
     const v = el("div", "voice"), play = el("button", "vplay"), secs = Math.max(2, Math.round([...m.h].length / 3.5));
@@ -3650,7 +3638,7 @@ function renderChatMove() {
   // A beginner can start from a line that works, and edit it before sending
   if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
     const st = el("div", "chat-starters");
-    p.starters.forEach(s => { const b = el("button", "chip"); b.append(el("span", "han", s.h)); if (chatPrefs.py) b.append(el("span", "py", s.p)); if (chatPrefs.en) b.append(el("span", "en-line", s.e)); b.onclick = () => { const i = $("#chat-input"); i.value = s.h; i.focus(); }; st.append(b); });
+    p.starters.forEach(s => { const b = el("button", "chip"); b.append(el("span", "han", s.h)); if (prefs.py) b.append(el("span", "py", s.p)); if (prefs.en) b.append(el("span", "en-line", s.e)); b.onclick = () => { const i = $("#chat-input"); i.value = s.h; i.focus(); }; st.append(b); });
     m.append(st);
   }
   if (chatHow) m.append(chatHowEl(p));
@@ -3852,8 +3840,8 @@ function openNotes(id) {
   setTimeout(() => { const f = d.querySelector(noteOpen ? "textarea" : "input"); if (f) f.focus({ preventScroll: true }); }, 0);
 }
 function closeNotes() {
-  const n = noteOpen && NOTES.find(x => x.id === noteOpen); if (n && !n.body.trim()) { NOTES = NOTES.filter(x => x !== n); saveNotes(); noteOpen = null; } // an empty new note isn't kept
-  document.body.classList.remove("notes-open"); $("#notes").hidden = true; $("#notes-btn").setAttribute("aria-expanded", "false"); $("#notes-btn").focus(); }
+  const d0 = $("#notes").hidden; const n = noteOpen && NOTES.find(x => x.id === noteOpen); if (n && !n.body.trim()) { NOTES = NOTES.filter(x => x !== n); saveNotes(); noteOpen = null; } // an empty new note isn't kept
+  document.body.classList.remove("notes-open"); $("#notes").hidden = true; const was = !d0; $("#notes-btn").setAttribute("aria-expanded", "false"); if (was) $("#notes-btn").focus(); }
 function drawNotes() {
   const d = $("#notes .nt-body"); d.textContent = "";
   const n = noteOpen && NOTES.find(x => x.id === noteOpen);
@@ -3869,7 +3857,7 @@ function drawNotes() {
       list.textContent = "";
       const ql = noteQuery.trim().toLowerCase();
       const all = NOTES.filter(x => !ql || x.body.toLowerCase().includes(ql)).sort((a, b) => (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || b.t - a.t);
-      if (!NOTES.length) list.append(el("p", "nt-empty", "Nothing here yet. Write down words, explanations, anything you want to keep. Or tap “Save to notes” on any line in the app."));
+      if (!NOTES.length) list.append(el("p", "nt-empty", "Nothing here yet. Write down words, explanations, anything you want to keep. Lines from Mistakes, Unscripted and Your pocket (tap Show) can be saved here too, with “Save to notes”."));
       else if (!all.length) list.append(el("p", "nt-empty", `No note has “${noteQuery}”.`));
       all.forEach(x => {
         const b = el("button", "nt-item" + (x.pin ? " pin" : ""));
@@ -3895,7 +3883,7 @@ function drawNotes() {
   const del = el("button", "linkish nt-del", noteDel ? "Yes, delete this note" : "Delete"); del.onclick = () => { if (!noteDel) { noteDel = true; drawNotes(); return; } NOTES = NOTES.filter(x => x !== n); saveNotes(); noteOpen = null; noteDel = false; drawNotes(); renderRail(); };
   tools.append(del); d.append(tools);
   if (noteMsg) d.append(el("p", "ls-err", noteMsg));
-  d.append(el("p", "nt-hint", "Saves as you type. “Save to notes” anywhere in the app adds to this note while it's open."));
+  d.append(el("p", "nt-hint", "Saves as you type. “Save to notes” in Mistakes, Unscripted or Your pocket adds to this note while it's open."));
 }
 // The Chinese you wrote, with pinyin and meanings added underneath: your own words stay as they are
 const NOTE_GLOSS = "\n—— 拼音 pinyin and meanings ——\n";
@@ -3922,7 +3910,7 @@ Return JSON only: {"items": [{"h": "汉字", "p": "pīnyīn", "e": "meaning"}]}`
 }
 
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-textsize", "sm-notes", "sm-chats", "sm-chat-prefs", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
+const KEYS = ["sm-textsize", "sm-notes", "sm-chats", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
@@ -3949,8 +3937,8 @@ function renderFoot() {
   const look = el("span", "look-pick"); look.append("Look:");
   [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
   if (isJade() && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => jadeOpening(true); look.append(re); }
-  // say plainly when the full world can't play, so a quiet screen is never a mystery
-  if (isJade()) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeF ? `Filmed world on${jadeF.credit ? ` (${jadeF.credit})` : ""}.` : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
+  // say plainly when the full world can't play, so a quiet screen is never a mystery (when the films play, there's nothing to explain)
+  if (isJade() && !jadeF) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
   // the device setting wins by default, but it's your app: you can ask for the motion anyway
   const asked = document.documentElement.dataset.motion === "on";
   if (asked || stillMotion()) { const mo = el("button", "linkish", asked ? "Use less motion again" : "Play the motion anyway"); mo.onclick = () => { try { asked ? localStorage.removeItem("sm-motion") : localStorage.setItem("sm-motion", "on"); sessionStorage.removeItem("sm-opened-3d"); } catch {} location.reload(); }; look.append(mo); }
@@ -4073,10 +4061,11 @@ function renderFieldMove() {
 
 /* ---------- phrasebook: every line that worked, from places you've survived ---------- */
 let pbQuery = "";
-function phraseRow(o, reply) {
-  const row = el("div", "pb-row");
+function phraseRow(o, reply, why) {
+  const row = el("div", "pb-row" + (why ? " slipped" : ""));
   const txt = el("div", "tap-rv");
   txt.append(el("div", "han", o.h), el("div", "py", o.p), el("div", "en-line tr", o.e));
+  if (why) txt.append(el("div", "pb-why", why));
   row.append(txt);
   const tools = el("div", "pb-tools");
   if (canSpeak) { const b = el("button", "say"); b.innerHTML = SPEAK_SVG; b.setAttribute("aria-label", "Listen"); b.onclick = () => speak(o.h); tools.append(b); }
@@ -4097,14 +4086,22 @@ function renderPhrases() {
   const log = $("#log"); log.textContent = "";
   const q = pbQuery.trim().toLowerCase(), qPy = normPy(q);
   const hit = o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q) || (qPy && normPy(o.p).includes(qPy));
-  // Lines learned the hard way: the fixes for mistakes still in your notebook
-  const hard = []; const seen = new Set();
-  activeItems().forEach(n => { if (n.fix && !seen.has(n.fix)) { seen.add(n.fix); hard.push({ h: n.fix, p: n.fixPy || "", e: n.why ? n.why.split(/(?<=\.)\s/)[0] : "" }); } });
-  const hardHits = hard.filter(o => !q || o.h.includes(q) || (qPy && normPy(o.p).includes(qPy)) || o.e.toLowerCase().includes(q));
+  // Lines learned the hard way: the fixes for mistakes still open. Each is marked where it lives in its place;
+  // only fixes with no place in the list yet get a section of their own, so no line shows twice.
+  const places = S.filter(s => done[s.id]);
+  const good = new Map(); places.forEach(s => s.turns.forEach(t => t.opts.forEach(o => { if (o.k === "good" && !good.has(o.h)) good.set(o.h, o); })));
+  const slipWhy = new Map(), hard = [];
+  activeItems().forEach(n => {
+    if (!n.fix || slipWhy.has(n.fix)) return;
+    const why = "You slipped here once" + (n.why ? ": " + n.why.split(/(?<=\.)\s/)[0] : ".");
+    slipWhy.set(n.fix, why);
+    if (!good.has(n.fix)) hard.push({ o: { h: n.fix, p: n.fixPy || "", e: "" }, why });
+  });
+  const hardHits = hard.filter(({ o, why }) => !q || o.h.includes(q) || (qPy && normPy(o.p).includes(qPy)) || why.toLowerCase().includes(q));
   if (hardHits.length) {
     const sec = el("section", "pb hard");
     sec.append(el("h4", "pb-title", "Learned the hard way"));
-    hardHits.slice(0, 8).forEach(o => sec.append(phraseRow(o, null)));
+    hardHits.slice(0, 8).forEach(({ o, why }) => sec.append(phraseRow(o, null, why)));
     log.append(sec);
   }
   const wl = store.get("sm-wander-lines", []).filter(o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q));
@@ -4114,12 +4111,11 @@ function renderPhrases() {
     wl.slice(0, 10).forEach(o => sec.append(phraseRow(o, null)));
     log.append(sec);
   }
-  const places = S.filter(s => done[s.id]);
   if (!places.length && !hard.length && !wl.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
   let shown = 0;
   places.forEach(s => {
     const rows = [];
-    s.turns.forEach((t, ti) => t.opts.filter(o => o.k === "good" && hit(o)).forEach(o => rows.push(phraseRow(o, replyAfter(s, ti)))));
+    s.turns.forEach((t, ti) => t.opts.filter(o => o.k === "good" && hit(o)).forEach(o => rows.push(phraseRow(o, replyAfter(s, ti), slipWhy.get(o.h)))));
     if (!rows.length) return;
     const sec = el("section", "pb");
     sec.append(el("h4", "pb-title", `${s.place} · ${s.en}`), ...rows);
@@ -4360,9 +4356,10 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
 // Two switches, the same as in Unscripted: pinyin and English under the Chinese, everywhere. Off, a line still
 // shows them when you tap it ("What does that mean?" on what people say to you).
 function setShow(k) {
-  prefs[k] = !prefs[k]; prefs.hint = prefs.en; store.set("sm-prefs", prefs); applyPrefs();
-  if (mode === "scene" && !finished) renderMove();
-  if (mode === "home") startHome(); else if (mode === "trip") renderTrip(); else if (mode === "phrases") renderPhrases();
+  prefs[k] = !prefs[k]; store.set("sm-prefs", prefs); applyPrefs();
+  if (mode === "scene" && !finished) { const t = $("#move input[type=text], #move textarea"), v = t && t.value; renderMove(); const n = $("#move input[type=text], #move textarea"); if (v && n) n.value = v; } // what you'd typed stays
+  if (mode === "home") startHome(homeDay); else if (mode === "trip") renderTrip(); else if (mode === "phrases") renderPhrases();
+  else if (mode === "chat" && chatWho) { chatDraw(true); renderMove(); }
   lsRedraw();
 }
 // Text size: each part of the app keeps its own (larger for reading Long Story, say). It scales the whole page, characters and all.
@@ -4379,7 +4376,7 @@ function tsSpace() {
 function tsSizes() { if (!applyTextSize.s) try { applyTextSize.s = JSON.parse(localStorage.getItem("sm-textsize")) || {}; } catch { applyTextSize.s = {}; } return applyTextSize.s; }
 function applyTextSize() {
   const [k, name] = tsSpace(), z = Math.min(tsSizes()[k] || 1, tsMax()), sc = $("#scene"), seg = $("#ts-seg");
-  sc.style.zoom = z === 1 ? "" : z; sc.style.setProperty("--tz", z);
+  [sc, $(".notebook")].forEach(x => { x.style.zoom = z === 1 ? "" : z; x.style.setProperty("--tz", z); }); // Mistakes lives in its own pane
   seg.setAttribute("aria-label", `Text size for ${name}`); seg.querySelector(".ts-val").title = `Text size for ${name}. Tap for normal size.`; seg.querySelector(".ts-val").textContent = Math.round(z * 100) + "%";
   seg.querySelector('[data-d="-1"]').disabled = z <= TS_STEPS[0]; seg.querySelector('[data-d="1"]').disabled = z >= tsMax();
 }
