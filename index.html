@@ -93,7 +93,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .day-part .dp-sub { font-size: 14px; color: var(--muted); }
 .today-card.done { background: transparent; }
 .today-card.done .tc-han { color: var(--muted); }
-.daily-card .dc-where { color: var(--muted); }
+.daily-card .dc-where { color: var(--muted); font-size: 13px; }
 .cando { margin-top: 26px; }
 .cando-head { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
 .cando-head:hover, .cando-head:focus-visible { border-color: var(--jade); }
@@ -107,7 +107,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .cd-list li.on::before { content: "✓ "; color: var(--jade); }
 .cd-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
 .ls-setup { display: grid; gap: 22px; }
-.ls-setup.busy { opacity: 0.45; pointer-events: none; }
+.ls-setup.busy, .ls-setup.off { pointer-events: none; } .ls-setup:is(.busy, .off) > * { opacity: 0.45; } /* on the children: the page's fade-in animation owns the box's own opacity */
 .ls-field { display: grid; gap: 8px; }
 .ls-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
 .ls-field .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -177,20 +177,17 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .tagline { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
 .streak { margin: 6px 0 0; font-size: 13px; color: var(--jade); font-weight: 600; min-height: 1em; }
 .streak .zh { font-family: var(--f-han); margin-right: 6px; }
-/* One help dial instead of three switches: less help as you get better */
+/* Header controls: text size, and the Pinyin / English switches */
 .help { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
-.help-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); gap: 2px; }
 .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
-.help-desc { font-size: 12px; color: var(--muted); max-width: 300px; text-align: right; }
 .help { align-self: center; } .help-row .seg, header.top .notes-btn { height: 42px; box-sizing: border-box; align-items: center; }
 .help-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .help-row .seg button { line-height: 18px; } .tsize button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
-/* the help dial shows only where it changes something: the places, Long Story, Mistakes and the pocket */
 @media (max-width: 760px) { .help { flex-direction: column; align-items: flex-start; align-self: auto; } .help-row { justify-content: flex-start; } .help-row .tsize { order: 2; } }
 .seg button:disabled { opacity: .35; cursor: default; }
-@media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .help-desc { display: none; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
+@media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
@@ -235,7 +232,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .place-en { font-weight: 700; font-size: 20px; line-height: 1.2; }
 .goal { font-size: 14px; }
 .goal b { font-weight: 600; }
-@media (max-width: 480px) { .place { font-size: 42px; } }
+@media (max-width: 480px) { .place { font-size: 42px; grid-row: span 2; } .scene-head .goal { grid-column: 1 / -1; margin-top: 6px; } } /* on a phone the explanation gets the full width under the name */
 /* A long title (a Long Story name) sits above the text instead of beside it */
 .scene-head.wide { grid-template-columns: minmax(0, 1fr); }
 .scene-head.wide .place { grid-row: auto; font-size: 40px; }
@@ -296,6 +293,7 @@ body.no-py .tap-rv.rv-open .py, body.no-en .tap-rv.rv-open .tr { display: revert
 /* Your move */
 .move { border-top: 1px solid var(--line); padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
 .move-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.move-head .mh-end { margin-left: auto; } .move-head:has(.mh-end) { justify-content: flex-start; } /* the prompt stays beside its heading */
 .move-head h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; }
 .prompt { font-size: 14px; color: var(--muted); }
 .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
@@ -357,7 +355,8 @@ body.hint-off .opt .en-line { display: none; }
 .field { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .field input, .field-place { font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--fg); }
 .field .btn { align-self: flex-start; }
-.ladder { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.ladder { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12px; }
+.ladder .lad-sep { font-style: normal; color: var(--muted); }
 .ladder span { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 .ladder span.done { color: var(--jade); border-color: var(--jade); }
 .ladder span.on { background: var(--jade); border-color: var(--jade); color: var(--surface); font-weight: 600; }
@@ -460,7 +459,7 @@ body.hint-off .opt .en-line { display: none; }
 .cr-side { font-size: 12px; color: var(--muted); align-self: start; padding-top: 4px; }
 .cr-dot { position: absolute; left: 50px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--cinnabar); border: 2px solid var(--surface); }
 .scene.chatting .log { max-height: calc(min(68vh, 720px) / var(--tz, 1)); background: var(--surface-2); }
-.chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+.chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 0 0 10px; border-bottom: 1px solid var(--line); } /* the slot already gives the side margin, so it lines up with the messages */
 .chat-reset { margin-left: auto; color: var(--muted); }
 .chat-warn { flex-basis: 100%; font-size: 13px; color: var(--cinnabar); }
 .row.chat .who { border-radius: 8px; background: var(--jade); color: var(--surface); font-size: 17px; font-weight: 900; }
@@ -472,6 +471,8 @@ body.hint-off .opt .en-line { display: none; }
 .scene.chatting .move { position: sticky; bottom: 0; z-index: 2; background: var(--surface); }
 .move:empty { display: none; }
 body.no-py .chat-fb .py { display: inline; }
+/* not wide enough for the list, the page and your notes: the notes take the list's place until they close */
+@media (min-width: 1100px) and (max-width: 1499px) { body.notes-open .layout { grid-template-columns: minmax(0, 1fr); } body.notes-open .rail { display: none; } }
 @media (min-width: 1100px) { body.notes-open .wrap { max-width: calc(100vw - 440px); margin-left: max(16px, calc((100vw - 440px - 1180px) / 2)); } }
 .row.chat .han { font-size: 19px; }
 body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py { display: block; }
@@ -529,7 +530,7 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
 @media (max-width: 760px) {
   .notes { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 78vh; border-radius: 16px 16px 0 0; }
   .chat-row { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 10px 12px; } .av { width: 42px; height: 42px; font-size: 20px; } .cr-dot { left: 44px; }
-  .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: calc((100dvh - 250px) / var(--tz, 1)); min-height: 280px; }
+  .scene.chatting .log { max-height: calc((100dvh - 250px) / var(--tz, 1)); min-height: 280px; }
   .scene.chatting .scene-head { padding: 10px 14px; } .scene.chatting .scene-head .place { font-size: 30px; } .scene.chatting .goal { display: none; }
 }
 
@@ -738,8 +739,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 :root[data-look="jade"] :is(.btn:not([disabled]), .opt, .today-card, .scn, .chip):active { transform: scale(.985); }
 :root[data-look="jade"] .seg button { position: relative; overflow: hidden; }
 /* text that sits straight on the sky stays readable when the sun is behind it */
-:root[data-look="jade"] header.top :is(.help-label, .help-desc, .tagline, .streak, .brand .en), :root[data-look="jade"] .rail h2 { text-shadow: 0 1px 2px rgba(2, 10, 7, .9), 0 0 14px rgba(2, 10, 7, .75); }
-:root[data-look="jade"] header.top .help-label, :root[data-look="jade"] .rail h2 { color: var(--cloud); opacity: .85; }
+:root[data-look="jade"] header.top :is(.tagline, .streak, .brand .en), :root[data-look="jade"] .rail h2 { text-shadow: 0 1px 2px rgba(2, 10, 7, .9), 0 0 14px rgba(2, 10, 7, .75); }
+:root[data-look="jade"] .rail h2 { color: var(--cloud); opacity: .85; }
 /* the volume slider: a thin jade track that fills up to a glowing bead */
 :root[data-look="jade"] input[type=range] { -webkit-appearance: none; appearance: none; height: 22px; background: transparent; border: 0; padding: 0; }
 :root[data-look="jade"] input[type=range]::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--dragonfire) var(--fill, 0%), rgba(80, 240, 160, .18) var(--fill, 0%)); }
@@ -878,6 +879,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .look-note { color: var(--muted); font-size: 12px; margin-left: 8px; }
 .look-pick { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-left: auto; }
 .look-pick > button { white-space: nowrap; }
+@media (max-width: 760px) { .look-pick { margin-left: 0; } }
 .look-pick button[aria-pressed="true"] { text-decoration: none; font-weight: 700; }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .jw-haze, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
@@ -1062,7 +1064,7 @@ function bubbleContent(h, p, e) {
     // Always there, shown only while a switch hides something, so flipping a switch mid-conversation still leaves a way to see it
     const r = el("button", "reveal rv-btn"); r.append(el("span", "rv-en", "What does that mean?"), el("span", "rv-py", "Show pinyin"));
     r.onclick = () => { const b = r.closest(".bubble, .lt") || r.parentNode.parentNode; b.classList.add("tap-rv", "rv-open"); };
-    tools.append(r); frag.append(tools, el("div", "en-line tr", e));
+    tools.append(r); frag.append(el("div", "en-line tr", e), tools); // the line reads through, then its tools
   } else frag.append(tools);
   return frag;
 }
@@ -1713,7 +1715,7 @@ function tileFallback(w) {
   const ch = [...normHan(w)];
   return ch.length && ch.every(c => charPy[c]) ? ch.map(c => charPy[c]).join("") : "";
 }
-// A tile shows its pinyin underneath while the help dial is on English or Pinyin
+// A tile shows its pinyin underneath while the Pinyin switch is on
 function tileBtn(w, cls, scene) {
   const b = el("button", cls), py = prefs.py && scene ? tilePyFor(scene)[w] || (/[\u4e00-\u9fff]/.test(w) ? tileFallback(w) : "") : "";
   b.append(el("span", "tw", w)); if (py) b.append(el("span", "tp", py));
@@ -2020,7 +2022,7 @@ function renderNotebook() {
 /* ---------- review round: mistakes come back ---------- */
 let rq = [], ri = 0, rRight = 0, rLearned = 0, rAnswered = false, rReveal = false;
 // Each time a mistake comes back it asks a little more of you: pick it, then build it, then say it with nothing on screen
-const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "From memory", "type it from memory"]];
+const LADDER = [["pick", "Pick it", "pick it"], ["build", "Build it", "build it"], ["type", "Type it", "type it from memory"]];
 let rHow = "pick", rGood = null, rTiles = null, rHeld = false, rAgain = new Set();
 // A miss comes back once more at the end of the round, so you produce the fix while it's fresh
 function again(n) { if (!rAgain.has(n)) { rAgain.add(n); rq.push(n); } }
@@ -2097,7 +2099,8 @@ function reviewChoose(o) {
 function ladderEl(n) {
   // Where this mistake is on its way out: each rung is one more return, asking a bit more
   const box = el("div", "ladder"), at = Math.max(0, LADDER.findIndex(x => x[0] === rHow));
-  LADDER.forEach(([, label], i) => { const r = el("span", i < (n.step || 0) ? "done" : i === at ? "on" : "", label); box.append(r); });
+  // steps, not tabs: the same three words as the answer modes in a place, with arrows between
+  LADDER.forEach(([, label], i) => { if (i) box.append(el("i", "lad-sep", "›")); box.append(el("span", i < (n.step || 0) ? "done" : i === at ? "on" : "", label)); });
   box.setAttribute("aria-label", `Return ${(n.step || 0) + 1} of 3: ${LADDER[at][1]}`);
   return box;
 }
@@ -2300,11 +2303,11 @@ function renderDrillMove() {
     head.append(el("h3", null, "Drill done"), el("span", "prompt", `${dRight} of ${dq.length} right.`));
     const row = el("div", "endcard");
     const again = el("button", "btn", "Another round"); again.onclick = () => startDrill();
-    const rd = el("button", "btn ghost", "Read any number"); rd.onclick = () => startReader();
+    const rd = el("button", "btn ghost", "Number reader"); rd.onclick = () => startReader();
     const back = backBtn();
     row.append(again, rd, back); m.append(head, row); return;
   }
-  const rdb = el("button", "linkish", "Number reader"); rdb.onclick = () => startReader();
+  const rdb = el("button", "linkish mh-end", "Number reader"); rdb.onclick = () => startReader();
   head.append(el("h3", null, `${dKind === "phone" ? "Number" : dKind === "time" ? "Time" : "Total"} ${di + 1} of ${dq.length}`), el("span", "prompt", dKind === "phone" ? "What's their number?" : dKind === "time" ? "When are you meeting?" : "How much do you pay?"), rdb);
   m.append(head);
   if (dAnswered) {
@@ -2652,8 +2655,9 @@ function renderReaderMove() {
 let trip = store.get("sm-trip", { ids: [], day: "" }), tripEditing = false;
 function startTrip() {
   mode = "trip"; busy = false; cur = { who: "出门", whoEn: "you" };
-  if (trip.day !== dayKey()) tripEditing = true; // a new day, a new plan
-  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Pick where you're going today for a cheat sheet, a warm-up and big text to show people. Every line has what worked everywhere you've been.");
+  // A new day starts on that day's stops, the same as opening it from your day; "Change places" picks others
+  if (trip.day !== dayKey()) { trip = { day: dayKey(), ids: DAYS[curDay()].stops.map(x => x.id) }; store.set("sm-trip", trip); tripEditing = false; }
+  setHead("口袋", "kǒudai", "Your pocket", "What it's for: ", "Where you're going today, as a cheat sheet, a warm-up and big text to show people. Every line has what worked everywhere you've been.");
   renderTrip(); renderRail(); renderMove();
 }
 function tripPlaces() { return trip.ids.map(id => S.find(s => s.id === id)).filter(Boolean); }
@@ -2860,7 +2864,7 @@ function wordsForToday(day) {
     if (SR && !micBroken && /[一-鿿]/.test(x.h)) { const m = el("button", "linkish", "Say it back"); m.onclick = () => sayBack(m, x.h, out); row.append(m); }
     const s = x.at && S.find(z => z.id === x.at);
     if (s && !(ids && ids.includes(s.id))) { const g = el("button", "linkish", `Try it: ${s.en}`); g.onclick = () => start(s.id); row.append(g); }
-    else if (s) row.append(el("span", "dc-where", `For today: ${s.en}`));
+    else if (s) c.append(el("span", "dc-where", `For today: ${s.en}`)); // its own line, so every card's links sit on the same row
     row.append(out); c.append(row); grid.append(c);
   });
   wrap.append(grid);
@@ -2903,14 +2907,11 @@ function renderHomeMove() {
   const back = dueItems().length, early = back ? [] : homeMorningSlips(started);
   if (next && !started && (back || early.length)) {
     const n = back || early.length, r = el("button", "btn", n === 1 ? "Review your slip first" : `Review ${n} slips first`);
-    r.onclick = () => startReview(back ? null : early); row.append(r);
-    const go = el("button", "btn ghost", `Or go: ${next.en}`); go.onclick = () => start(next.id); row.append(go);
+    r.onclick = () => startReview(back ? null : early); row.append(r); // the stop itself is the next card down, so no second button for it
   } else if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
   else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => { cranes(); jadeDawn(homeDay + 2); startHome(homeDay + 1); }; row.append(go); }
-  const all = el("button", "btn ghost", "Or pick any place");
-  // On a phone that opens the folded list; on a wide screen the list is already there, so jump to its find box
-  all.onclick = () => { if (getComputedStyle($("#menu-btn")).display !== "none") setMenu(true); else { findBox.focus(); } };
-  row.append(all); m.append(row);
+  // One button: the next thing to do. Any other place is in the list (on a phone, behind "Places and practice").
+  if (row.children.length) m.append(row);
 }
 /* ---------- Long Story: a light novel Claude writes around you, one chapter at a time ---------- */
 // Short Story teaches you to survive a situation. Long Story is where you live in Chinese: the same people
@@ -3212,15 +3213,17 @@ function lsSetup() {
   const box = el("div", "ls-setup");
   const len = el("div", "ls-field"); len.append(el("span", "ls-label", "How long"));
   const chips = el("div", "chips");
-  [[7, "A week"], [14, "Two weeks"], [30, "A month"]].forEach(([n, l]) => { const c = el("button", "chip", `${l} · ${n} volumes`); c.setAttribute("aria-pressed", lsPick.n === n); c.onclick = () => { lsPick.n = n; lsSetup(); renderMove(); }; chips.append(c); });
+  // Quick picks, or any length from 7 to 30 on the slider; the count is said once, under it
+  [[7, "A week"], [14, "Two weeks"], [30, "A month"]].forEach(([n, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", lsPick.n === n); c.onclick = () => { lsPick.n = n; lsSetup(); renderMove(); }; chips.append(c); });
   const range = el("input"); range.type = "range"; range.min = 7; range.max = 30; range.value = lsPick.n; range.setAttribute("aria-label", "Number of volumes");
-  const rv = el("span", "ls-n", `${lsPick.n} volumes, one day each`);
+  const daily = (lsPick.pace || "daily") === "daily", count = () => `${lsPick.n} volumes` + (daily ? `, one day of the story each` : "");
+  const rv = el("span", "ls-n", count());
   const fill = () => range.style.setProperty("--fill", ((range.value - 7) / 23 * 100).toFixed(1) + "%"); fill();
-  range.oninput = () => { lsPick.n = +range.value; fill(); const bb = $("#move .btn"); if (bb) bb.textContent = `Begin: ${lsPick.n} volumes`; rv.textContent = `${lsPick.n} volumes, one day each`; chips.querySelectorAll(".chip").forEach((c, i) => c.setAttribute("aria-pressed", [7, 14, 30][i] === lsPick.n)); };
+  range.oninput = () => { lsPick.n = +range.value; fill(); rv.textContent = count(); chips.querySelectorAll(".chip").forEach((c, i) => c.setAttribute("aria-pressed", [7, 14, 30][i] === lsPick.n)); };
   len.append(chips, range, rv);
-  const pace = el("div", "chips");
+  const pf = el("div", "ls-field"), pace = el("div", "chips");
   [["daily", "A volume a day"], ["free", "As fast as I like"]].forEach(([k, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", (lsPick.pace || "daily") === k); c.onclick = () => { lsPick.pace = k; lsSetup(); }; pace.append(c); });
-  len.append(el("span", "ls-label", "Pace"), pace, el("span", "ls-n", (lsPick.pace || "daily") === "daily" ? "Like a serial: each day, one day of the story. The next volume opens tomorrow." : "Read on whenever you like."));
+  pf.append(el("span", "ls-label", "Pace"), pace, el("span", "ls-n", daily ? "Like a serial: the next volume opens tomorrow." : "Read on whenever you like."));
   const th = el("div", "ls-field"); th.append(el("span", "ls-label", "What it's about"));
   const tg = el("div", "ls-themes");
   LS_THEMES.forEach(([zh, en, blurb], i) => { const c = el("button", "today-card" + (lsPick.theme === i ? " first" : "")); c.setAttribute("aria-pressed", lsPick.theme === i);
@@ -3234,8 +3237,9 @@ function lsSetup() {
   const ni = el("input", "ls-own"); ni.type = "text"; ni.placeholder = "马修, Matt, 小马…"; ni.value = lsPick.name; ni.maxLength = 12; ni.setAttribute("aria-label", "Your name in the story"); ni.oninput = () => { lsPick.name = ni.value; };
   const he = el("div", "chips"); [["", "Either"], ["he", "他 he"], ["she", "她 she"]].forEach(([k, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", (lsPick.he || "") === k); c.onclick = () => { lsPick.he = k; lsSetup(); }; he.append(c); });
   nm.append(ni, el("span", "ls-label", "How people talk about you"), he);
-  box.append(len, th, nm);
-  if (!sample) box.prepend(aiNote(`Long Story is written by ${AI_NAME} as you read, so it needs ${AI_NAME}. ${aiHow()} to start one. Short Story works without it.`));
+  box.append(len, pf, th, nm);
+  if (!sample) box.classList.add("off"); // nothing here can start without Claude, so it's shown, not offered
+  if (!sample) log.append(aiNote(`Long Story is written by ${AI_NAME} as you read, so it needs ${AI_NAME}. ${aiHow()} to start one. Short Story works without it.`));
   if (lsPlanning) box.classList.add("busy");
   log.append(box); log.scrollTop = 0;
 }
@@ -3437,9 +3441,9 @@ function renderLongMove() {
     return;
   }
   if (!LS) {
-    const go = el("button", "btn", `Begin: ${lsPick.n} volumes`); go.disabled = !sample; go.onclick = () => lsBegin();
-    row.append(go); if (!sample) row.append(el("span", "ls-prompt", `Needs ${AI_NAME}: ${aiHow(true)} to start one.`));
-    m.append(row); return;
+    if (!sample) return; // the note above the form says why
+    const go = el("button", "btn", "Begin the story"); go.onclick = () => lsBegin();
+    row.append(go); m.append(row); return;
   }
   if (lsView === "read" && lsMoment && !lsReady) {
     // Read first: the answer waits until you've reached the end of the chapter
@@ -3910,7 +3914,7 @@ Return JSON only: {"items": [{"h": "汉字", "p": "pīnyīn", "e": "meaning"}]}`
 }
 
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-textsize", "sm-notes", "sm-chats", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
+const KEYS = ["sm-textsize", "sm-grown", "sm-notes", "sm-chats", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
@@ -4352,7 +4356,6 @@ If "advance" is true, keep npc_hanzi to a brief acknowledgement (like 好的 or 
 }
 
 /* ---------- toggles ---------- */
-// The help dial: each step takes one crutch away. The last one is how the street actually works: you hear it first
 // Two switches, the same as in Unscripted: pinyin and English under the Chinese, everywhere. Off, a line still
 // shows them when you tap it ("What does that mean?" on what people say to you).
 function setShow(k) {
