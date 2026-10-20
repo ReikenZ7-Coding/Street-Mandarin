@@ -187,7 +187,13 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .help-desc { font-size: 12px; color: var(--muted); max-width: 300px; text-align: right; }
-.tsize { margin-left: auto; } .tsize .seg button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
+.help-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.help-row .seg button { line-height: 18px; } .tsize button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
+/* the help dial shows only where it changes something: the places, Long Story, Mistakes and the pocket */
+.help.help-off :is(.help-label, #help-seg, .help-desc) { display: none; } .help.help-off { align-self: center; }
+@media (max-width: 760px) { .help, .help.help-off { flex-direction: column; align-items: flex-start; align-self: auto; } .help-row { justify-content: flex-start; } .help-row .tsize { order: 2; } }
+.help.pop :is(.help-label, #help-seg, .help-desc) { animation: help-pop .35s cubic-bezier(.2, .9, .3, 1.3) both; }
+@keyframes help-pop { from { opacity: 0; transform: translateY(4px) scale(.94); } }
 .seg button:disabled { opacity: .35; cursor: default; }
 @media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .help-desc { display: none; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
@@ -891,13 +897,12 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
     <div class="nt-head"><span class="nt-han">笔记</span><span class="nt-en">Your notes</span><button class="linkish nt-close" id="notes-close">Close</button></div>
     <div class="nt-body"></div>
   </aside>
-    <div class="help tsize" role="group" aria-labelledby="ts-label">
-      <span class="help-label" id="ts-label">Text size</span>
-      <div class="seg" id="ts-seg"><button type="button" data-d="-1" aria-label="Smaller text">A−</button><button type="button" data-d="0" class="ts-val" title="Back to normal size">100%</button><button type="button" data-d="1" aria-label="Larger text">A+</button></div>
-    </div>
-    <div class="help" role="group" aria-labelledby="help-label">
+    <div class="help">
       <span class="help-label" id="help-label">How much help</span>
-      <div class="seg" id="help-seg"></div>
+      <div class="help-row">
+        <div class="seg tsize" id="ts-seg" role="group" aria-label="Text size"><button type="button" data-d="-1" aria-label="Smaller text">A−</button><button type="button" data-d="0" class="ts-val" title="Back to normal size">100%</button><button type="button" data-d="1" aria-label="Larger text">A+</button></div>
+        <div class="seg" id="help-seg" role="group" aria-labelledby="help-label"></div>
+      </div>
       <span class="help-desc" id="help-desc"></span>
     </div>
   </header>
@@ -1237,6 +1242,9 @@ function renderRail() {
   const ut = tool("随便聊", "Unscripted", unread ? `${plural(unread, "new message")}` : nChats ? `${plural(nChats, "chat")} going` : `Chat with ${PEOPLE.length} people you meet`, mode === "chat", () => startChats());
   ut.id = "tool-chat"; rail.append(ut);
   $(".layout").classList.toggle("nb-view", mode === "notebook"); applyTextSize();
+  const hb = $(".help"), off = mode === "home" || mode === "chat"; // the day page has no answers to help with, and Unscripted has its own switches
+  if (hb.classList.contains("help-off") && !off) { hb.classList.remove("pop"); void hb.offsetWidth; hb.classList.add("pop"); }
+  hb.classList.toggle("help-off", off);
   // Pages you read (not conversations) get the full height instead of a scroll box
   $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field", "long"].includes(mode) || mode === "chat" && !chatWho);
   $("#scene").classList.toggle("chatting", mode === "chat" && !!chatWho);
@@ -4381,7 +4389,7 @@ function tsSizes() { if (!applyTextSize.s) try { applyTextSize.s = JSON.parse(lo
 function applyTextSize() {
   const [k, name] = tsSpace(), z = Math.min(tsSizes()[k] || 1, tsMax()), sc = $("#scene"), seg = $("#ts-seg");
   sc.style.zoom = z === 1 ? "" : z; sc.style.setProperty("--tz", z);
-  $("#ts-label").textContent = `Text size · ${name}`; seg.querySelector(".ts-val").textContent = Math.round(z * 100) + "%";
+  seg.setAttribute("aria-label", `Text size for ${name}`); seg.querySelector(".ts-val").title = `Text size for ${name}. Tap for normal size.`; seg.querySelector(".ts-val").textContent = Math.round(z * 100) + "%";
   seg.querySelector('[data-d="-1"]').disabled = z <= TS_STEPS[0]; seg.querySelector('[data-d="1"]').disabled = z >= tsMax();
 }
 function stepTextSize(d) {
