@@ -832,6 +832,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 /* ---------- the opening: out of the dark, through the grove, into the peaks ---------- */
 .opening { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
 .opening .op-black { position: absolute; inset: 0; background: #020806; }
+.opening .op-dragon { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
 .opening.run .op-black { animation: op-dark .7s .05s ease-out both; }
 .opening.run:not(.gl) .op-black { animation-duration: 1s; }
 @keyframes op-dark { from { opacity: 1; } to { opacity: 0; } }
@@ -4706,15 +4707,16 @@ let jadeWhy = "", jadeGPU = "";
 // "ANGLE (NVIDIA, NVIDIA GeForce RTX 5070 Ti Laptop GPU (0x2F58) Direct3D11 vs_5_0 ps_5_0, D3D11)" → "NVIDIA GeForce RTX 5070 Ti Laptop GPU"
 const gpuName = r => (String(r || "").replace(/^ANGLE \(/, "").split(",").find((x, i, a) => i === (a.length > 1 ? 1 : 0)) || "").replace(/\s*\(0x[0-9a-f]+\)|\s*Direct3D.*$|\s*\(R\)|\(TM\)/gi, "").trim();
 function jadeGL(canvas, opts = {}) {
-  const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "high-performance" });
+  const only = opts.dragonOnly; // just the dragon, on a see-through canvas over the filmed world
+  const gl = canvas.getContext("webgl", { antialias: !!only, alpha: !!only, powerPreference: "high-performance" });
   if (!gl) { jadeWhy = "this browser has WebGL turned off"; return null; }
   // without a graphics chip the 3D world would only slow the page down, so the drawn layers are used instead
   try { const ext = gl.getExtension("WEBGL_debug_renderer_info"), r = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ""; jadeGPU = gpuName(r); if (/swiftshader|llvmpipe|software|basic render/i.test(r)) { jadeWhy = "no graphics chip found"; return null; } } catch {}
   const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   const prog = (vs, fs) => { const p = gl.createProgram(); gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); return p; };
-  const pr = prog("attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }", JADE_FRAG);
+  const pr = only ? null : prog("attribute vec2 a; void main() { gl_Position = vec4(a, 0.0, 1.0); }", JADE_FRAG);
   const tri = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, tri); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const U = {}; ["uRes", "uTime", "uZ", "uYaw", "uPitch", "uLift", "uSun", "uReveal", "uVein", "uFlash"].forEach(n => (U[n] = gl.getUniformLocation(pr, n)));
+  const U = {}; if (pr) ["uRes", "uTime", "uZ", "uYaw", "uPitch", "uLift", "uSun", "uReveal", "uVein", "uFlash"].forEach(n => (U[n] = gl.getUniformLocation(pr, n)));
   const state = { z: 0, yaw: 0, pitch: 0, lift: 0, sun: 1, reveal: 1, vein: 1, flash: 0, scale: opts.scale || 0.5 };
   // the dragon
   const dp = prog(DRAGON_VERT, DRAGON_FRAG), DU = {};
@@ -4786,12 +4788,15 @@ function jadeGL(canvas, opts = {}) {
     const w = Math.max(2, Math.round(canvas.clientWidth * state.scale)), h = Math.max(2, Math.round(canvas.clientHeight * state.scale));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     gl.viewport(0, 0, w, h); gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST);
+    if (!pr) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); }
+    else {
     gl.useProgram(pr); gl.bindBuffer(gl.ARRAY_BUFFER, tri);
     for (let i = 0; i < 8; i++) gl.disableVertexAttribArray(i);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.uniform2f(U.uRes, w, h); gl.uniform1f(U.uTime, time); gl.uniform1f(U.uZ, state.z); gl.uniform1f(U.uYaw, state.yaw); gl.uniform1f(U.uPitch, state.pitch);
     gl.uniform1f(U.uLift, state.lift); gl.uniform1f(U.uSun, state.sun); gl.uniform1f(U.uReveal, state.reveal); gl.uniform1f(U.uVein, state.vein); gl.uniform1f(U.uFlash, state.flash);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
     if (!dragon.on || dragon.fade <= 0) return;
     const cam = jadeCamera(state); buildDragon(time, cam);
     gl.useProgram(dp); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -5256,6 +5261,9 @@ function jadeOpening(force) {
   op.innerHTML = `<div class="op-black"></div><div class="op-word"><span>玉</span><span>境</span></div><div class="op-sub">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
   document.body.append(op); wrap.classList.add("op-wait");
   const END = g || fl ? 3.8 : 2.3, UI = END - 0.8;
+  // filmed: the jade dragon still crosses the sky, drawn live in 3D over the footage
+  let dw = null;
+  if (fl) { const cv = el("canvas", "op-dragon"), why = jadeWhy, gpu = jadeGPU; op.querySelector(".op-black").after(cv); try { dw = jadeGL(cv, { dragonOnly: true, scale: Math.min(devicePixelRatio || 1, 1.5) }); } catch (e) { console.warn("玉境 dragon:", e); } jadeWhy = why; jadeGPU = gpu; if (dw) dw.state.sun = 0.8; else cv.remove(); }
   let rest = null, Z = 0;
   if (w) { const st = w.state; rest = { sun: w.goal.sun, reveal: w.goal.reveal }; Z = st.z; w.show = true; Object.assign(st, { sun: 0.04, z: Z - 26, lift: 3, pitch: 0, yaw: 0, reveal: 0.45, flash: 0 }); w.dragon.on = false; w.dragon.fade = 1; w.dragon.dissolve = 0; }
   if (groveRun) groveRun.stop();
@@ -5282,6 +5290,7 @@ function jadeOpening(force) {
     if (fl) { // filmed: the grove plays in front, then thins away into the peaks as the light comes up
       if (pv) pv.style.opacity = 1 - smooth(1.5, 2.5, e);
       fl.box.style.filter = `brightness(${(0.3 + 0.7 * smooth(0.8, 2.8, e)).toFixed(3)})`;
+      if (dw) { const dr = dw.dragon; if (e > 1.1) { dr.on = true; dr.t = -1.6 + (e - 1.1) * 1.6; dr.fade = 1 - smooth(UI - 0.55, UI + 0.1, e); } dw.draw(now / 1000); } // it is gone before the page comes in
     }
     if (!uiIn && e > UI) { uiIn = true; op.classList.add("ph-out"); wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); }
     if (e > END) return finish();
@@ -5295,6 +5304,7 @@ function jadeOpening(force) {
   function finish() {
     if (over) return; over = true;
     if (fl) { if (pv) { pv.style.opacity = ""; pv.pause(); } fl.box.style.filter = ""; }
+    if (dw) { const x = dw.gl.getExtension("WEBGL_lose_context"); dw.dragon.on = false; setTimeout(() => x && x.loseContext(), 700); }
     if (w) { const st = w.state; w.dragon.on = false; w.show = false; st.flash = 0; st.lift = 0; st.vein = 1; w.goal.reveal = rest.reveal; }
     if (g) g.canvas.classList.remove("on");
     wrap.classList.remove("op-wait"); if (!uiIn) wrap.classList.add("op-in");
