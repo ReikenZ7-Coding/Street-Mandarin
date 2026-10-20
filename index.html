@@ -73,10 +73,10 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; }
 .brand:hover .en, .brand:focus-visible .en { text-decoration: underline; text-decoration-color: var(--jade); text-underline-offset: 4px; }
 .today { display: grid; gap: 10px; }
-.today-card { display: grid; grid-template-columns: 76px 1fr; gap: 2px 14px; align-items: baseline; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+.today-card { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 2px 14px; align-items: baseline; text-align: left; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
 .today-card:hover, .today-card:focus-visible { border-color: var(--jade); }
 .today-card.first { border-left: 4px solid var(--jade); }
-.today-card .tc-han { grid-row: span 3; white-space: nowrap; font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
+.today-card .tc-han { grid-row: span 3; line-height: 1.2; overflow-wrap: anywhere; /* a long title wraps inside its column instead of running into the English */ font-family: var(--f-han); font-weight: 900; font-size: 20px; color: var(--jade); }
 .today-card .tc-title { font-weight: 700; font-size: 16px; }
 .today-card .tc-why { font-size: 14px; color: var(--muted); }
 .free-open { display: block; margin-top: 14px; font-size: 14px; }
@@ -187,6 +187,8 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .help-desc { font-size: 12px; color: var(--muted); max-width: 300px; text-align: right; }
+.tsize { margin-left: auto; } .tsize .seg button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
+.seg button:disabled { opacity: .35; cursor: default; }
 @media (max-width: 760px) { .help { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; } .help-desc { display: none; } .seg button { padding: 6px 10px; } .tagline { font-size: 14px; } }
 .chip { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; }
 .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
@@ -202,8 +204,9 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .rail { display: flex; flex-direction: column; gap: 8px; }
 .rail-group { font-size: 12px; color: var(--muted); margin: 8px 2px 0; font-weight: 600; }
 .rail h2, .notebook h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0 0 4px; font-weight: 600; }
-.scn { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 12px; align-items: center; }
-.scn .han { font-family: var(--f-han); font-weight: 900; font-size: 26px; grid-row: span 2; line-height: 1; }
+.scn { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; display: grid; grid-template-columns: 82px minmax(0,1fr); gap: 2px 12px; align-items: center; }
+.scn .han { font-family: var(--f-han); font-weight: 900; font-size: 26px; grid-row: span 2; line-height: 1; justify-self: center; white-space: nowrap; } /* one column width for every card, so the names line up */
+.scn .han.long { font-size: 19.5px; }
 .scn .name { font-weight: 600; }
 .scn .meta { font-size: 12px; color: var(--muted); }
 .scn[aria-current="true"] { border-color: var(--fg); box-shadow: inset 3px 0 0 var(--cinnabar); }
@@ -238,7 +241,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .scene-head.wide .place { grid-row: auto; font-size: 40px; }
 @media (max-width: 480px) { .scene-head.wide .place { font-size: 32px; } }
 
-.log { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; max-height: min(62vh, 620px); min-height: 220px; overflow-y: auto; }
+.log { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; max-height: calc(min(62vh, 620px) / var(--tz, 1)); min-height: 220px; overflow-y: auto; }
 .scene.page .log { max-height: none; }
 .narr { color: var(--muted); font-style: italic; font-size: 14px; max-width: 60ch; }
 .row { display: flex; gap: 10px; align-items: flex-end; }
@@ -369,7 +372,7 @@ body.hint-off .opt .en-line { display: none; }
 .find-none { font-size: 13px; color: var(--muted); margin: 0; }
 .trip-group { flex-basis: 100%; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; }
 /* Practice tools: compact, so places stay the main thing */
-.scn.tool { padding: 7px 10px; gap: 0 10px; }
+.scn.tool { padding: 7px 10px; gap: 0 10px; grid-template-columns: 62px minmax(0,1fr); }
 .scn.tool .han { font-size: 18px; }
 .scn.tool .meta { font-size: 11.5px; }
 /* Place folders: one open at a time */
@@ -448,7 +451,7 @@ body.hint-off .opt .en-line { display: none; }
 .cr-prev { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cr-side { font-size: 12px; color: var(--muted); align-self: start; padding-top: 4px; }
 .cr-dot { position: absolute; left: 50px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--cinnabar); border: 2px solid var(--surface); }
-.scene.chatting .log { max-height: min(68vh, 720px); background: var(--surface-2); }
+.scene.chatting .log { max-height: calc(min(68vh, 720px) / var(--tz, 1)); background: var(--surface-2); }
 .chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
 .chat-sw { display: flex; gap: 6px; }
 .chat-reset { margin-left: auto; color: var(--muted); }
@@ -519,7 +522,7 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
 @media (max-width: 760px) {
   .notes { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 78vh; border-radius: 16px 16px 0 0; }
   .chat-row { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 10px 12px; } .av { width: 42px; height: 42px; font-size: 20px; } .cr-dot { left: 44px; }
-  .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: calc(100dvh - 250px); min-height: 280px; }
+  .chat-bar { padding: 8px 14px; } .scene.chatting .log { max-height: calc((100dvh - 250px) / var(--tz, 1)); min-height: 280px; }
   .scene.chatting .scene-head { padding: 10px 14px; } .scene.chatting .scene-head .place { font-size: 30px; } .scene.chatting .goal { display: none; }
 }
 
@@ -888,6 +891,10 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
     <div class="nt-head"><span class="nt-han">笔记</span><span class="nt-en">Your notes</span><button class="linkish nt-close" id="notes-close">Close</button></div>
     <div class="nt-body"></div>
   </aside>
+    <div class="help tsize" role="group" aria-labelledby="ts-label">
+      <span class="help-label" id="ts-label">Text size</span>
+      <div class="seg" id="ts-seg"><button type="button" data-d="-1" aria-label="Smaller text">A−</button><button type="button" data-d="0" class="ts-val" title="Back to normal size">100%</button><button type="button" data-d="1" aria-label="Larger text">A+</button></div>
+    </div>
     <div class="help" role="group" aria-labelledby="help-label">
       <span class="help-label" id="help-label">How much help</span>
       <div class="seg" id="help-seg"></div>
@@ -1229,7 +1236,7 @@ function renderRail() {
   rail.append(el("h2", "rail-sub", "Unscripted"));
   const ut = tool("随便聊", "Unscripted", unread ? `${plural(unread, "new message")}` : nChats ? `${plural(nChats, "chat")} going` : `Chat with ${PEOPLE.length} people you meet`, mode === "chat", () => startChats());
   ut.id = "tool-chat"; rail.append(ut);
-  $(".layout").classList.toggle("nb-view", mode === "notebook");
+  $(".layout").classList.toggle("nb-view", mode === "notebook"); applyTextSize();
   // Pages you read (not conversations) get the full height instead of a scroll box
   $("#scene").classList.toggle("page", ["home", "trip", "phrases", "field", "long"].includes(mode) || mode === "chat" && !chatWho);
   $("#scene").classList.toggle("chatting", mode === "chat" && !!chatWho);
@@ -1240,7 +1247,7 @@ function renderRail() {
   const placeBtn = (s, next) => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
-    b.append(el("span", "han", s.place), el("span", "name", s.en));
+    b.append(el("span", "han" + (s.place.length > 3 ? " long" : ""), s.place), el("span", "name", s.en));
     const meta = el("span", "meta");
     if (done[s.id]) meta.append(marksEl(s.id), miss ? ` ${plural(miss, "mistake")}` : "");
     else meta.append(miss ? `${plural(miss, "mistake")} so far` : "Not tried yet");
@@ -3915,7 +3922,7 @@ Return JSON only: {"items": [{"h": "汉字", "p": "pīnyīn", "e": "meaning"}]}`
 }
 
 /* ---------- your progress, portable: everything lives in this browser, so let it move ---------- */
-const KEYS = ["sm-notes", "sm-chats", "sm-chat-prefs", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
+const KEYS = ["sm-textsize", "sm-notes", "sm-chats", "sm-chat-prefs", "sm-notebook", "sm-done", "sm-prefs", "sm-last", "sm-days", "sm-said", "sm-ghost", "sm-mastery", "sm-trip", "sm-custom", "sm-wander-lines", "sm-twists", "sm-seen-cb", "sm-rail-open", "sm-heard", "sm-long"];
 function progressCode() {
   const o = {}; KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) o[k] = v; } catch {} });
   return "SM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
@@ -4359,6 +4366,31 @@ const HELP = [
 const helpLevel = () => prefs.listen ? 3 : !prefs.py ? 2 : prefs.hint ? 0 : 1;
 function setHelp(i) { const h = HELP[i]; prefs.py = h.py; prefs.hint = h.hint; prefs.listen = h.listen; store.set("sm-prefs", prefs); applyPrefs(); if (mode === "scene" && !finished) renderMove();
   lsRedraw(); }
+// Text size: each part of the app keeps its own (larger for reading Long Story, say). It scales the whole page, characters and all.
+const TS_STEPS = [0.85, 1, 1.15, 1.3, 1.5, 1.75, 2];
+const tsMax = () => innerWidth < 600 ? 1.3 : innerWidth < 1000 ? 1.5 : 2; // a phone has no room for the biggest sizes
+function tsSpace() {
+  if (mode === "long") return ["long", "Long Story"];
+  if (mode === "chat") return ["chat", "Unscripted"];
+  if (["notebook", "review", "field"].includes(mode) || (mode === "pattern" && pPat)) return ["mistakes", "Mistakes"];
+  if (["drill", "reader", "ears"].includes(mode)) return ["ear", "Train your ear"];
+  if (["trip", "phrases", "pattern"].includes(mode)) return ["pocket", "Your pocket"];
+  return mode === "home" ? ["day", "Your day"] : ["story", "Short Story"];
+}
+function tsSizes() { if (!applyTextSize.s) try { applyTextSize.s = JSON.parse(localStorage.getItem("sm-textsize")) || {}; } catch { applyTextSize.s = {}; } return applyTextSize.s; }
+function applyTextSize() {
+  const [k, name] = tsSpace(), z = Math.min(tsSizes()[k] || 1, tsMax()), sc = $("#scene"), seg = $("#ts-seg");
+  sc.style.zoom = z === 1 ? "" : z; sc.style.setProperty("--tz", z);
+  $("#ts-label").textContent = `Text size · ${name}`; seg.querySelector(".ts-val").textContent = Math.round(z * 100) + "%";
+  seg.querySelector('[data-d="-1"]').disabled = z <= TS_STEPS[0]; seg.querySelector('[data-d="1"]').disabled = z >= tsMax();
+}
+function stepTextSize(d) {
+  const [k] = tsSpace(), all = tsSizes(), i = Math.max(0, TS_STEPS.indexOf(Math.min(all[k] || 1, tsMax())));
+  const z = d ? Math.min(tsMax(), TS_STEPS[Math.max(0, Math.min(TS_STEPS.length - 1, i + d))]) : 1;
+  if (z === 1) delete all[k]; else all[k] = z;
+  try { localStorage.setItem("sm-textsize", JSON.stringify(all)); } catch {}
+  applyTextSize();
+}
 function applyPrefs() {
   document.body.classList.toggle("no-py", !prefs.py);
   document.body.classList.toggle("hint-off", !prefs.hint);
@@ -5348,6 +5380,8 @@ scenery();
 jadeWorld($(".scenery"));
 applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
+$("#ts-seg").onclick = e => { const b = e.target.closest("button"); if (b) stepTextSize(+b.dataset.d); };
+addEventListener("resize", () => applyTextSize(), { passive: true });
 $("#notes-btn").onclick = () => notesShown() ? closeNotes() : openNotes();
 $("#notes-close").onclick = () => closeNotes();
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !ev.isComposing && notesShown()) closeNotes(); });
