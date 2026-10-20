@@ -833,6 +833,15 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .opening { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
 .opening .op-black { position: absolute; inset: 0; background: #020806; }
 .opening .op-dragon { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
+.opening.run.game .op-black { animation: none; }
+.opening .op-embers { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+.op-embers i { position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%; background: #9dffd0; box-shadow: 0 0 8px 2px rgba(80, 240, 160, .55); opacity: 0; animation: ember linear infinite both; }
+@keyframes ember { 0% { opacity: 0; translate: 0 0; } 15% { opacity: .85; } 100% { opacity: 0; translate: var(--dx) -75vh; } }
+.opening .op-bloom { position: absolute; left: 50%; top: calc(34% + min(19vw, 30vh) / 2); width: 130vmin; height: 70vmin; transform: translate(-50%, -50%); z-index: 1; opacity: 0; background: radial-gradient(closest-side, rgba(80, 240, 160, .26), rgba(199, 169, 107, .06) 60%, transparent); }
+.opening.run.game .op-bloom { animation: op-bloom 2.6s 4.9s ease-out both; }
+@keyframes op-bloom { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: .4; } }
+.opening.run.gl.game .op-word span { animation-duration: 1s; animation-delay: 4.9s; } .opening.run.gl.game .op-word span + span { animation-delay: 5.2s; }
+.opening.run.gl.game .op-sub { animation-delay: 6s; }
 .opening.run .op-black { animation: op-dark .7s .05s ease-out both; }
 .opening.run:not(.gl) .op-black { animation-duration: 1s; }
 @keyframes op-dark { from { opacity: 1; } to { opacity: 0; } }
@@ -847,6 +856,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .opening.run .op-sub { animation: op-fade .6s forwards; }
 .opening.run.gl .op-sub { animation-delay: 2.3s; } .opening.run:not(.gl) .op-sub { animation-delay: .9s; }
 @keyframes op-fade { to { opacity: .9; } }
+.opening.ph-out .op-sub { animation: op-unfade .45s both !important; } /* its fade-in animation would otherwise hold it on screen over the page */
+@keyframes op-unfade { from { opacity: .9; } to { opacity: 0; } }
 .opening.ph-out .op-word, .opening.ph-out .op-sub { transition: opacity .45s, transform .6s cubic-bezier(.5, 0, .2, 1); opacity: 0; transform: translateY(-14px) scale(.96); }
 .opening .op-skip { position: absolute; right: 18px; bottom: 18px; z-index: 6; pointer-events: auto; background: rgba(7, 26, 19, .6); color: var(--cloud); border: 1px solid rgba(80, 240, 160, .35); border-radius: 8px; padding: 8px 14px; font-size: 13px; letter-spacing: .04em; }
 .opening.ph-done { transition: opacity .4s; opacity: 0; }
@@ -4732,8 +4743,8 @@ function jadeGL(canvas, opts = {}) {
   function spineAt(s, T, cam) {
     // it swims right to left across the sky; the body follows the head along one winding track, weaving in depth
     const u = T * 16 - s * 30, D = dragon.dist;
-    const x = -u;
-    const y = 0.6 + Math.sin(u * 0.33) * 2.1 + Math.sin(u * 0.13 + 1.0) * 1.0;
+    const x = -u * (dragon.dir || 1); // dir -1: it swims left to right instead
+    const y = (dragon.y || 0) + 0.6 + Math.sin(u * 0.33) * 2.1 + Math.sin(u * 0.13 + 1.0) * 1.0;
     const z = D + Math.sin(u * 0.21 + 1.0) * 4.0;
     return V3.add(V3.add(V3.add(cam.ro, V3.mul(cam.rt, x)), V3.mul(cam.up, y)), V3.mul(cam.fw, z));
   }
@@ -5260,10 +5271,18 @@ function jadeOpening(force) {
   const op = el("div", "opening" + (g || fl ? " gl" : "")); op.setAttribute("aria-hidden", "true");
   op.innerHTML = `<div class="op-black"></div><div class="op-word"><span>玉</span><span>境</span></div><div class="op-sub">Street Mandarin</div><button class="op-skip" type="button">Skip ›</button>`;
   document.body.append(op); wrap.classList.add("op-wait");
-  const END = g || fl ? 3.8 : 2.3, UI = END - 0.8;
-  // filmed: the jade dragon still crosses the sky, drawn live in 3D over the footage
+  // filmed: the jade dragon, drawn live in 3D on its own see-through canvas
   let dw = null;
   if (fl) { const cv = el("canvas", "op-dragon"), why = jadeWhy, gpu = jadeGPU; op.querySelector(".op-black").after(cv); try { dw = jadeGL(cv, { dragonOnly: true, scale: Math.min(devicePixelRatio || 1, 1.5) }); } catch (e) { console.warn("玉境 dragon:", e); } jadeWhy = why; jadeGPU = gpu; if (dw) dw.state.sun = 0.8; else cv.remove(); }
+  // with the dragon, the opening is a game's title sequence: the dragon alone in the dark, close then far,
+  // the title lands as it passes, and only then does the world open up behind it
+  const game = !!dw;
+  if (game) {
+    op.classList.add("game");
+    const em = el("div", "op-embers"); for (let i = 0; i < 34; i++) { const d = el("i"); d.style.cssText = `left:${Math.random() * 100}%;animation-duration:${4 + Math.random() * 4}s;animation-delay:${Math.random() * 5}s;--dx:${(Math.random() * 120 - 60).toFixed(0)}px;transform:scale(${(0.5 + Math.random()).toFixed(2)})`; em.append(d); }
+    op.querySelector(".op-black").after(em, el("div", "op-bloom"));
+  }
+  const END = game ? 9.2 : g || fl ? 3.8 : 2.3, UI = END - 0.8;
   let rest = null, Z = 0;
   if (w) { const st = w.state; rest = { sun: w.goal.sun, reveal: w.goal.reveal }; Z = st.z; w.show = true; Object.assign(st, { sun: 0.04, z: Z - 26, lift: 3, pitch: 0, yaw: 0, reveal: 0.45, flash: 0 }); w.dragon.on = false; w.dragon.fade = 1; w.dragon.dissolve = 0; }
   if (groveRun) groveRun.stop();
@@ -5287,10 +5306,16 @@ function jadeOpening(force) {
         alpha: 1 - smooth(2.1, 2.7, e), veil: 0.92 * (1 - smooth(0.5, 1.9, e)), focal: 1.15, fogNear: 2.5, fogFar: 20 });
       else g.canvas.classList.remove("on");
     }
-    if (fl) { // filmed: the grove plays in front, then thins away into the peaks as the light comes up
+    if (game) {
+      const dr = dw.dragon, dark = 1 - smooth(7.2, 8.4, e);
+      if (e < 4.1) Object.assign(dr, { on: e > 0.5, dist: 22, dir: 1, y: -0.6, t: -1.0 + (e - 0.5) * 0.95, fade: smooth(0.5, 1.2, e) }); // first, close: it rushes past
+      else Object.assign(dr, { on: true, dist: 40, dir: -1, y: 0, t: -1.4 + (e - 4.1) * 1.25, fade: 1 - smooth(7.0, 7.7, e) }); // then far, back across, through the title
+      dw.draw(now / 1000);
+      op.querySelector(".op-black").style.opacity = dark; op.querySelector(".op-embers").style.opacity = dark;
+      fl.box.style.filter = `brightness(${(0.3 + 0.7 * smooth(7.2, 8.8, e)).toFixed(3)})`;
+    } else if (fl) { // filmed: the grove plays in front, then thins away into the peaks as the light comes up
       if (pv) pv.style.opacity = 1 - smooth(1.5, 2.5, e);
       fl.box.style.filter = `brightness(${(0.3 + 0.7 * smooth(0.8, 2.8, e)).toFixed(3)})`;
-      if (dw) { const dr = dw.dragon; if (e > 1.1) { dr.on = true; dr.t = -1.6 + (e - 1.1) * 1.6; dr.fade = 1 - smooth(UI - 0.55, UI + 0.1, e); } dw.draw(now / 1000); } // it is gone before the page comes in
     }
     if (!uiIn && e > UI) { uiIn = true; op.classList.add("ph-out"); wrap.classList.remove("op-wait"); wrap.classList.add("op-in"); }
     if (e > END) return finish();
@@ -5298,8 +5323,8 @@ function jadeOpening(force) {
   }
   if (fl) { // wait (briefly) for the first frames, behind the dark, so the film doesn't start half loaded
     fl.cut(0, (window.FILMS || {}).dawn || "morning");
-    if (pv) pv.style.opacity = 1;
-    fl.ready().then(() => { if (over) return; if (pv) { try { pv.currentTime = 0; } catch {} pv.play().catch(() => {}); } requestAnimationFrame(tick); });
+    if (pv && !game) pv.style.opacity = 1;
+    fl.ready().then(() => { if (over) return; if (pv && !game) { try { pv.currentTime = 0; } catch {} pv.play().catch(() => {}); } requestAnimationFrame(tick); });
   } else requestAnimationFrame(tick);
   function finish() {
     if (over) return; over = true;
