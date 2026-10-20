@@ -127,9 +127,6 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .ls-prompt { font-size: 14px; color: var(--muted); }
 .ls-chap-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
 .ls-chap-row .linkish { font-size: 14px; }
-.ls-lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; align-self: center; }
-.ls-lang button { font: inherit; font-size: 13px; padding: 4px 12px; background: none; border: 0; color: var(--muted); cursor: pointer; }
-.ls-lang button[aria-pressed="true"] { background: var(--jade-soft); color: var(--fg); font-weight: 600; }
 .ls-zh { display: flex; flex-wrap: wrap; gap: 6px 4px; max-width: 62ch; margin: 0; }
 .ls-zh .zs { display: inline-flex; flex-direction: column; text-align: left; font: inherit; background: none; border: 0; border-radius: 6px; padding: 2px 4px; color: var(--fg); cursor: pointer; }
 .ls-zh .zs:hover, .ls-zh .zs:focus-visible { background: var(--jade-soft); }
@@ -187,10 +184,11 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .seg button { border: 0; background: none; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--fg); }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .help-desc { font-size: 12px; color: var(--muted); max-width: 300px; text-align: right; }
+.help { align-self: center; } .help-row .seg, header.top .notes-btn { height: 42px; box-sizing: border-box; align-items: center; }
 .help-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .help-row .seg button { line-height: 18px; } .tsize button { min-width: 34px; } .tsize [data-d="1"] { font-size: 16px; } .tsize .ts-val { font-variant-numeric: tabular-nums; min-width: 52px; }
 /* the help dial shows only where it changes something: the places, Long Story, Mistakes and the pocket */
-.help.help-off #help-seg { display: none; } .help.help-off { align-self: center; }
+.help.help-off #help-seg { display: none; }
 @media (max-width: 760px) { .help, .help.help-off { flex-direction: column; align-items: flex-start; align-self: auto; } .help-row { justify-content: flex-start; } .help-row .tsize { order: 2; } }
 .help.pop #help-seg { animation: help-pop .35s cubic-bezier(.2, .9, .3, 1.3) both; }
 @keyframes help-pop { from { opacity: 0; transform: translateY(4px) scale(.94); } }
@@ -994,7 +992,7 @@ function practised() {
   renderStreak();
 }
 let prefs = Object.assign({ py: true, hint: false, listen: false, how: "pick" }, store.get("sm-prefs", {}));
-if (prefs.en === undefined) prefs.en = !!prefs.hint; // from the old help dial: its English level had English on
+if (prefs.en === undefined) prefs.en = store.get("sm-prefs", null) ? !!prefs.hint : true; // from the old help dial its English level means on; someone new starts with it on
 prefs.listen = false; prefs.hint = prefs.en;
 if (prefs.build === true && !store.get("sm-prefs", {}).how) prefs.how = "build";
 
@@ -3067,16 +3065,9 @@ function lsZhNarr(sents) {
   });
   return p;
 }
-// Switch the story between English narration and all Chinese, any time; it remembers your choice
-function lsLangSwitch(v, c) {
-  const wrap = el("div", "ls-lang"); wrap.setAttribute("role", "group"); wrap.setAttribute("aria-label", "Narration language");
-  [["English", false], ["全中文 All Chinese", true]].forEach(([l, zh]) => {
-    const b = el("button", null, l); b.setAttribute("aria-pressed", !!LS.zh === zh ? "true" : "false");
-    b.onclick = () => { if (!!LS.zh === zh) return; LS.zh = zh; lsSave(); lsRedraw(); };
-    wrap.append(b);
-  });
-  return wrap;
-}
+// The narration follows the English switch at the top: with English on it's in English, with it off the whole
+// chapter is in Chinese (tap a sentence for its English). One switch for the whole app, no second one here.
+const lsZhMode = () => !prefs.en, zhNow = () => !!document.querySelector("#log .ls-zh");
 // Redraw the chapter you're on without losing your place or your answer
 function lsRedraw() {
   if (mode !== "long" || lsView !== "read" || !lsAt || !lsCh(lsAt.v, lsAt.c)) return;
@@ -3146,7 +3137,7 @@ function lsFetch(v, c) {
       try {
         const ch = lsCleanChapter(await sample.json(prompt, opts), last);
         if (LS !== story) return; // a new story was started meanwhile
-        LS.chapters[key] = ch; lsLogOwn(v, c, ch); lsSave(); if (LS.zh) await lsZhFetch(v, c).catch(() => {}); return;
+        LS.chapters[key] = ch; lsLogOwn(v, c, ch); lsSave(); if (lsZhMode()) await lsZhFetch(v, c).catch(() => {}); return;
       } catch (e) { err = e; if (e && (e.code === "not_granted" || e.code === "rate_limited")) break; }
     }
     throw err;
@@ -3315,7 +3306,7 @@ function lsRead(v, c) {
   const ch = lsCh(v, c); if (!ch) return lsWrite(v, c);
   lsView = "read"; lsAt = { v, c }; mode = "long"; busy = false;
   const b = LS.bible, vol = b.volumes[v - 1] || {};
-  setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}: `, ch.title_en);
+  setHead(`第${zhNum(v)}卷`, `dì ${pyNum(v)} juàn`, `Volume ${v}: ${vol.title_english}`, `Chapter ${c} of ${LS_CH}`, ""); // the chapter's title is right below, in Chinese and English
   const log = $("#log"); log.textContent = "";
   // The words in a chapter count as met once, the first time you read it
   if (!ch.counted) lsCount(ch, lsKey(v, c));
@@ -3324,9 +3315,7 @@ function lsRead(v, c) {
   LS.lastAt = Date.now();
   if (ch.fb) { const f = el("div", "ls-fb"); f.append(el("span", "ls-label", "What you said last time"), ch.fb.note); if (ch.fb.fix) f.append(" ", el("span", "han-inline", ch.fb.fix[0]), " ", el("span", "py", ch.fb.fix[1])); log.append(f); }
   const th = el("div", "ls-chap-row"); th.append(el("div", "ls-chap", ch.title_zh ? `${ch.title_zh} · ${ch.title_en}` : ch.title_en));
-  const zhOn = !!(LS.zh && ch.zh);
-  if (sample || ch.zh) th.append(lsLangSwitch(v, c));
-  { const nb = el("button", "linkish", "笔记 Notes"); nb.onclick = () => notesShown() ? closeNotes() : openNotes(); th.append(nb); }
+  const zhOn = !!(lsZhMode() && ch.zh);
   if (canSpeak) { const lb = el("button", "linkish", zhOn ? "Listen to the chapter" : "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
   // A chapter that reads badly can be written again, until you've answered it
   if (sample && !ch.said) { const re = el("button", "linkish ls-rewrite", "Rewrite it");
@@ -3337,9 +3326,9 @@ function lsRead(v, c) {
     }; th.append(re); }
   log.append(th);
   const zh = zhOn;
-  if (LS.zh && !ch.zh) {
+  if (lsZhMode() && !ch.zh) {
     // Not in Chinese yet: read the English meanwhile, and swap over when it's ready
-    const note = el("p", "ls-zh-note", sample ? "Putting this chapter into Chinese. Read on in English meanwhile; it switches when it's ready." : `This chapter isn't in Chinese yet, and that needs ${AI_NAME}.`);
+    const note = el("p", "ls-zh-note", sample ? "English is off, so this chapter is being put into Chinese. Read on in English meanwhile; it switches when it's ready." : `English is off, but putting this chapter into Chinese needs ${AI_NAME}, so it's in English for now.`);
     log.append(note);
     if (sample) lsZhFetch(v, c).then(() => { if (lsAt && lsAt.v === v && lsAt.c === c && lsView === "read") lsRedraw(); })
       .catch(() => { note.textContent = "Couldn't put this chapter into Chinese just now. "; const again = el("button", "linkish", "Try again"); again.onclick = () => lsRedraw(); note.append(again); });
@@ -3364,10 +3353,10 @@ function lsRead(v, c) {
 function lsListen(btn) {
   if (!canSpeak) return;
   if (btn.dataset.on) { speechSynthesis.cancel(); return; }
-  const rows = [...document.querySelectorAll(LS.zh ? "#log .row.npc, #log .ls-zh .zs" : "#log .row.npc")]; if (!rows.length) return; // in Chinese, the narration is read too
+  const rows = [...document.querySelectorAll(zhNow() ? "#log .row.npc, #log .ls-zh .zs" : "#log .row.npc")]; if (!rows.length) return; // in Chinese, the narration is read too
   speechSynthesis.cancel(); btn.dataset.on = "1"; btn.textContent = "Stop";
   const voice = speechSynthesis.getVoices().find(v => /zh[-_]CN/i.test(v.lang));
-  const stop = () => { delete btn.dataset.on; btn.textContent = LS.zh ? "Listen to the chapter" : "Listen to the conversation"; rows.forEach(r => r.classList.remove("speaking")); };
+  const stop = () => { delete btn.dataset.on; btn.textContent = zhNow() ? "Listen to the chapter" : "Listen to the conversation"; rows.forEach(r => r.classList.remove("speaking")); };
   rows.forEach((r, i) => {
     const u = new SpeechSynthesisUtterance((r.querySelector(".han, .zh") || {}).textContent || ""); u.lang = "zh-CN"; u.rate = 0.9; if (voice) u.voice = voice;
     u.onstart = () => { rows.forEach(x => x.classList.remove("speaking")); r.classList.add("speaking"); r.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
