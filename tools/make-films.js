@@ -14,6 +14,12 @@ const TIMES = { "peaks-1": "morning", "peaks-2": "out", "peaks-3": "evening", "p
 const out = path.join(root, "films");
 fs.mkdirSync(out, { recursive: true });
 
+// the clip's average brightness (0 to 255), sampled from about one frame a second
+const meanLuma = f => {
+  const o = execFileSync("ffmpeg", ["-hide_banner", "-i", f, "-vf", "fps=1,signalstats,metadata=print:key=lavfi.signalstats.YAVG:file=-", "-f", "null", "-"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const v = [...o.matchAll(/YAVG=([\d.]+)/g)].map(m => +m[1]);
+  return v.length ? v.reduce((a, b) => a + b) / v.length : 130;
+};
 const ff = (...a) => execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", ...a], { stdio: "inherit" });
 const raw = fs.readdirSync(src).filter(f => /\.(mp4|webm|mov|mkv)$/i.test(f)).sort();
 const films = { peaks: [], grove: null, dawn: null, credit };
@@ -26,6 +32,8 @@ for (const f of raw) {
     "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", path.join(out, name + ".webm"));
   ff("-ss", "1", "-i", inp, "-frames:v", "1", "-vf", "scale='min(1280,iw)':-2", "-q:v", "4", path.join(out, name + ".jpg"));
   const shot = { src: `films/${name}.webm`, poster: `films/${name}.jpg` };
+  // clips come out of the generator lighter or darker than each other; a gain evens the shots of the peaks and the dawn out
+  if (name !== "grove") { const g = Math.min(1.7, Math.max(0.85, Math.sqrt(130 / meanLuma(inp)))); if (Math.abs(g - 1) > 0.03) shot.gain = +g.toFixed(2); }
   if (name === "grove") films.grove = shot;
   else if (name === "dawn") films.dawn = { ...shot, time: "morning" };
   else films.peaks.push(TIMES[name] ? { ...shot, time: TIMES[name] } : shot);

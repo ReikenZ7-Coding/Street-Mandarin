@@ -784,16 +784,16 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .jw-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 /* the filmed world: two players dissolve one shot into the next, graded toward the jade palette and the time of day */
 .jw-film { position: absolute; inset: -3%; transform: scale(1.06); transition: transform 1.2s cubic-bezier(.2, .7, .2, 1); background: var(--obsidian, #071A13); }
-.jw-film video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: saturate(.8) brightness(.74) contrast(1.06); }
+.jw-film video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: saturate(.8) brightness(calc(.74 * var(--g, 1))) contrast(1.06); }
 .jw-film video.on { opacity: 1; }
-.scenery[data-time="morning"] .jw-film video { filter: saturate(.85) brightness(.8) contrast(1.04) sepia(.1); }
-.scenery[data-time="evening"] .jw-film video { filter: saturate(.65) brightness(.5) contrast(1.1); }
+.scenery[data-time="morning"] .jw-film video { filter: saturate(.85) brightness(calc(.8 * var(--g, 1))) contrast(1.04) sepia(.1); }
+.scenery[data-time="evening"] .jw-film video { filter: saturate(.7) brightness(calc(.6 * var(--g, 1))) contrast(1.08); }
 .jw-haze { position: absolute; inset: -10% -30%; z-index: 3; pointer-events: none; background: radial-gradient(38% 16% at 28% 72%, rgba(185, 216, 196, .14), transparent 70%), radial-gradient(32% 13% at 74% 60%, rgba(185, 216, 196, .1), transparent 70%); animation: haze 70s ease-in-out infinite alternate; }
 .jw-haze.h2 { background: radial-gradient(45% 20% at 60% 86%, rgba(185, 216, 196, .12), transparent 72%); animation-duration: 47s; animation-delay: -20s; animation-direction: alternate-reverse; }
 @keyframes haze { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
 .jw-leaves { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
 .jw-leaves i { position: absolute; top: -40px; border-radius: 0 100% 0 100%; background: linear-gradient(120deg, #3f7a58, #1d4a35); opacity: .8; animation: fall linear forwards; }
-.jw-grade { position: absolute; inset: 0; z-index: 4; background: radial-gradient(120% 90% at 50% 38%, transparent 35%, rgba(7, 26, 19, .6) 100%), linear-gradient(rgba(7, 26, 19, .45), rgba(7, 26, 19, .12) 38%, rgba(7, 26, 19, .55) 75%, rgba(7, 26, 19, .85)); }
+.jw-grade { position: absolute; inset: 0; z-index: 4; background: radial-gradient(120% 90% at 50% 38%, transparent 35%, rgba(7, 26, 19, .6) 100%), linear-gradient(rgba(7, 26, 19, .7), rgba(7, 26, 19, .32) 20%, rgba(7, 26, 19, .12) 40%, rgba(7, 26, 19, .55) 75%, rgba(7, 26, 19, .85)); }
 .jw-grade::after { content: ""; position: absolute; inset: 0; background: #0E5C3B; mix-blend-mode: color; opacity: .22; }
 .jw.film > :not(.jw-film) { display: none !important; }
 .film-pass { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 75; pointer-events: none; opacity: 0; filter: saturate(.85) brightness(.82) contrast(1.06); }
@@ -5080,7 +5080,7 @@ let jadeF = null;
 function jadeFilm(jw, sc, fallback) {
   const F = window.FILMS, probe = document.createElement("video");
   if (!F || !F.peaks || !F.peaks.length || !probe.canPlayType('video/webm; codecs="vp9"')) return false;
-  const still = stillMotion(), shots = F.peaks.slice();
+  const still = stillMotion(), shots = F.peaks.concat(F.dawn || []), SLOW = 0.75; // the clips are short, so they play a little slowed, like the slow drone shots they are
   const box = el("div", "jw-film"), mk = () => { const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.disablePictureInPicture = true; return v; };
   const vids = [mk(), mk()], leaves = el("div", "jw-leaves");
   box.append(...vids, el("div", "jw-haze h1"), el("div", "jw-haze h2"), leaves, el("div", "jw-grade")); // live mist and leaves drift over the film
@@ -5096,11 +5096,11 @@ function jadeFilm(jw, sc, fallback) {
     if (fits(f.shot, want)) return f.shot;
     const o = shots.filter(s => s !== f.shot); return o.length ? any(o) : f.shot || shots[0];
   };
-  const load = (v, s) => { v.shot = s; v.leaving = false; v.src = s.src; if (s.poster) v.poster = s.poster; v.load(); };
+  const load = (v, s) => { v.shot = s; v.leaving = false; v.style.setProperty("--g", s.gain || 1); v.src = s.src; if (s.poster) v.poster = s.poster; v.load(); };
   vids.forEach(v => {
     v.addEventListener("error", () => { if (!played) return fail(); const i = shots.indexOf(v.shot); if (i >= 0 && shots.length > 1) shots.splice(i, 1); if (v === cur) cut(400); });
     // a moment before a shot ends, the next one dissolves in over it
-    v.addEventListener("timeupdate", () => { if (v === cur && !v.leaving && !still && v.duration && v.currentTime > v.duration - 1.5) cut(1300); });
+    v.addEventListener("timeupdate", () => { if (v === cur && !v.leaving && !still && v.duration && v.currentTime > v.duration - 1.5) cut(1800); });
   });
   // cut to another shot: ms is the dissolve; want is a shot, or a time of day to choose one for
   function cut(ms, want) {
@@ -5114,7 +5114,7 @@ function jadeFilm(jw, sc, fallback) {
       if (id !== n) return;
       played = true; v.leaving = false;
       try { v.currentTime = still ? Math.min(1, (v.duration || 2) / 2) : same ? Math.random() * Math.max(0, (v.duration || 0) - 2.5) : 0; } catch {}
-      if (!still) v.play().catch(() => {});
+      if (!still) { v.playbackRate = SLOW; v.play().catch(() => {}); }
       v.style.zIndex = 2; if (old) old.style.zIndex = 1;
       v.classList.add("on");
       if (ms && v.animate) { v.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease" }); v.animate([{ transform: "scale(1.07)" }, { transform: "none" }], { duration: ms + 1400, easing: "cubic-bezier(.2,.7,.2,1)" }); }
