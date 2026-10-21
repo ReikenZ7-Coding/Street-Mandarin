@@ -608,6 +608,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 
 /* progress is bamboo: the ten days are segments of one stalk, joined at the nodes */
 .days { gap: 0; padding: 4px 0; }
+.days { flex-wrap: nowrap; } .day-dot { flex: 0 1 auto; min-width: 0; } /* ten segments stay one stalk, shrinking at big text sizes instead of breaking onto a second row */
 .day-dot { width: 46px; height: 30px; border-radius: 3px; border: 0; margin-right: 4px; background: var(--surface-2); color: var(--muted); position: relative; box-shadow: inset 0 -3px 0 rgba(0,0,0,.06); }
 .day-dot::after { content: ""; position: absolute; right: -4px; top: -2px; bottom: -2px; width: 4px; border-radius: 2px; background: var(--line); }
 .day-dot:last-child::after { display: none; }
@@ -2697,7 +2698,7 @@ function renderTrip() {
     });
     log.append(grid); log.scrollTop = 0; return;
   }
-  addNarr(`Today: ${tripPlaces().map(s => s.en).join(", ")}. Read it through on the way, tap Show to hand your phone over.`);
+  // (the heading says what this is for, and each place has its own card below: no summary line on top)
   tripPlaces().forEach(s => {
     const sec = el("section", "pb trip-card");
     const h = el("h4", "pb-title", `${s.place} · ${s.en}`); sec.append(h);
@@ -2732,12 +2733,12 @@ function renderTripMove() {
     const row = el("div", "endcard"); row.append(go);
     m.append(head, row); return;
   }
-  head.append(el("h3", null, "Ready?"));
-  // "It happened for real" lives in Mistakes and on your day's evening, where you'd be when you're back
+  // One button; changing the places is a quiet link beside the heading ("It happened for real" lives in Mistakes and on your evening)
+  const edit = el("button", "linkish mh-end", "Change places"); edit.onclick = () => { tripEditing = true; renderTrip(); renderMove(); };
+  head.append(el("h3", null, "Ready?"), edit);
   const row = el("div", "endcard");
   const warm = el("button", "btn", "Warm up on every moment"); warm.onclick = () => startTripWarmup();
-  const edit = el("button", "btn ghost", "Change places"); edit.onclick = () => { tripEditing = true; renderTrip(); renderMove(); };
-  row.append(warm, edit); m.append(head, row);
+  row.append(warm); m.append(head, row);
 }
 function startTripWarmup() {
   mode = "pattern"; busy = false; transcript = []; pPat = null;
