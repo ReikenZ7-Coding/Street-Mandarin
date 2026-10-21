@@ -1620,7 +1620,8 @@ function submitTyped(text, t) {
     return choose(Object.assign({}, m.o, { quiet: true }));
   }
   // Off the script. First, what the app can judge by itself, with no AI at all
-  const judged = judgeOffline(text, good, { also: m.also });
+  // In a Long Story, Claude reads your own words in the story, so the app doesn't call a different number "wrong" first
+  const judged = judgeOffline(text, good, { also: m.also, real: mode === "long" && !!sample });
   if (judged) {
     addMe(text, "", "", judged.kind);
     addFeedback(judged.kind, judged.note, [good.h, good.p]);
@@ -3664,7 +3665,7 @@ function renderChatMove() {
   // A beginner can start from a line that works, and edit it before sending
   if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
     const st = el("div", "chat-starters");
-    p.starters.forEach(s => { const b = el("button", "chip"); b.append(el("span", "han", s.h)); if (prefs.py) b.append(el("span", "py", s.p)); if (prefs.en) b.append(el("span", "en-line", s.e)); b.onclick = () => { const i = $("#chat-input"); i.value = s.h; i.focus(); }; st.append(b); });
+    p.starters.forEach(s => { const b = el("button", "chip"); b.append(el("span", "han", s.h)); if (prefs.py) b.append(el("span", "py", s.p)); if (prefs.en) b.append(el("span", "en-line", s.e)); b.onclick = () => { const i = $("#chat-input"); chatDraft = i.value = s.h; i.focus(); }; st.append(b); }); // a tapped starter is kept as the draft, so a re-render doesn't empty the box
     m.append(st);
   }
   if (chatHow) m.append(chatHowEl(p));
@@ -3693,9 +3694,9 @@ function chatHowEl(p) {
   box.append(form);
   if (chatHow.err) box.append(el("p", "ls-err", chatHow.err));
   (chatHow.opts || []).forEach(o => {
-    const b = el("div", "how-opt"), use = el("button", "chip"); use.append(el("span", "han", o.h), el("span", "py", o.p));
+    const b = el("div", "how-opt"), use = el("button", "chip"); use.append(el("span", "han", o.h)); if (prefs.py) use.append(el("span", "py", o.p)); // follows the Pinyin switch, like the starters
     use.title = "Put it in the message box"; use.onclick = () => { chatDraft = o.h; chatHow = null; renderMove(); const i = $("#chat-input"); if (i) i.focus(); };
-    b.append(use, el("span", "how-note", `${o.e}${o.note ? ". " + o.note : ""}`));
+    b.append(use, el("span", "how-note", o.note ? `${String(o.e).replace(/[.!?。]\s*$/, "")}. ${o.note}` : o.e));
     const sv = el("button", "linkish", "Save to notes"); sv.onclick = () => { noteAdd(`${o.h}  ${o.p}  ${o.e}`, `How to say "${chatHow.q}"`); sv.textContent = "Saved"; sv.disabled = true; };
     if (canSpeak) { const s = el("button", "linkish", "Hear it"); s.onclick = () => speak(o.h); b.append(s); }
     b.append(sv); box.append(b);
