@@ -1,0 +1,22 @@
+const { chromium } = require('./pw');
+(async () => {
+  const b = await chromium.launch(); const errs = [];
+  const a = await b.newPage(); a.on('pageerror', e => errs.push(e.message));
+  await a.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await a.addInitScript(() => { localStorage.setItem('sm-said', '7'); localStorage.setItem('sm-done', JSON.stringify({ noodles: true })); localStorage.setItem('sm-notebook', JSON.stringify([{ sid: 'noodles', turn: 0, said: '我是牛肉面', why: '是…', fix: '我要', due: 0, step: 0, t: 1 }])); });
+  await a.goto(require('./pw').APP);
+  await a.locator('#foot .linkish', { hasText: 'Copy' }).click();
+  const code = await a.locator('#foot textarea').inputValue();
+  console.log('code len', code.length, code.slice(0, 12));
+  const ctx = await b.newContext(); const p2 = await ctx.newPage(); p2.on('pageerror', e => errs.push(e.message));
+  await p2.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await p2.goto(require('./pw').APP);
+  console.log('fresh:', await p2.locator('#place-en').innerText());
+  await p2.locator('#foot .linkish', { hasText: 'Bring' }).click();
+  await p2.fill('#foot textarea', 'nonsense'); await p2.locator('#foot .btn').click();
+  console.log('bad:', await p2.locator('#foot .foot-msg').innerText());
+  await p2.fill('#foot textarea', code); await Promise.all([p2.waitForNavigation(), p2.locator('#foot .btn').click()]);
+  console.log('after load:', await p2.locator('#place-en').innerText(), '|', await p2.locator('#streak').innerText(), '|', await p2.locator('#tool-nb .meta').innerText());
+  await p2.screenshot({ path: 'foot.png', fullPage: true });
+  console.log('ERRORS', errs); await b.close();
+})();

@@ -1,0 +1,28 @@
+const { chromium } = require('./pw');
+(async () => {
+  const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1300, height: 900 } });
+  const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await pg.goto(require('./pw').APP);
+  await pg.locator('.scn', { hasText: 'Train your ear' }).click();
+  await pg.locator('#tabs .chip', { hasText: 'Phone numbers' }).click();
+  const v = await pg.evaluate(() => dq[0]);
+  await pg.fill('#move input', v); await pg.press('#move input', 'Enter');
+  console.log('PHONE right:', (await pg.locator('.fb').last().innerText()).replace(/\n+/g,' | '));
+  await pg.locator('#move .endcard .btn').first().click();
+  const v2 = await pg.evaluate(() => dq[1]);
+  await pg.fill('#move input', v2.slice(0,5) + (v2[5] === '1' ? '7' : '1') + v2.slice(6)); await pg.press('#move input', 'Enter');
+  console.log('PHONE wrong:', (await pg.locator('.fb').last().innerText()).replace(/\n+/g,' | '));
+  await pg.locator('.scn', { hasText: 'Train your ear' }).click();
+  await pg.locator('#tabs .chip', { hasText: 'Times' }).click();
+  const t = await pg.evaluate(() => dq[0]);
+  const [h, m] = t.split(':').map(Number);
+  await pg.fill('#move input', `${h > 12 ? h - 12 : h}:${String(m).padStart(2,'0')}`); await pg.press('#move input', 'Enter');
+  console.log('TIME', t, (await pg.locator('#log').innerText()).replace(/\n+/g,' | ').slice(-200));
+  await pg.locator('.scn', { hasText: 'Train your ear' }).click();
+  await pg.locator('#tabs .chip', { hasText: 'Prices' }).click();
+  const p = await pg.evaluate(() => dq[0]);
+  await pg.fill('#move input', String(p)); await pg.press('#move input', 'Enter');
+  console.log('PRICE:', (await pg.locator('.fb').last().innerText()).replace(/\n+/g,' | '));
+  console.log('ERRORS', errs); await b.close();
+})();

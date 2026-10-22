@@ -8,6 +8,16 @@ You walk into a noodle shop, a taxi, a night market, a street corner or a pharma
 
 Open `index.html` in a browser. There's no build step. It also runs inside Claude as an artifact, where the AI parts use the viewer's own Claude.
 
+## Checking a change
+
+```
+node tools/check-syntax.js     # the scripts inside index.html
+node tools/check-scenes.js     # after editing scenes.js
+node tools/run-tests.js        # the browser tests in tests/browser (needs Playwright: npm i -g playwright)
+node tools/run-tests.js --ai   # also Unscripted and Long Story, played against a stand-in Claude
+node tools/build-artifact.js   # the claude.ai artifact version, in dist-artifact/
+```
+
 ## Running it on your own computer, with your own model
 
 Solo mode runs the app for one person on their own computer, with no accounts, and the AI parts come from a model you run yourself in [LM Studio](https://lmstudio.ai) or [Ollama](https://ollama.com). It costs nothing to run, and nothing leaves your computer.
