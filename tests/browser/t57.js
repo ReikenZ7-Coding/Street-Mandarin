@@ -43,7 +43,7 @@ const { chromium } = require('./pw');
     await pg.screenshot({ path: `t57-chat-${w}.png` });
     // failure and retry
     await pg.evaluate(() => { window.__fail = 1; }); await pg.locator('#chat-input').press('Enter'); await pg.waitForTimeout(600);
-    console.log('FAIL', await pg.locator('.chat-fail').count(), await pg.locator('#move .ls-err').innerText());
+    console.log('SEND FAILED', await pg.locator('.chat-fail').count(), await pg.locator('#move .ls-err').innerText());
     await pg.evaluate(() => { window.__fail = 0; }); await pg.locator('.chat-fail').click(); await pg.waitForFunction(() => !chatPending.size, null, { timeout: 5000 }); await pg.waitForTimeout(900);
     console.log('RETRIED', await pg.locator('.chat-fail').count());
     // save to notes from a message
