@@ -467,7 +467,7 @@ body.hint-off .opt .en-line { display: none; }
 .cr-prev { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cr-side { font-size: 12px; color: var(--muted); align-self: start; padding-top: 4px; }
 .cr-dot { position: absolute; left: 50px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--cinnabar); border: 2px solid var(--surface); }
-.scene.chatting .log { max-height: calc(min(68vh, 720px) / var(--tz, 1)); background: var(--surface-2); }
+.scene.chatting .log { max-height: calc(min(68vh, 720px, 100dvh - var(--movH, 140px) - 16px) / var(--tz, 1)); background: var(--surface-2); } /* the newest message always fits above the message box */
 .chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 0 0 10px; border-bottom: 1px solid var(--line); } /* the slot already gives the side margin, so it lines up with the messages */
 .chat-reset { margin-left: auto; color: var(--muted); }
 .chat-warn { flex-basis: 100%; font-size: 13px; color: var(--cinnabar); }
@@ -479,7 +479,6 @@ body.hint-off .opt .en-line { display: none; }
 .chat-wait { font-size: 13px; color: var(--muted); margin: -4px 0 0; }
 .scene.chatting .move { position: sticky; bottom: 0; z-index: 2; background: var(--surface); }
 .move:empty { display: none; }
-body.no-py .chat-fb .py { display: inline; }
 /* not wide enough for the list, the page and your notes: the notes take the list's place until they close */
 @media (min-width: 1100px) and (max-width: 1499px) { body.notes-open .layout { grid-template-columns: minmax(0, 1fr); } body.notes-open .rail { display: none; } }
 @media (min-width: 1100px) { body.notes-open .wrap { max-width: calc(100vw - 440px); margin-left: max(16px, calc((100vw - 440px - 1180px) / 2)); } }
@@ -540,7 +539,7 @@ body.no-py .row.chat .py, body.no-py .chat-starters .py, body.no-py .how-opt .py
 @media (max-width: 760px) {
   .notes { top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 78vh; border-radius: 16px 16px 0 0; }
   .chat-row { grid-template-columns: 42px minmax(0, 1fr) auto; padding: 10px 12px; } .av { width: 42px; height: 42px; font-size: 20px; } .cr-dot { left: 44px; }
-  .scene.chatting .log { max-height: calc((100dvh - 250px) / var(--tz, 1)); min-height: 280px; }
+  .scene.chatting .log { max-height: calc(min(100dvh - 250px, 100dvh - var(--movH, 140px) - 12px) / var(--tz, 1)); min-height: 160px; }
   .scene.chatting .scene-head { padding: 10px 14px; } .scene.chatting .scene-head .place { font-size: 30px; } .scene.chatting .goal { display: none; }
 }
 
@@ -1034,7 +1033,7 @@ function validTurn(t) {
 let mastery = store.get("sm-mastery", {});
 const MARKS = [["survived", "Survived"], ["clean", "Clean run"], ["curve", "Clean through a surprise"]];
 const poolSize = id => { const s = S.find(x => x.id === id); return (s && s.curveballs || []).length + twistPool(id).length; };
-let twistNote = "";
+let twistNote = "", wSlips = 0; // wSlips: lines in a live scene that didn't land, so "Clean run" is only said when it was
 function earnMarks(cutShort) {
   const m = mastery[cur.id] = mastery[cur.id] || {}, gained = [];
   const give = k => { if (!m[k]) { m[k] = Date.now(); gained.push(k); } };
@@ -1179,6 +1178,8 @@ Return ONLY a JSON object: "why" (2 to 4 plain-English sentences going one level
     btn.disabled = false; btn.textContent = e && e.code === "rate_limited" ? "Busy, try again in a moment" : "Couldn't ask. Try again?";
   }
 }
+// How tall the answer area is, for layouts that keep the conversation above it (Unscripted)
+try { new ResizeObserver(([e]) => document.documentElement.style.setProperty("--movH", Math.round(e.target.getBoundingClientRect().height) + "px")).observe(document.getElementById("move")); } catch {}
 function addNarr(t) { $("#log").append(el("div", "narr", t)); scrollLog(); }
 function scrollLog() {
   const l = $("#log"); l.scrollTop = l.scrollHeight;
@@ -1341,7 +1342,7 @@ function armRush() {
   }, ms);
 }
 function start(id, opt = {}) {
-  clearRush(); rush = !!opt.rush; rushLate = 0;
+  twistNote = ""; clearRush(); rush = !!opt.rush; rushLate = 0;
   mode = "scene"; if (groupOf(id) !== railOpen) setRailOpen(groupOf(id));
   const base = S.find(s => s.id === id);
   turn = 0; finished = false; transcript = []; busy = false; flags = {}; outcomes = []; curveball = null; surprises = []; runMisses = []; runMissTags = []; lastGained = [];
@@ -1609,17 +1610,19 @@ function matchTyped(text, t) {
   const best = mains.slice().sort((a, b) => share(b) - share(a))[0];
   return { o: null, how: "none", good: best, also: [t.npc ? t.npc[0] : ""].concat(goods.map(o => o.h)).join("，") };
 }
+// A Long Story keeps what you actually said (the story, its volume end and rereading show it), not the line it was close to
+const mine = text => mode === "long" ? { h: text, p: "", e: "" } : {};
 function submitTyped(text, t) {
   if (busy || !text) return;
   const m = matchTyped(text, t), good = m.good || t.opts.find(o => o.k === "good");
   if (m.how === "exact" || m.how === "core" || m.how === "slip") return choose(m.how === "core" ? Object.assign({}, m.o, { h: text, p: "", e: "" }) : m.o);
   if (m.how === "near") {
     // Name the slip when the app can spot it; otherwise show exactly where it differs
-    const named = judgeOffline(text, m.o), why = named ? named.note : `Almost. One small slip: compare yours with ${m.o.h} ${m.o.p}`;
+    const named = judgeOffline(text, m.o), why = named ? named.note : "Almost: one small slip. Compare yours with the line below.";
     addMe(text, "", "", "okay");
     addFeedback("okay", why, [m.o.h, m.o.p]);
     logMistake({ sid: cur.id, ...turnRef(), kind: "okay", said: text, fix: m.o.h, fixPy: m.o.p, why });
-    return choose(Object.assign({}, m.o, { quiet: true }));
+    return choose(Object.assign({}, m.o, { quiet: true }, mine(text)));
   }
   // Off the script. First, what the app can judge by itself, with no AI at all
   // In a Long Story, Claude reads your own words in the story, so the app doesn't call a different number "wrong" first
@@ -1628,7 +1631,7 @@ function submitTyped(text, t) {
     addMe(text, "", "", judged.kind);
     addFeedback(judged.kind, judged.note, [good.h, good.p]);
     logMistake({ sid: cur.id, ...turnRef(), kind: judged.kind, said: text, fix: good.h, fixPy: good.p, why: judged.note });
-    if (judged.kind === "okay") return choose(Object.assign({}, good, { quiet: true }));
+    if (judged.kind === "okay") return choose(Object.assign({}, good, { quiet: true }, mine(text)));
     return renderMove();
   }
   if (sample) return offScript(text);
@@ -1854,7 +1857,7 @@ Exactly one good option, and give it "b": its hanzi split into 2-5 word tiles wi
     r.turn.opts.forEach(o => { if (o.b && o.b.split("|").join("") !== normHan(o.h)) delete o.b; if (o.k !== "good" && !TAGSET.includes(o.tag)) o.tag = "words"; delete o.carry; delete o.flag; delete o.end; });
     r.id = "g" + Date.now().toString(36); r.what = String(r.what).slice(0, 60);
     (twists[s.id] = twists[s.id] || []).push({ id: r.id, after: r.after, what: r.what, turn: r.turn }); store.set("sm-twists", twists);
-    twistNote = `Something new can now happen here: ${r.what}. Play it again and you might meet it.`;
+    twistNote = "Something new can now happen here. Play it again and you might meet it."; // not named: it's a surprise
     if (mode === "scene" && finished && cur.id === s.id) renderMove();
   } catch {} finally { twistBusy = false; }
 }
@@ -1908,7 +1911,7 @@ function renderEnd() {
     const k = prefs.en ? "en" : "py", up = el("button", "linkish", `Turn ${k === "en" ? "English" : "pinyin"} off`); up.onclick = () => { setShow(k); start(cur.id); };
     line("Help", `Clean with ${k === "en" ? "English" : "pinyin"} on. Ready for less? `, up);
   }
-  if (twistNote) { line("New here", twistNote.replace(/^Something new can now happen here: /, "")); twistNote = ""; }
+  if (twistNote) line("New here", twistNote); // stays through a switch flip; cleared when you start a place
   // The person you just met adds you on WeChat: the conversation can carry on in Unscripted
   const pal = PEOPLE.find(x => x.met === cur.id);
   if (pal && sample && !((CHATS[pal.id] || {}).msgs || []).some(m => m.me)) { const hi = el("button", "linkish", `Say hi to ${pal.en}`); hi.onclick = () => startChat(pal.id); line("WeChat", `${pal.han} added you. `, hi); }
@@ -2952,6 +2955,9 @@ let lsReady = false, LS = store.get("sm-long", null), lsView = "home", lsAt = nu
 const lsSave = () => { try { localStorage.setItem("sm-long", JSON.stringify(LS)); } catch { lsErr = "Your browser's storage is full, so this chapter won't be kept."; } };
 const lsKey = (v, c) => v + "." + c;
 const lsCh = (v, c) => LS && LS.chapters[lsKey(v, c)];
+// A line counts as a mistake if it was close or wrong, or if it was your own words and the next chapter's note says they didn't quite land (what lsLogOwn files)
+const lsSlipped = (v, c) => { const ch = lsCh(v, c); if (!ch || !ch.said) return false; if (ch.said.k === "okay" || ch.said.k === "wrong") return true;
+  const nx = c < LS_CH ? lsCh(v, c + 1) : lsCh(v + 1, 1); return ch.said.k === "own" && !!(nx && nx.fb && nx.fb.kind !== "good" && nx.fb.fix); };
 // Where you are: the first chapter you haven't answered yet
 function lsNext() {
   for (let v = 1; v <= LS.n; v++) for (let c = 1; c <= LS_CH; c++) { const ch = lsCh(v, c); if (!ch || !ch.said) return { v, c }; }
@@ -3212,7 +3218,7 @@ async function lsBegin() {
     if (mode === "long") { startLong(); lsAt = { v: 1, c: 1 }; } // story home, then straight into chapter one
     lsWrite(1, 1);
   } catch (e) {
-    lsPlanning = false; lsErr = e && e.code === "not_granted" ? `Long Story needs permission to use ${AI_NAME}.` : "The plan didn't come out right. Try again.";
+    lsPlanning = false; lsErr = e && e.code === "not_granted" ? `Long Story needs permission to use ${AI_NAME}.` : e && e.code === "rate_limited" ? `${AI_CAP} is busy right now. Try again in a moment.` : "The plan didn't come out right. Try again.";
     if (e && e.code === "not_granted") sample = null;
     if (mode === "long" && !LS) { lsSetup(); renderMove(); }
   }
@@ -3220,7 +3226,7 @@ async function lsBegin() {
 
 /* the pages: story home (or setup), a chapter, and the end of a volume */
 function startLong() {
-  mode = "long"; busy = false; finished = false; clearRush(); lsView = "home"; lsMoment = null; lsWaiting = null; lsErr = "";
+  mode = "long"; busy = false; finished = false; clearRush(); lsView = "home"; lsMoment = null; lsWaiting = null; lsErr = ""; lsNew = false; // a "start a new story?" left armed doesn't survive leaving
   cur = { id: "long", who: "书", whoEn: "the story", en: "Long Story", turns: [] };
   if (!LS) {
     setHead("长篇", "chángpiān", "Long Story", "How it works: ", AI_CAP + " writes you a light novel set in China, a volume a day for a week or up to a month. You're the main character, and every chapter ends on something you have to say. The Chinese grows as you read.");
@@ -3255,7 +3261,9 @@ function lsSetup() {
   const sur = el("button", "today-card"); sur.setAttribute("aria-pressed", lsPick.theme === -2);
   sur.append(el("span", "tc-han", "惊喜"), el("span", "tc-title", "Surprise me"), el("span", "tc-why", AI_CAP + " picks the city and the story.")); sur.onclick = () => { lsPick.theme = -2; lsSetup(); }; tg.append(sur);
   const own = el("input", "ls-own"); own.type = "text"; own.placeholder = "Or your own idea: a mystery in a Chengdu teahouse…"; own.value = lsPick.own; own.setAttribute("aria-label", "Your own story idea");
-  own.oninput = () => { lsPick.own = own.value; lsPick.theme = own.value.trim() ? -1 : 0; tg.querySelectorAll(".today-card").forEach(c => c.setAttribute("aria-pressed", "false")); };
+  // Typing an idea unpicks the cards; clearing it goes back to the card you'd picked, and shows it picked
+  own.oninput = () => { lsPick.own = own.value; if (own.value.trim()) { if (lsPick.theme !== -1) lsPick.was = lsPick.theme; lsPick.theme = -1; } else if (lsPick.theme === -1) lsPick.theme = lsPick.was ?? 0;
+    const cards = [...tg.querySelectorAll(".today-card")]; cards.forEach((c, i) => c.setAttribute("aria-pressed", String(lsPick.theme === (i === cards.length - 1 ? -2 : i)))); };
   th.append(tg, own);
   const nm = el("div", "ls-field"); nm.append(el("span", "ls-label", "What people call you (optional)"));
   const ni = el("input", "ls-own"); ni.type = "text"; ni.placeholder = "马修, Matt, 小马…"; ni.value = lsPick.name; ni.maxLength = 12; ni.setAttribute("aria-label", "Your name in the story"); ni.oninput = () => { lsPick.name = ni.value; };
@@ -3295,7 +3303,7 @@ function lsHome() {
   b.cast.forEach(c => { const card = el("button", "ls-person"), n = lsLinesOf(c).length; card.append(el("span", "lp-han", c.name_hanzi), el("span", "lp-py", c.name_pinyin), el("span", "lp-role", c.role), el("span", "lp-n", n ? `${plural(n, "line")} to you` : "Not met yet")); card.disabled = !n; card.onclick = () => lsPerson(c); cast.append(card); });
   log.append(cast);
   log.append(lsWordsEl());
-  log.scrollTop = 0;
+  log.scrollTop = 0; window.scrollTo(0, 0);
 }
 let lsWordsOpen = false;
 function lsWordsEl() {
@@ -3370,7 +3378,7 @@ function lsRead(v, c) {
   lsMoment = ch.moment && !ch.said ? Object.assign({}, ch.moment, { npc: last }) : null;
   cur = { id: "long", who: lsLastWho(ch).slice(-2), whoEn: "them", en: `Long Story: ${b.title_english}`, place: b.title_hanzi, turns: lsMoment ? [lsMoment] : [] };
   turn = 0; order = lsMoment ? shuffle(lsMoment.opts) : []; bState = null; transcript = []; lsReady = false;
-  log.scrollTop = 0; renderRail(); renderMove();
+  log.scrollTop = 0; window.scrollTo(0, 0); renderRail(); renderMove();
 }
 // Every line of the chapter's dialogue, in order, at speaking speed: the conversation as you'd hear it
 function lsListen(btn) {
@@ -3429,16 +3437,16 @@ function lsRecap(v) {
   const log = $("#log"); log.textContent = "";
   const res = el("dl", "score"), line = (k, ...x) => { const dd = el("dd"); dd.append(...x); res.append(el("dt", null, k), dd); };
   const words = chs.flatMap(ch => ch.words).filter((w, i, a) => a.findIndex(x => x.h === w.h) === i);
-  if (words.length) { const span = el("span"); words.forEach((w, i) => { if (i) span.append(" · "); span.append(el("span", "han-inline", w.h), ` ${w.e}`); }); line("New words", span); }
+  if (words.length) { const span = el("span"); words.forEach((w, i) => { if (i) span.append(" · "); span.append(el("span", "han-inline", w.h), el("span", "tr", ` ${w.e}`)); }); line("New words", span); }
   const ul = el("ul", "ls-said"); chs.forEach(ch => { if (!ch.said || ch.said.k === "end") return; const li = el("li", ch.said.k === "okay" || ch.said.k === "wrong" ? "slip" : "ok"); li.append(el("span", "han-inline", ch.said.h), ch.said.k === "good" ? " · landed" : ch.said.k === "own" ? " · in your own words" : ch.said.k === "okay" ? " · understood, but off" : " · a slip"); ul.append(li); });
   line("What you said", ul);
-  const slips = chs.filter(ch => ch.said && (ch.said.k === "okay" || ch.said.k === "wrong")).length;
+  const slips = [1, 2, 3, 4].filter(c => lsSlipped(v, c)).length;
   line("Mistakes", slips ? `${plural(slips, "mistake")}, now in Mistakes. They come back for review.` : "None. Everything you said landed.");
   if (!slips) leafFall();
   log.append(res);
   if (v === LS.n && lsVolDone(v)) {
     // The end: the whole story in a few lines, and what it was about all along
-    const all = Object.values(LS.chapters).filter(ch => ch.said), lines = all.filter(ch => ch.said.k !== "end").length, slipsAll = all.filter(ch => ch.said.k === "okay" || ch.said.k === "wrong").length;
+    const all = Object.values(LS.chapters).filter(ch => ch.said), lines = all.filter(ch => ch.said.k !== "end").length, slipsAll = Array.from({ length: LS.n }, (_, i) => [1, 2, 3, 4].filter(c => lsSlipped(i + 1, c)).length).reduce((a, b) => a + b, 0);
     const end = el("dl", "score"), l2 = (k, x) => end.append(el("dt", null, k), el("dd", null, x));
     log.append(el("div", "day-part"));
     log.lastChild.append(el("span", "dp-zh", "完"), el("span", "dp-en", "The whole story"));
@@ -3448,7 +3456,7 @@ function lsRecap(v) {
     l2("Mistakes", slipsAll ? `${plural(slipsAll, "mistake")} along the way, all in Mistakes.` : "None. Every line landed.");
     log.append(end);
   }
-  log.scrollTop = 0;
+  log.scrollTop = 0; window.scrollTo(0, 0);
   renderRail(); renderMove();
 }
 function renderLongMove() {
@@ -3502,7 +3510,7 @@ function renderLongMove() {
     const v = lsAt ? lsAt.v : 1;
     if (v === LS.n) { const go = el("button", "btn", lsNew ? "Yes, start another story" : "Start another story");
       go.onclick = () => { if (!lsNew) { lsNew = true; renderMove(); return; } lsNew = false; LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); }; row.append(go);
-      if (lsNew) m.append(el("p", "ls-err", "This story will be gone, though its slips stay in Mistakes. Story home keeps it to reread.")); }
+      if (lsNew) { row.append(keepIt()); m.append(el("p", "ls-err", "This story will be gone, though its slips stay in Mistakes.")); } }
     else if (v < LS.n && lsLocked(v + 1)) row.append(el("span", "ls-prompt", `Volume ${v + 1} opens tomorrow. Come back for it, like the next episode.`));
     else if (v < LS.n) { const go = el("button", "btn", `Volume ${v + 1}: ${(LS.bible.volumes[v] || {}).title_english}`); go.onclick = () => lsCh(v + 1, 1) ? lsRead(v + 1, 1) : (lsAt = { v: v + 1, c: 1 }, lsWrite(v + 1, 1)); row.append(go); }
   }
@@ -3513,7 +3521,7 @@ function renderLongMove() {
       go.onclick = () => { lsAt = nx; lsCh(nx.v, nx.c) ? lsRead(nx.v, nx.c) : lsWrite(nx.v, nx.c); }; row.append(go); }
     const fresh = el("button", "btn ghost", lsNew ? "Yes, start a new story" : "Start a new story");
     fresh.onclick = () => { if (!lsNew) { lsNew = true; renderMove(); return; } lsNew = false; LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); };
-    row.append(fresh);
+    row.append(fresh); if (lsNew) row.append(keepIt());
     if (lsNew) m.append(el("p", "ls-err", "This story and its chapters will be gone. Slips from it stay in Mistakes."));
   } else {
     const home = el("button", "btn ghost", "Story home"); home.onclick = () => startLong(); row.append(home);
@@ -3521,6 +3529,7 @@ function renderLongMove() {
   m.append(row);
 }
 let lsNew = false;
+const keepIt = () => { const k = el("button", "btn ghost", "Keep it"); k.onclick = () => { lsNew = false; renderMove(); }; return k; };
 
 /* ---------- Unscripted: keep in touch on WeChat with the people from your days (people.js) ---------- */
 // Short Story gets you through a situation; Unscripted is what comes after: the noodle boss, your classmate,
@@ -3533,7 +3542,8 @@ const personOf = id => PEOPLE.find(p => p.id === id);
 const chatOf = id => CHATS[id] || (CHATS[id] = { msgs: [], about: "" });
 const saveChats = () => { try { localStorage.setItem("sm-chats", JSON.stringify(CHATS)); } catch { if (chatWho) chatErrs[chatWho] = "Your browser's storage is full, so new messages won't be kept."; } };
 // A message that was on its way when the page closed can be sent again
-Object.values(CHATS).forEach(c => (c.msgs || []).forEach(m => { if (m.pending) { delete m.pending; m.fail = true; } }));
+// A message still sending when the page closed comes back as not sent, with the reason beside the box
+Object.entries(CHATS).forEach(([id, c]) => (c.msgs || []).forEach(m => { if (m.pending) { delete m.pending; m.fail = true; chatErrs[id] = "This message didn't go through before the page closed. Tap the ! to send it again."; } }));
 const chatUnread = () => PEOPLE.filter(p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length && !m[m.length - 1].me && !m[m.length - 1].seen; }).length;
 // Someone you met at a place you've been: they've added you, and their first message is waiting
 function chatSeed(p) {
@@ -3614,7 +3624,13 @@ function chatDraw(keep) {
   });
   chatInked[chatWho] = c.msgs.length;
   if (chatPending.has(chatWho)) log.append(el("div", "chat-typing", `${p.han}正在输入… typing`));
-  if (keep) log.scrollTop = y; else log.scrollTop = log.scrollHeight;
+  if (keep) log.scrollTop = y; else { log.scrollTop = log.scrollHeight; chatFit(); }
+}
+// The message box sticks to the bottom of the screen; scroll the page just enough that the newest message sits above it
+function chatFit() {
+  requestAnimationFrame(() => requestAnimationFrame(() => { if (mode !== "chat" || !chatWho) return;
+    const l = $("#log").getBoundingClientRect(), mv = $("#move").getBoundingClientRect(), over = l.bottom - mv.top + 8;
+    if (over > 8) window.scrollBy(0, over); }));
 }
 function chatMsg(m, p, i) {
   const row = el("div", "row chat " + (m.me ? "me" : "npc"));
@@ -3649,7 +3665,7 @@ function chatMsg(m, p, i) {
   // How your message landed: a quiet note under it, not a lecture in the chat
   const wrap = el("div", "chat-me-wrap"); wrap.append(row);
   const fb = el("div", "chat-fb " + m.fb.kind);
-  fb.append(el("span", "cf-k", m.fb.kind === "english" ? "In Chinese" : m.fb.kind === "wrong" ? "错 Didn't land" : "差不多 Close"));
+  fb.append(el("span", "cf-k", m.fb.kind === "english" ? "In Chinese" : m.fb.kind === "wrong" ? "错 Didn't land" : "差不多 Understood, but…"));
   if (m.fb.fix) fb.append(" ", el("span", "han-inline", m.fb.fix[0]), " ", el("span", "py", m.fb.fix[1] || ""));
   if (m.fb.note) fb.append(el("span", "cf-note", m.fb.note));
   wrap.append(fb);
@@ -4203,7 +4219,7 @@ let wTranscript = [], wDone = false, wGoal = false;
 async function startLive(id) {
   // The same place, unscripted: Claude plays it and throws in its own surprise
   const base = S.find(x => x.id === id); if (!sample || !base) return;
-  mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = [];
+  mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = []; wSlips = 0;
   setHead(base.place, base.placePy, base.en + ", live", "Your goal: ", base.goal);
   $("#log").textContent = ""; addNarr("No script this time. Anything can happen…");
   renderRail(); renderMove();
@@ -4222,7 +4238,9 @@ Return ONLY JSON: "place_hanzi" (2 to 4 characters), "place_pinyin", "place_engl
     addNpc([r.opening_hanzi, r.opening_pinyin, r.opening_english]);
     wTranscript.push({ who: "npc", text: r.opening_hanzi });
   } catch (e) {
-    $("#log").textContent = ""; addNarr("Couldn't set the scene that time. Try again in a moment."); wDone = true;
+    // Nothing to play yet: say so, and offer to try again (not "Scene over" and a way home only)
+    cur = { id: "wander", live: base.id, failed: true, place: base.place, placePy: base.placePy, en: base.en, who: base.who, whoEn: base.whoEn, goal: base.goal, turns: [] };
+    $("#log").textContent = ""; addNarr(e && e.code === "rate_limited" ? `${AI_CAP} is busy right now, so the scene couldn't be set.` : "Couldn't set the scene that time."); wDone = true;
   }
   busy = false; renderRail(); renderMove();
 }
@@ -4230,9 +4248,9 @@ function renderWanderMove() {
   const m = $("#move"); m.textContent = "";
   const head = el("div", "move-head");
   if (wDone) {
-    head.append(el("h3", null, wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
+    head.append(el("h3", null, cur.failed ? "No scene yet" : wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
     const row = el("div", "endcard");
-    if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
+    if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", cur.failed ? "Try again" : "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
     const back = backBtn();
     row.append(back); m.append(head, row);
     return;
@@ -4292,7 +4310,8 @@ Return ONLY a JSON object:
       wl.unshift({ h: text, p: "", e: cur.en || "Live" }); store.set("sm-wander-lines", wl.slice(0, 30));
     }
     if (kind !== "good") logMistake({ sid: "wander", turn: null, kind, said: text, fix: r.better_hanzi || "", fixPy: r.better_pinyin || "", why: (cur.en ? cur.en + ": " : "") + (r.note || "") });
-    if (r.goal_reached === true) { wDone = wGoal = true; addNarr(outcomes.length ? "Goal reached, though it cost you: " + outcomes.join("; ") + "." : "Goal reached. Clean run."); }
+    if (kind !== "good") wSlips++;
+    if (r.goal_reached === true) { wDone = wGoal = true; addNarr(outcomes.length ? "Goal reached, though it cost you: " + outcomes.join("; ") + "." : wSlips ? `Goal reached, with ${plural(wSlips, "slip")} on the way.` : "Goal reached. Clean run."); }
   } catch (e) {
     think.remove();
     addNarr(e && e.code === "rate_limited" ? "Too many messages at once. Wait a moment, then try again." : "That didn't go through. Try saying it again.");
