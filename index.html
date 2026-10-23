@@ -253,6 +253,7 @@ button.ls-person:disabled { cursor: default; opacity: 0.7; }
 .npc .bubble { background: var(--npc); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 .me .bubble { background: var(--me); color: var(--me-fg); border-bottom-right-radius: 4px; }
 .me.wrong .bubble { background: var(--cinnabar-soft); color: var(--fg); }
+.han.as-en { font-family: var(--f-ui); font-size: 16px; font-weight: 500; }
 .me.wrong .han { text-decoration: line-through; text-decoration-color: var(--cinnabar); text-decoration-thickness: 2px; }
 .me.okay .bubble { background: var(--ochre-soft); color: var(--fg); }
 .han { font-family: var(--f-han); font-weight: 600; font-size: 21px; line-height: 1.4; }
@@ -277,6 +278,7 @@ body.no-py .tap-rv.rv-open .py, body.no-en .tap-rv.rv-open .tr { display: revert
 .fb.wrong { background: var(--cinnabar-soft); border-color: var(--cinnabar); }
 .fb.okay { background: var(--ochre-soft); border-color: var(--ochre); }
 .fb.good { background: var(--jade-soft); border-color: var(--jade); }
+.fb.note { background: var(--surface); border-color: var(--line); } .fb.note .seal { background: var(--jade); } .fb.note .label { color: var(--muted); }
 .seal { width: 48px; height: 48px; border-radius: 6px; display: grid; place-items: center; font-family: var(--f-han); font-weight: 900; font-size: 26px; color: var(--surface); transform: rotate(-6deg); line-height: 1; }
 .fb.wrong .seal { background: var(--cinnabar); }
 .fb.okay .seal { background: var(--ochre); font-size: 14px; }
@@ -392,7 +394,7 @@ body.hint-off .opt .en-line { display: none; }
 .folder .f-name { font-weight: 600; font-size: 14px; display: flex; gap: 6px; } .folder .f-name .f-chev { flex: 0 0 auto; } /* a wrapped day name stays in line with its first line */
 .folder .f-count.all { color: var(--jade); }
 .folder .f-count { font-size: 12px; color: var(--muted); }
-.folder .f-next { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.folder .f-next { grid-column: 1 / -1; font-size: 12px; color: var(--muted); padding-left: 18px; } /* under the day name, past the chevron */
 .folder .f-chev { display: inline-block; width: 12px; color: var(--muted); transition: transform .15s; }
 .folder[aria-expanded="true"] .f-chev { transform: rotate(90deg); }
 .folder:hover .f-name { text-decoration: underline; text-underline-offset: 3px; }
@@ -446,7 +448,8 @@ body.hint-off .opt .en-line { display: none; }
 .score ul.ls-said { color: var(--fg); } .score ul.ls-said li.slip { color: var(--cinnabar); } .score ul.ls-said li.ok::marker { color: var(--jade); }
 @media (max-width: 520px) { .score { grid-template-columns: minmax(0, 1fr); gap: 2px; } .score dd { margin-bottom: 6px; } }
 .nb-item .where { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
-.nb-item .when { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.nb-item .when { text-transform: none; letter-spacing: 0; font-size: 12px; }
+.nb-item .nb-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .dots { display: inline-flex; gap: 3px; }
 .dots-n { font-size: 12px; color: var(--muted); text-transform: none; letter-spacing: 0; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--jade); display: inline-block; }
@@ -1219,7 +1222,8 @@ const findBox = el("input", "rail-find"), placesBox = el("div", "rail-places");
 findBox.type = "search"; findBox.placeholder = "Find a place or phrase"; findBox.setAttribute("aria-label", "Find a place or phrase");
 findBox.oninput = () => renderPlaces();
 let renderPlaces = () => {};
-const lineMatches = (o, q) => { const l = q.toLowerCase(), py = normPy(q); return o.h.includes(q) || o.e.toLowerCase().includes(l) || (py.length >= 3 && /^[a-z\s']+$/i.test(q) && normPy(o.p).includes(py)); };
+// One rule for "this line matches", so the side list and the pocket find (and count) the same lines
+const lineMatches = (o, q) => { const l = q.toLowerCase(), py = normPy(q); return o.h.includes(q) || (o.e || "").toLowerCase().includes(l) || (py.length >= 2 && /^[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü\s']+$/i.test(q) && normPy(o.p || "").includes(py)); };
 function placeMatches(s, q) {
   const l = q.toLowerCase(), py = normPy(q);
   return s.en.toLowerCase().includes(l) || s.place.includes(q) || (py.length >= 2 && /^[a-z\s']+$/i.test(q) && normPy(s.placePy || "").includes(py)) || s.goal.toLowerCase().includes(l) ||
@@ -1290,7 +1294,7 @@ function renderRail() {
     const hits = S.filter(s => placeMatches(s, q));
     hits.forEach(s => placesBox.append(placeBtn(s, false)));
     if (!hits.length) placesBox.append(el("p", "find-none", `No place has “${q}” yet.`));
-    const lines = S.filter(s => done[s.id]).reduce((n, s) => n + s.turns.reduce((m, t) => m + t.opts.filter(o => o.k === "good" && lineMatches(o, q)).length, 0), 0);
+    const lines = pocketFind(q).n;
     if (lines) { const b = el("button", "linkish", `${plural(lines, "line")} with “${q}” in your pocket`); b.onclick = () => { pbQuery = q; startPhrasebook(); setMenu(false); }; placesBox.append(b); }
     placesBox.querySelectorAll(".scn").forEach(b => b.addEventListener("click", () => setMenu(false)));
     return;
@@ -1395,7 +1399,7 @@ function voiceFor(id, i, line) {
 function heardRows(s, box) {
   s.turns.forEach((t, ti) => {
     if (!t.npc) return;
-    const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]));
+    const r = el("div", "pb-heard"); r.append(el("span", "han", t.npc[0]), el("span", "py", t.npc[1])); // pinyin follows the switch, like every other line
     ((VOICES[s.id] || {})[ti] || []).forEach(v => r.append(el("span", "han alt", "or " + v[0])));
     r.classList.add("tap-rv"); r.append(el("span", "en-line tr", t.npc[2])); box.append(r);
   });
@@ -1997,18 +2001,20 @@ function nbItem(n) {
   const dots = el("span", "dots"); dots.setAttribute("aria-label", `${n.step || 0} of ${GAPS.length} right`);
   GAPS.forEach((_, i) => dots.append(el("i", i < (n.step || 0) ? "on" : "")));
   // said in words: the same dots elsewhere mean how well you know a place, so these say what they count
-  top.append(st, el("span", "dots-n", n.learned ? "learned" : `${n.step || 0} of ${GAPS.length} right`), dots);
+  // when it's back and how far along, as one group on the right, so a narrow screen wraps it whole ("Learned" already says it for learned ones)
+  const right = el("span", "nb-right"); right.append(st); if (!n.learned) right.append(el("span", "dots-n", `${n.step || 0} of ${GAPS.length} right`)); right.append(dots);
+  top.append(right);
   it.append(top);
   if (n.heard) { const h = el("div", "nb-heard"); h.append(el("span", "nb-who", `${(personOf(n.who) || {}).han || "They"}: `), el("span", null, n.heard)); h.title = n.heardE || ""; it.append(h); }
   it.append(el("div", "said" + (n.kind === "okay" ? " okay" : ""), n.said));
-  if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy", n.fixPy || "")); it.append(f); }
+  if (n.fix) { const f = el("div"); f.append(el("span", "fix", n.fix), " ", el("span", "fixpy py", n.fixPy || "")); it.append(f); }
   it.append(el("div", "why", n.why));
   if (!n.learned) {
     const sc = sceneFor(n), t = scriptedTurn(sc, n);
     const ctx = { sid: n.sid, place: sc ? sc.en : "", heard: t && t.npc ? { text: t.npc[0] } : n.heard ? { text: n.heard } : null, said: { text: n.said }, note: n.why, fix: n.fix ? [n.fix, n.fixPy] : null };
     if (canExplain(ctx)) { const ask = el("button", "why-btn", "Why, exactly?"); ask.onclick = () => explainWhy(ask, ctx); it.append(ask); }
   }
-  if (n.fix) { const sv = el("button", "why-btn nb-save", "Save to notes"); sv.onclick = () => { noteAdd(`${n.fix}  ${n.fixPy || ""}  (not: ${n.said})${n.why ? "  " + n.why : ""}`, "Mistakes"); sv.textContent = "Saved"; sv.disabled = true; }; it.append(sv); }
+  if (n.fix) { const sv = saveBtn("why-btn nb-save", n.fix, () => noteAdd(`${n.fix}  ${n.fixPy || ""}  (not: ${n.said})${n.why ? "  " + n.why : ""}`, "Mistakes")); it.append(sv); }
   return it;
 }
 function openNotebook() {
@@ -2341,7 +2347,8 @@ function renderDrillMove() {
   if (dAnswered) {
     const nx = el("button", "btn", di + 1 < dq.length ? `Next ${dKind === "phone" ? "number" : dKind === "time" ? "time" : "total"}` : "See how you did");
     nx.onclick = () => { di++; if (di < dq.length) drillItem(); else renderMove(); };
-    const row = el("div", "endcard"); row.append(nx); m.append(row); return;
+    const row = el("div", "endcard"); row.append(nx); m.append(row);
+    requestAnimationFrame(() => nx.scrollIntoView({ block: "nearest" })); return; // at big text the button can sit below the screen
   }
   const form = el("form", "free");
   const inp = el("input"); inp.id = "price-input"; inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
@@ -2412,7 +2419,7 @@ function renderEarsMove() {
   const head = el("div", "move-head");
   setTabs(earTabs("ears"));
   if (ei >= eq.length) {
-    head.append(el("h3", null, "Round done"), el("span", "prompt", `${eRight} of ${eq.length} heard right.`));
+    head.append(el("h3", null, "Drill done"), el("span", "prompt", `${eRight} of ${eq.length} heard right.`));
     const row = el("div", "endcard");
     const again = el("button", "btn", "Another round"); again.onclick = () => startEars();
     const back = backBtn();
@@ -2434,10 +2441,11 @@ function renderEarsMove() {
       eAnswered = true;
       const right = o === it.said;
       addMe(o[2], "", "", right ? "good" : "wrong");
-      const both = `They said ${it.said[0]} ${it.said[1]} The twin is ${it.other[0]} ${it.other[1]} `;
-      if (right) { eRight++; addFeedback("good", both + it.why, null); }
+      { const r = $("#log").lastElementChild; r.querySelector(".han").classList.add("as-en"); const sp = r.querySelector(".say"); if (sp) sp.remove(); } // you picked a meaning: it's English, not a line to hear
+      // the pinyin stays in this note even with Pinyin off: telling the two apart by sound is the whole drill
+      if (right) { eRight++; addFeedback("good", `They said ${it.said[0]} ${it.said[1]} The twin is ${it.other[0]} ${it.other[1]} ` + it.why, null); }
       else {
-        addFeedback("wrong", both + it.why, [it.said[0], it.said[1]], { label: "Heard the twin" });
+        addFeedback("wrong", `That was the twin, ${it.other[0]} ${it.other[1]} ` + it.why, [it.said[0], it.said[1]], { label: "Heard the twin" }); // "Say instead" shows what they said
         logMistake({ sid: "ears", turn: null, kind: "wrong", said: o[0], fix: it.said[0], fixPy: it.said[1], why: it.why });
       }
       renderMove();
@@ -2670,7 +2678,7 @@ function renderReaderMove() {
     const r = readNumber(rdVal, rdKind);
     if (r.err) { addNarr(r.err); return; }
     addNpc([r.zh, r.py, ""], false);
-    if (r.notes.length) addFeedback("okay", r.notes.join(" "), null, { label: "Watch for", seal: "注" });
+    if (r.notes.length) addFeedback("note", r.notes.join(" "), null, { label: "Watch for", seal: "注" }); // a routine tip, not a verdict: no gold
     if (canSpeak) speak(r.zh.replace(/ /g, "，"));
   };
   const back = el("button", "btn ghost", `Back to ${{ phone: "phone numbers", time: "times" }[dKind] || "prices"} by ear`); back.onclick = () => startDrill();
@@ -3655,7 +3663,7 @@ function chatMsg(m, p, i) {
     if (m.open) {
       const tools = el("div", "b-tools");
       if (canSpeak) { const s = el("button", "say"); s.innerHTML = SPEAK_SVG; s.setAttribute("aria-label", "Listen"); s.onclick = () => speak(m.h, 0.85); tools.append(s); }
-      const nb = el("button", "linkish", "Save to notes"); nb.onclick = () => { noteAdd(`${m.h}${m.p ? "  " + m.p : ""}${m.e ? "  " + m.e : ""}`, `${p.han}, Unscripted`); nb.textContent = "Saved"; nb.disabled = true; };
+      const nb = saveBtn("linkish", m.h, () => noteAdd(`${m.h}${m.p ? "  " + m.p : ""}${m.e ? "  " + m.e : ""}`, `${p.han}, Unscripted`));
       tools.append(nb); bub.append(tools);
     }
   }
@@ -3714,7 +3722,7 @@ function chatHowEl(p) {
     const b = el("div", "how-opt"), use = el("button", "chip"); use.append(el("span", "han", o.h)); if (prefs.py) use.append(el("span", "py", o.p)); // follows the Pinyin switch, like the starters
     use.title = "Put it in the message box"; use.onclick = () => { chatDraft = o.h; chatHow = null; renderMove(); const i = $("#chat-input"); if (i) i.focus(); };
     b.append(use, el("span", "how-note", o.note ? `${String(o.e).replace(/[.!?。]\s*$/, "")}. ${o.note}` : o.e));
-    const sv = el("button", "linkish", "Save to notes"); sv.onclick = () => { noteAdd(`${o.h}  ${o.p}  ${o.e}`, `How to say "${chatHow.q}"`); sv.textContent = "Saved"; sv.disabled = true; };
+    const sv = saveBtn("linkish", o.h, () => noteAdd(`${o.h}  ${o.p}  ${o.e}`, `How to say "${chatHow.q}"`));
     if (canSpeak) { const s = el("button", "linkish", "Hear it"); s.onclick = () => speak(o.h); b.append(s); }
     b.append(sv); box.append(b);
   });
@@ -3862,6 +3870,12 @@ const saveNotes = () => { try { localStorage.setItem("sm-notes", JSON.stringify(
 const noteTitle = n => { const t = (n.body.split("\n").find(l => l.trim()) || "Empty note").trim(); return t.length <= 60 ? t : t.slice(0, 58).replace(/\s+\S*$/, "") + "…"; }; // cut at a word
 function noteNew(body) { const n = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), body: body || "", t: Date.now() }; NOTES.unshift(n); saveNotes(); return n; }
 // "Save to notes" from anywhere: into the note you have open, or a running "Saved lines" note
+// "Save to notes" that knows when the line is already in your notes, after a reload too, so it isn't added twice
+function saveBtn(cls, h, add) {
+  const b = el("button", cls, "Save to notes"), done = () => { b.textContent = "Saved"; b.disabled = true; };
+  try { if (NOTES.some(x => (x.body || "").includes(h))) done(); } catch {} // (NOTES isn't set yet during the very first render)
+  b.onclick = ev => { ev.stopPropagation(); add(); done(); }; return b;
+}
 function noteAdd(text, from) {
   let n = notesShown() && noteOpen && NOTES.find(x => x.id === noteOpen);
   if (!n) n = NOTES.find(x => x.saved) || Object.assign(noteNew("Saved lines\n"), { saved: true });
@@ -3982,7 +3996,7 @@ function renderFoot() {
   [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
   if (isJade() && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => jadeOpening(true); look.append(re); }
   // say plainly when the full world can't play, so a quiet screen is never a mystery (when the films play, there's nothing to explain)
-  if (isJade() && !jadeF) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
+  if (isJade() && (!jadeF || stillMotion())) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
   // the device setting wins by default, but it's your app: you can ask for the motion anyway
   const asked = document.documentElement.dataset.motion === "on";
   if (asked || stillMotion()) { const mo = el("button", "linkish", asked ? "Use less motion again" : "Play the motion anyway"); mo.onclick = () => { try { asked ? localStorage.removeItem("sm-motion") : localStorage.setItem("sm-motion", "on"); sessionStorage.removeItem("sm-opened-3d"); } catch {} location.reload(); }; look.append(mo); }
@@ -4126,43 +4140,44 @@ function startPhrasebook() {
   renderPhrases();
   renderRail(); renderMove();
 }
-function renderPhrases() {
-  const log = $("#log"); log.textContent = "";
-  const q = pbQuery.trim().toLowerCase(), qPy = normPy(q);
-  const hit = o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q) || (qPy && normPy(o.p).includes(qPy));
+// What the pocket holds for a search: the fixes for open mistakes, your own live lines, and each place's lines in story order
+function pocketFind(q) {
+  const hit = o => !q || lineMatches(o, q);
+  const places = railOrder().filter(s => done[s.id]);
+  const good = new Map(); places.forEach(s => s.turns.forEach(t => t.opts.forEach(o => { if (o.k === "good" && !good.has(o.h)) good.set(o.h, o); })));
   // Lines learned the hard way: the fixes for mistakes still open. Each is marked where it lives in its place;
   // only fixes with no place in the list yet get a section of their own, so no line shows twice.
-  const places = S.filter(s => done[s.id]);
-  const good = new Map(); places.forEach(s => s.turns.forEach(t => t.opts.forEach(o => { if (o.k === "good" && !good.has(o.h)) good.set(o.h, o); })));
   const slipWhy = new Map(), hard = [];
   activeItems().forEach(n => {
     if (!n.fix || slipWhy.has(n.fix)) return;
-    const why = "You got this wrong once" + (n.why ? ": " + unUnderstood(n.why).split(/(?<=\.)\s/)[0] : ".");
+    const why = (n.kind === "okay" ? "You were close here once" : "You got this wrong once") + (n.why ? ": " + unUnderstood(n.why) : ".");
     slipWhy.set(n.fix, why);
     if (!good.has(n.fix)) hard.push({ o: { h: n.fix, p: n.fixPy || "", e: "" }, why });
   });
-  const hardHits = hard.filter(({ o, why }) => !q || o.h.includes(q) || (qPy && normPy(o.p).includes(qPy)) || why.toLowerCase().includes(q));
-  if (hardHits.length) {
+  const hardHits = hard.filter(({ o, why }) => hit(o) || (q && why.toLowerCase().includes(q.toLowerCase()))).slice(0, 8);
+  const wl = store.get("sm-wander-lines", []).filter(hit).slice(0, 10);
+  const secs = places.map(s => ({ s, rows: s.turns.flatMap((t, ti) => t.opts.filter(o => o.k === "good" && hit(o)).map(o => ({ o, ti }))) })).filter(x => x.rows.length);
+  return { places, hard, hardHits, wl, secs, slipWhy, n: hardHits.length + wl.length + secs.reduce((a, x) => a + x.rows.length, 0) };
+}
+function renderPhrases() {
+  const log = $("#log"); log.textContent = "";
+  const q = pbQuery.trim(), f = pocketFind(q);
+  if (f.hardHits.length) {
     const sec = el("section", "pb hard");
     sec.append(el("h4", "pb-title", "From your open mistakes"));
-    hardHits.slice(0, 8).forEach(({ o, why }) => sec.append(phraseRow(o, null, why)));
+    f.hardHits.forEach(({ o, why }) => sec.append(phraseRow(o, null, why)));
     log.append(sec);
   }
-  const wl = store.get("sm-wander-lines", []).filter(o => !q || o.h.includes(q) || o.e.toLowerCase().includes(q));
-  if (wl.length) {
+  if (f.wl.length) {
     const sec = el("section", "pb");
     sec.append(el("h4", "pb-title", "Your own lines that worked, live"));
-    wl.slice(0, 10).forEach(o => sec.append(phraseRow(o, null)));
+    f.wl.forEach(o => sec.append(phraseRow(o, null)));
     log.append(sec);
   }
-  if (!places.length && !hard.length && !wl.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
-  let shown = 0;
-  places.forEach(s => {
-    const rows = [];
-    s.turns.forEach((t, ti) => t.opts.filter(o => o.k === "good" && hit(o)).forEach(o => rows.push(phraseRow(o, replyAfter(s, ti), slipWhy.get(o.h)))));
-    if (!rows.length) return;
+  if (!f.places.length && !f.hard.length && !f.wl.length) addNarr("Nothing here yet. Survive your first place and its lines land here.");
+  f.secs.forEach(({ s, rows }) => {
     const sec = el("section", "pb");
-    sec.append(el("h4", "pb-title", `${s.place} · ${s.en}`), ...rows);
+    sec.append(el("h4", "pb-title", `${s.place} · ${s.en}`), ...rows.map(({ o, ti }) => phraseRow(o, replyAfter(s, ti), f.slipWhy.get(o.h))));
     if (!q) {
       // The other half of the conversation: what people there say to you
       const hear = el("details", "pb-hear");
@@ -4170,10 +4185,10 @@ function renderPhrases() {
       heardRows(s, hear);
       sec.append(hear);
     }
-    shown += rows.length; log.append(sec);
+    log.append(sec);
   });
-  const hc = $("#pb-count"); if (hc) hc.textContent = q ? `${plural(shown, "line")} found` : hc.dataset.all; // the count follows the search
-  if (q && !shown && !hardHits.length) addNarr(`Nothing matches "${pbQuery}" yet. Survive more places to fill the phrasebook.`);
+  const hc = $("#pb-count"); if (hc) hc.textContent = q ? `${plural(f.n, "line")} found` : hc.dataset.all; // the count follows the search, and counts every row shown
+  if (q && !f.n) addNarr(`Nothing matches "${pbQuery}" yet. Survive more places to fill your pocket.`);
   log.scrollTop = 0;
 }
 function showLocal(o, reply) {
@@ -4186,7 +4201,7 @@ function showLocal(o, reply) {
   const en = el("div", "sl-en", o.e);
   const row = el("div", "sl-tools");
   if (canSpeak) { const b = el("button", "btn", "Play it"); b.onclick = ev => { ev.stopPropagation(); speak(o.h, 0.8); }; row.append(b); }
-  const sv = el("button", "btn ghost", "Save to notes"); sv.onclick = ev => { ev.stopPropagation(); noteAdd(`${o.h}  ${o.p || ""}  ${o.e || ""}`, "Your pocket"); sv.textContent = "Saved"; sv.disabled = true; }; row.append(sv);
+  const sv = saveBtn("btn ghost", o.h, () => noteAdd(`${o.h}  ${o.p || ""}  ${o.e || ""}`, "Your pocket")); row.append(sv);
   const x = el("button", "btn ghost", "Close"); x.onclick = close; row.append(x);
   ov.append(big, py, en);
   if (reply) {
@@ -4200,14 +4215,14 @@ function showLocal(o, reply) {
 }
 function renderPhrasesMove() {
   const m = $("#move"); m.textContent = "";
-  const n = S.filter(s => done[s.id]).reduce((a, s) => a + s.turns.reduce((b, t) => b + t.opts.filter(o => o.k === "good").length, 0), 0);
+  const n = pocketFind("").n;
   const head = el("div", "move-head");
   setTabs(pocketTabs("all"));
-  const hc = el("h3", null, plural(n, "phrase")); hc.id = "pb-count"; hc.dataset.all = hc.textContent;
+  const hc = el("h3", null, plural(n, "line")); hc.id = "pb-count"; hc.dataset.all = hc.textContent;
   head.append(hc, el("span", "prompt", `From ${plural(S.filter(s => done[s.id]).length, "place")} of ${S.length}.`));
   const form = el("form", "free");
   const inp = el("input"); inp.type = "search"; inp.autocomplete = "off"; inp.value = pbQuery;
-  inp.placeholder = "Find a line: \"toilet\", \"duoshao\", 谢谢…"; inp.setAttribute("aria-label", "Search the phrasebook");
+  inp.placeholder = "Find a line: \"toilet\", \"duoshao\", 谢谢…"; inp.setAttribute("aria-label", "Search your pocket");
   inp.oninput = () => { pbQuery = inp.value; renderPhrases(); };
   form.onsubmit = ev => ev.preventDefault();
   form.append(inp);
