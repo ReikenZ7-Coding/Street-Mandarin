@@ -1,0 +1,25 @@
+const { chromium } = require('./pw');
+(async () => {
+  const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1300, height: 900 } });
+  const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await pg.goto(require('./pw').APP);
+  await pg.evaluate(() => { localStorage.setItem('sm-done', JSON.stringify({ noodles: 1, toilet: 1, taxi: 1 })); localStorage.setItem('sm-notebook', JSON.stringify([{ sid: 'noodles', turn: 3, kind: 'wrong', said: '给你八十块。', fix: '扫码。', fixPy: 'Sǎo mǎ.', why: '十八 is 18. Listen.', t: 1, step: 0, due: 9e15 }])); });
+  await pg.reload();
+  await pg.locator('.scn', { hasText: 'Your pocket' }).click(); await pg.locator('.chip', { hasText: 'Every line' }).click();
+  console.log('SECTIONS:', await pg.locator('.pb-title').allInnerTexts());
+  await pg.fill('#move input[type=search]', 'toilet');
+  console.log('toilet →', (await pg.locator('#log').innerText()).replace(/\n+/g,' | ').slice(0,200));
+  await pg.fill('#move input[type=search]', 'zai nar');
+  console.log('zai nar →', await pg.locator('.pb-row .han').allInnerTexts());
+  await pg.fill('#move input[type=search]', '');
+  await pg.locator('.pb-row button', { hasText: 'Show' }).nth(1).click();
+  console.log('SHOW:', (await pg.locator('.show-local').innerText()).replace(/\n+/g,' | '));
+  await pg.screenshot({ path: 'show.png' });
+  await pg.keyboard.press('Escape');
+  console.log('closed:', await pg.locator('.show-local').count());
+  await pg.setViewportSize({ width: 390, height: 800 });
+  await pg.locator('.pb-row button', { hasText: 'Show' }).nth(2).click();
+  await pg.screenshot({ path: 'show-m.png' });
+  console.log('ERRORS', errs); await b.close();
+})();

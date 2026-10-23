@@ -1,0 +1,30 @@
+const { chromium } = require('./pw');
+(async () => {
+  const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1300, height: 1000 } });
+  const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
+  await pg.addInitScript(() => { Math.random = () => 0.99; });
+  await pg.goto(require('./pw').APP);
+  await pg.locator('#tool-nb').click();
+  await pg.locator('#nb-actions .btn', { hasText: 'for real' }).click();
+  await pg.selectOption('.field-place', 'taxi');
+  const go = async (said, heard) => {
+    if (said) await pg.fill('.field input >> nth=0', said);
+    if (heard) await pg.fill('.field input >> nth=1', heard);
+    await pg.click('.field .btn'); await pg.waitForTimeout(200);
+    console.log(`said="${said||''}" heard="${heard||''}" →`, (await pg.locator('#log .fb').last().innerText()).replace(/\n+/g, ' | ').slice(0, 230));
+  };
+  await go('wo qu huoche');
+  await go('去火车站');
+  await go('我要去机场站', '');
+  await go('', 'zou gaosu');
+  console.log('LOG tail:', (await pg.locator('#log').innerText()).replace(/\n+/g,' | ').slice(-200));
+  await pg.locator('#log .why-btn').first().click().catch(() => {});
+  console.log('why:', await pg.locator('#log .why-out').count());
+  await pg.screenshot({ path: 'field.png', fullPage: true });
+  await pg.locator('#move .btn', { hasText: 'See it in Mistakes' }).click();
+  console.log('NB:', (await pg.locator('#nb-list').innerText()).replace(/\n+/g, ' | ').slice(0, 300));
+  await pg.locator('#nb-actions .btn').first().click();
+  console.log('REVIEW:', (await pg.locator('#log').innerText()).replace(/\n+/g, ' | ').slice(0, 160));
+  console.log('ERRORS', errs); await b.close();
+})();

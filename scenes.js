@@ -236,7 +236,7 @@ window.SCENES = [
         opts: [
           { h: "再要一瓶水。", b: "再|要|一瓶|水", p: "Zài yào yì píng shuǐ.", e: "And a bottle of water.", k: "good", note: "再 zài adds one more thing. 瓶 píng is the measure word for bottles." },
           { h: "再要一个水。", p: "Zài yào yí ge shuǐ.", e: "And one water.", k: "okay", tag: "grammar", r: ["一瓶水？好。", "Yì píng shuǐ? Hǎo.", "A bottle of water? Sure."], note: "Water comes in bottles: 一瓶水 yì píng shuǐ. 个 works, but 瓶 sounds natural.", fix: ["再要一瓶水。", "Zài yào yì píng shuǐ."] },
-          { h: "没有。", p: "Méiyǒu.", e: "There isn't any.", k: "wrong", tag: "agreeing", r: ["没有？没有什么？你还要别的吗？", "Méiyǒu? Méiyǒu shénme? Nǐ hái yào bié de ma?", "There isn't? There isn't what? Do you want anything else?"], note: "没有 méiyǒu means \"don't have\" or \"there isn't\". To add something, say 再要 zài yào or 还要 hái yào.", fix: ["再要一瓶水。", "Zài yào yì píng shuǐ."] }
+          { h: "没有。", p: "Méiyǒu.", e: "There isn't any.", k: "wrong", tag: "words", r: ["没有？没有什么？你还要别的吗？", "Méiyǒu? Méiyǒu shénme? Nǐ hái yào bié de ma?", "There isn't? There isn't what? Do you want anything else?"], note: "没有 méiyǒu means \"don't have\" or \"there isn't\". To add something, say 再要 zài yào or 还要 hái yào.", fix: ["再要一瓶水。", "Zài yào yì píng shuǐ."] }
         ] },
       { npc: ["要袋子吗？", "Yào dàizi ma?", "Need a bag?"], prompt: "You don't need one.",
         opts: [
@@ -544,8 +544,8 @@ window.SCENES = [
       { npc: ["不过……你带纸了吗？里面可能没有。", "Búguò… nǐ dài zhǐ le ma? Lǐmiàn kěnéng méiyǒu.", "But… did you bring paper? There might not be any in there."], prompt: "You haven't. Ask where to buy tissues.",
         opts: [
           { h: "没带。哪儿能买纸巾？", b: "没带|哪儿|能|买|纸巾", p: "Méi dài. Nǎr néng mǎi zhǐjīn?", e: "I didn't. Where can I buy tissues?", k: "good", note: "没带 méi dài, \"didn't bring\". Tissues are 纸巾 zhǐjīn." },
-          { h: "什么纸？", p: "Shénme zhǐ?", e: "What paper?", k: "good", note: "Asking is always better than guessing. 纸 zhǐ here means toilet paper." },
-          { h: "带了！", p: "Dài le!", e: "I did!", k: "wrong", tag: "listening", carry: "Found out the hard way there was no paper", r: ["那就好，去吧。", "Nà jiù hǎo, qù ba.", "Good, off you go then."], note: "带了 means you brought it. When you don't catch a word, ask: 什么纸？", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] }
+          { h: "什么纸？", p: "Shénme zhǐ?", e: "What paper?", k: "okay", tag: "listening", r: ["卫生纸啊！上厕所用的。", "Wèishēngzhǐ a! Shàng cèsuǒ yòng de.", "Toilet paper! For when you go."], note: "Asking beats guessing, but here 纸 zhǐ is toilet paper, and you haven't brought any. Say so, and ask where to buy some.", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] },
+          { h: "带了！", p: "Dài le!", e: "I did!", k: "wrong", tag: "listening", carry: "Found out the hard way there was no paper", r: ["那就好，去吧。", "Nà jiù hǎo, qù ba.", "Good, off you go then."], note: "带了 means you brought it, so they let you go without any. You haven't: say 没带 and ask where to buy some.", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] }
         ] }
     ],
     end: ["二楼有卖纸巾的机器，扫码就行。", "Èr lóu yǒu mài zhǐjīn de jīqì, sǎo mǎ jiù xíng.", "There's a tissue machine on the second floor. Just scan the code."],
