@@ -27,8 +27,9 @@ const { chromium } = require('./pw');
     if (w < 500) await pg.screenshot({ path: 't65-morning-390.png' });
     // Review them: the first is the noodle shop; typing the taught line is right
     await pg.locator('#move .endcard .btn').first().click(); await pg.waitForTimeout(300);
-    const narr = await pg.locator('#log').innerText();
-    if (!narr.includes("Yesterday's mistakes")) bad.push('no early note');
+    // the side list and Mistakes agree with the morning: they're due now, not "none due yet"
+    const meta = await pg.evaluate(() => [$('#tool-nb .meta').textContent, whenText(rq[0])]);
+    if (!meta[0].startsWith('2 due now') || meta[1] !== 'Due now') bad.push('due disagrees: ' + meta.join(' | '));
     const t = await pg.evaluate(() => { const n = rq[0]; return matchTyped('十八块，扫码', scriptedTurn(sceneFor(n), n)).how; });
     if (t !== 'exact') bad.push('review typed: ' + t);
     await pg.evaluate(() => { rq.forEach(n => markReviewed(n, true)); ri = rq.length; renderReviewMove(); }); await pg.waitForTimeout(200);

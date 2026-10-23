@@ -24,7 +24,8 @@ const run = t => new Promise(done => {
   p.on('close', code => {
     clearTimeout(timer);
     const lines = out.trim().split('\n');
-    const why = lines.filter(l => /^FAIL|TIMEOUT|^\s*at .*\.js:\d+|Error:/.test(l) || /^(ERRORS|errs|BAD) \[(?!\])/.test(l.trim()));
+    const fi = lines.findIndex(l => /^FAIL t\d+/.test(l)); // a test's own FAIL line is followed by its reasons
+    const why = fi >= 0 ? lines.slice(fi, fi + 6) : lines.filter(l => /^FAIL|TIMEOUT|^\s*at .*\.js:\d+|Error:/.test(l) || /^(ERRORS|errs|BAD) \[(?!\])/.test(l.trim()));
     done({ t, ok: code === 0 && !why.length, why: why.slice(0, 6), tail: lines.slice(-4) });
   });
 });

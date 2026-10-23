@@ -293,6 +293,8 @@ body.no-py .tap-rv.rv-open .py, body.no-en .tap-rv.rv-open .tr { display: revert
 .fb .better { margin-top: 6px; font-size: 14px; }
 .fb .better .h { font-family: var(--f-han); font-weight: 600; font-size: 17px; }
 .fb .better .p { font-family: var(--f-py); color: var(--muted); }
+/* Chinese breaks between clauses, not inside a word: no lone 吗 or half of 纸巾 on the next line */
+.han, .fb .better .h { word-break: keep-all; overflow-wrap: break-word; }
 
 /* Your move */
 .move { border-top: 1px solid var(--line); padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -401,6 +403,7 @@ body.hint-off .opt .en-line { display: none; }
 .pb-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px dashed var(--line); padding-top: 6px; }
 .pb-row .han { font-size: 18px; }
 .pb-tools { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+@media (max-width: 560px) { .pb-row { flex-wrap: wrap; row-gap: 4px; } .pb-row .pb-tools { margin-left: auto; } } /* a long line gets the full width; its buttons go under it */
 .pb.hard .pb-title { color: var(--cinnabar); }
 .pb-why { font-size: 13px; color: var(--cinnabar); margin-top: 2px; }
 .trip-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--surface); }
@@ -1264,8 +1267,7 @@ function renderRail() {
   $("#scene").classList.toggle("chatting", mode === "chat" && !!chatWho);
   const nDone = S.filter(s => done[s.id]).length;
   const nMast = S.filter(s => (mastery[s.id] || {}).curve || ((mastery[s.id] || {}).clean && !poolSize(s.id))).length;
-  const nCan = S.filter(s => canDo(s.id)).length;
-  rail.append(el("h2", "rail-sub", nDone ? `Short Story · ${nDone} of ${S.length} places${nCan ? ` · ${nCan} you can do alone` : ""}` : "Short Story · ten days"));
+  rail.append(el("h2", "rail-sub", nDone ? `Short Story · ${nDone} of ${S.length} places` : "Short Story · ten days"));
   const placeBtn = (s, next) => {
     const b = el("button", "scn"); b.setAttribute("aria-current", mode === "scene" && cur && cur.id === s.id ? "true" : "false");
     const miss = notebook.filter(n => n.sid === s.id && !n.learned).length;
@@ -1867,24 +1869,29 @@ function rematch() {
   $("#log").textContent = ""; addNarr("Same place, same people. Only the moments you missed.");
   renderRail(); beginTurn();
 }
+// The kind of mistake that came up most. "Mostly" only when it really is: more than one, and more than half
+function topKind(tags) {
+  tags = tags.filter(Boolean); const kinds = {}; tags.forEach(t => kinds[t] = (kinds[t] || 0) + 1);
+  const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
+  return { pat, most: !!pat && kinds[top] > 1 && kinds[top] * 2 > tags.length };
+}
 function renderEnd() {
   const m = $("#move");
   if (!runMisses.length && !cur._leaves) { cur._leaves = true; leafFall(); }
   const head = el("div", "move-head");
-  head.append(el("h3", null, cur._rematch ? (runMisses.length ? "Rematch over, still a slip or two" : "Rematch won") : outcomes.length ? "You made it, at a price" : "You survived"));
+  head.append(el("h3", null, cur._rematch ? (runMisses.length ? (runMisses.length === 1 ? "Rematch over, one slip left" : `Rematch over, ${runMisses.length} slips left`) : "Rematch won") : outcomes.length ? "You made it, at a price" : "You survived"));
   head.classList.toggle("won", !runMisses.length); // a clean run is one of the few things that earns gold
   // A short scorecard: what it cost, what slipped, what surprised you, what you earned. One line each
   const res = el("dl", "score");
   const line = (k, ...v) => { const dd = el("dd"); dd.append(...v); res.append(el("dt", null, k), dd); };
   if (outcomes.length) { const ul = el("ul"); outcomes.forEach(o => ul.append(el("li", null, o))); line("It cost you", ul); }
   else line("It cost you", "Nothing. No slip had a lasting price.");
-  const kinds = {}; runMissTags.forEach(t => kinds[t] = (kinds[t] || 0) + 1);
-  const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
+  const { pat, most } = topKind(runMissTags);
   // a stop cut short only counts (and only names surprises from) the moments you actually reached
   const played = endCut ? Math.min(turn + 1, cur.turns.length) : cur.turns.length, metHere = surprises.filter(x => cur.turns.slice(0, played).some(t => t._cb === x.key));
   if (runMisses.length) {
     const parts = [`${runMisses.length} of ${plural(played, "moment")}`];
-    if (pat) { const go = el("button", "linkish", "Drill that"); go.onclick = () => startPattern(pat.id); parts.push(`, mostly ${pat.en.toLowerCase()}. `, go, " across every place."); }
+    if (pat && (most || runMisses.length === 1)) { const go = el("button", "linkish", "Drill that"); go.onclick = () => startPattern(pat.id); parts.push(`${most ? ", mostly" : ":"} ${pat.en.toLowerCase()}. `, go, " across every place."); }
     line("Mistakes", ...parts);
   } else line("Mistakes", "None. A clean run.");
   const base = S.find(x => x.id === cur.id), poolN = (base.curveballs || []).length + twistPool(cur.id).length, met = (seenCb[cur.id] || []).length;
@@ -1893,7 +1900,7 @@ function renderEnd() {
   if (!cur._rematch) {
     const can = CAN[cur.id] ? lcFirst(CAN[cur.id]) : "do this";
     const msg = lastGained.includes("curve") ? (lastGained.includes("clean") ? `New: you can ${can} on your own, even when something unexpected comes up. Mastered.` : "Clean through a surprise too. Mastered.") : lastGained.includes("clean") ? `New: you can ${can} on your own.` + (poolSize(cur.id) ? " Next, get through a surprise cleanly." : "")
-      : mk.curve ? "All three. Mastered." : mk.clean ? `You can ${can}. Next: get through a surprise without a slip.` : `A clean run, with no slips, and you can say you can ${can} on your own.`;
+      : mk.curve ? "All three. Mastered." : mk.clean ? `You can ${can}. Next: get through a surprise without a slip.` : `Get through with no slips and you can ${can} on your own.`;
     line(lastGained.includes("clean") ? "You can now" : "Next", marksEl(cur.id), " " + msg);
   }
   if (rush) line("Rush hour", rushLate ? `You kept people waiting ${rushLate === 1 ? "once" : rushLate === 2 ? "twice" : rushLate + " times"}. Next time, say the first thing that fits; a short answer beats a perfect late one.` : "You kept up. Nobody had to wait.");
@@ -1943,7 +1950,9 @@ function renderEnd() {
 /* ---------- notebook + spaced comebacks ---------- */
 const DAY = 864e5, GAPS = [1, 3, 7]; // days until a mistake comes back; 3 right answers and it's learned
 const activeItems = () => notebook.filter(n => !n.learned);
-const dueItems = () => activeItems().filter(n => (n.due || 0) <= Date.now());
+// Due by the date, or by the story: a mistake from a day you've since finished is back the next story morning, whatever the date says
+const isDue = n => (n.due || 0) <= Date.now() || (!n.rv && dayOf(n.sid) >= 0 && dayOf(n.sid) < curDay());
+const dueItems = () => activeItems().filter(isDue);
 function saveNotebook() { store.set("sm-notebook", notebook); renderNotebook(); renderRail(); }
 function logMistake(entry) {
   const now = Date.now();
@@ -1970,7 +1979,7 @@ function markReviewed(n, right, hold) {
 }
 function whenText(n) {
   if (n.learned) return "Learned";
-  const d = Math.ceil(((n.due || 0) - Date.now()) / DAY);
+  const d = isDue(n) ? 0 : Math.ceil(((n.due || 0) - Date.now()) / DAY);
   return d <= 0 ? "Due now" : d === 1 ? "Comes back tomorrow" : `Comes back in ${d} days`;
 }
 let confirmClear = false, lastActive = -1;
@@ -2043,9 +2052,9 @@ let rHow = "pick", rGood = null, rTiles = null, rHeld = false, rAgain = new Set(
 // A miss comes back once more at the end of the round, so you produce the fix while it's fresh
 function again(n) { if (!rAgain.has(n)) { rAgain.add(n); rq.push(n); } }
 const ROUND_MAX = 10; // a round is short on purpose; the rest wait for the next one
-function startReview(early) {
+function startReview() {
   mode = "review"; busy = false; transcript = [];
-  const due = early && early.length ? early : dueItems();
+  const due = dueItems();
   const seenAt = new Set();
   rq = (due.length ? due : activeItems()).slice().sort((a, b) => (a.due || 0) - (b.due || 0))
     .filter(n => { const k = n.sid + (n.turn != null ? "t" + n.turn : n.cb != null ? "c" + n.cb : "s" + n.said); if (seenAt.has(k)) return false; seenAt.add(k); return true; }).slice(0, ROUND_MAX);
@@ -2054,7 +2063,6 @@ function startReview(early) {
   $("#log").textContent = "";
   renderRail();
   if (!rq.length) { addNarr("No mistakes to review yet. Go get some wrong first."); return renderReviewMove(); }
-  if (early && early.length) addNarr("Yesterday's mistakes, before you head out. They'd normally wait for tomorrow's date, but you've moved on to the next day already.");
   else if (!due.length) addNarr("Nothing is due yet, so this round is extra practice. It still counts.");
   reviewItem();
 }
@@ -2106,7 +2114,7 @@ function reviewChoose(o) {
   const rung = `${whenText(n)}, and it'll ask you to ${LADDER[Math.min(n.step || 0, 2)][2]} again.`;
   const msg = o.k === "wrong" ? o.note
     : o._close === "slip" ? (n.learned ? "Close enough, with one small slip, and that's the third time. It's learned." : `Close enough, with one small slip. ${whenText(n)}${n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`)
-    : close ? `${o._close ? "Most of it, but not the whole line" : o.note + " Close enough"}, so it stays where it was. ${rung}`
+    : close ? `${o._close ? "Most of it, but not the whole line, so it" : o.note + " It"} stays where it was. ${rung}`
     : n.learned ? "Third time right. It's learned and leaves Mistakes."
     : rHeld ? `${rHeld === "again" ? "Got it this time." : "Right, with the choices on screen."} ${rung}`
     : `Right this time. ${whenText(n)}${rGood && n.step < 3 ? `, and next time you'll ${LADDER[n.step][2]}` : ""}.`;
@@ -2739,7 +2747,7 @@ function renderTripMove() {
   head.append(el("h3", null, "Ready?"), edit);
   const row = el("div", "endcard");
   const warm = el("button", "btn", "Warm up on every moment"); warm.onclick = () => startTripWarmup();
-  row.append(warm); m.append(head, row);
+  row.append(warm, backBtn()); m.append(head, row); // a way home, like every drill and review has
 }
 function startTripWarmup() {
   mode = "pattern"; busy = false; transcript = []; pPat = null;
@@ -2800,11 +2808,11 @@ function startHome(day) {
   const part = (en, zh, sub) => { const h = el("div", "day-part"); h.append(el("span", "dp-zh", zh), el("span", "dp-en", en)); if (sub) h.append(el("span", "dp-sub", sub)); log.append(h); };
   // Morning: get ready. Once the day's stops are done it has served its purpose, so Evening comes up under the stops
   const finishedDay = dayDone(homeDay), started = stops.some(s => done[s.id]);
-  const early = homeMorningSlips(started), due = dueItems().length || early.length;
+  const due = dueItems().length;
   if (!finishedDay) {
   part("Morning", "早上", started ? null : "Get ready");
   const am = el("div", "today");
-  if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One mistake is back" : `${due} mistakes are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview(dueItems().length ? null : early) }, true));
+  if (due) am.append(homeCard({ kind: "From before", han: "复习", title: due === 1 ? "One mistake is back" : `${due} mistakes are back`, why: due === 1 ? "Get it right now and it'll go better out there." : "Get them right now and they'll go better out there.", go: () => startReview() }, true));
   am.append(homeCard({ kind: "Your pocket", han: "口袋", title: stops.length === 1 ? "Lines for today's stop" : `Lines for today's ${stops.length === 2 ? "two" : "three"} stops`, why: "What to say, what you'll hear and the traps, including your own. Read it, or warm up.",
     go: () => { trip = { day: dayKey(), ids: stops.map(s => s.id), auto: homeDay === curDay(), dayIdx: homeDay }; store.set("sm-trip", trip); tripEditing = false; startTrip(); } }));
   // A note you pinned comes with you every morning, like the page you keep open in a paper notebook
@@ -2825,12 +2833,12 @@ function startHome(day) {
   if (started) {
     part("Evening", "晚上", dayDone(homeDay) ? null : "So far");
     const pm = el("div", "today"), ids = stops.map(s => s.id);
-    const slips = notebook.filter(x => ids.includes(x.sid) && !x.learned), kinds = {};
-    slips.forEach(x => { const g = tagOf(x); if (g) kinds[g] = (kinds[g] || 0) + 1; });
-    const top = Object.keys(kinds).sort((a, b) => kinds[b] - kinds[a])[0], pat = top && PATTERNS.find(p => p.id === top);
-    if (!slips.length) pm.append(homeCard({ kind: "Today's mistakes", han: "错题本", title: "None open from today", why: "Nothing to bring back tomorrow. Older ones wait in Mistakes.", go: () => openNotebook() }));
-    else pm.append(homeCard({ kind: "Today's mistakes", han: "错题本", title: `${plural(slips.length, "mistake")} from today`, why: "They're in Mistakes, and they come back tomorrow morning.", go: () => openNotebook() }));
-    if (pat) pm.append(homeCard({ kind: "Tonight's drill", drill: 1, han: pat.zh, title: `Mostly ${pat.en.toLowerCase()}`, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
+    const slips = notebook.filter(x => ids.includes(x.sid) && !x.learned), { pat, most } = topKind(slips.map(tagOf));
+    // Looking back at an earlier day: its mistakes have already had their morning, so no "tomorrow"
+    const past = homeDay < curDay(), dayN = `day ${homeDay + 1}`;
+    if (!slips.length) pm.append(homeCard({ kind: past ? "That day's mistakes" : "Today's mistakes", han: "错题本", title: past ? `None open from ${dayN}` : "None open from today", why: past ? "Nothing from that day is still open." : "Nothing to bring back tomorrow. Older ones wait in Mistakes.", go: () => openNotebook() }));
+    else pm.append(homeCard({ kind: past ? "That day's mistakes" : "Today's mistakes", han: "错题本", title: past ? `${plural(slips.length, "mistake")} still open from ${dayN}` : `${plural(slips.length, "mistake")} from today`, why: past ? "They're in Mistakes, coming back on their own schedule." : "They're in Mistakes, and they come back tomorrow morning.", go: () => openNotebook() }));
+    if (pat) pm.append(homeCard({ kind: past ? "A drill for it" : "Tonight's drill", drill: 1, han: pat.zh, title: most ? `Mostly ${pat.en.toLowerCase()}` : pat.en, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
     // Without AI, the evening keeps to what works: no story or chat that would stop at "needs AI"
     if (sample || LS) pm.append(lsTonight());
     // Someone you met today can carry on the conversation in Unscripted
@@ -2915,21 +2923,14 @@ function lsTonight() {
   if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
   return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? `A light novel set in China, written around you. It needs ${AI_NAME}, so ${aiHow(true)} to start one.` : `A light novel set in China, written around you by ${AI_NAME}, a volume a day.`, go: () => startLong() });
 }
-// Yesterday's open slips, for a morning reached by playing straight on: by the clock they'd only be due
-// tomorrow, but the story has moved to the next day, so "they come back tomorrow morning" has to hold
-function homeMorningSlips(started) {
-  if (started || homeDay === 0 || !dayDone(homeDay - 1)) return [];
-  const ids = DAYS[homeDay - 1].stops.map(x => x.id);
-  return activeItems().filter(n => ids.includes(n.sid) && !n.rv && (n.due || 0) > Date.now());
-}
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
   const d = DAYS[homeDay], stops = d.stops.map(x => S.find(s => s.id === x.id)), next = stops.find(s => !done[s.id]);
   const row = el("div", "endcard"), started = stops.some(s => done[s.id]);
-  const back = dueItems().length, early = back ? [] : homeMorningSlips(started);
-  if (next && !started && (back || early.length)) {
-    const n = back || early.length, r = el("button", "btn", n === 1 ? "Review your mistake first" : `Review ${Math.min(n, ROUND_MAX)} mistakes first`);
-    r.onclick = () => startReview(back ? null : early); row.append(r); // the stop itself is the next card down, so no second button for it
+  const back = dueItems().length;
+  if (next && !started && back) {
+    const r = el("button", "btn", back === 1 ? "Review your mistake first" : `Review ${Math.min(back, ROUND_MAX)} mistakes first`);
+    r.onclick = () => startReview(); row.append(r); // the stop itself is the next card down, so no second button for it
   } else if (next) { const go = el("button", "btn", `Go: ${next.en}`); go.onclick = () => start(next.id); row.append(go); }
   else if (homeDay < DAYS.length - 1 && dayDone(homeDay + 1)) { const c = curDay(), go = el("button", "btn", dayDone(c) ? "Back to day 10" : `Back to day ${c + 1}: ${DAYS[c].title}`); go.onclick = () => startHome(c); row.append(go); } // looking back: the next day's already done
   else if (homeDay < DAYS.length - 1) { const go = el("button", "btn", `Start day ${homeDay + 2}: ${DAYS[homeDay + 1].title}`); go.onclick = () => { cranes(); jadeDawn(homeDay + 2); startHome(homeDay + 1); }; row.append(go); }
