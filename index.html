@@ -1197,7 +1197,7 @@ const DAYS = ((window.JOURNEY || {}).days || []).map(d => Object.assign({}, d, {
 const CAN = (window.JOURNEY || {}).can || {};
 const NUM_PY = ["", "yī", "èr", "sān", "sì", "wǔ", "liù", "qī", "bā", "jiǔ", "shí"], NUM_HAN = "〇一二三四五六七八九十";
 const zhNum = n => n <= 10 ? NUM_HAN[n] : n < 20 ? "十" + (n % 10 ? NUM_HAN[n % 10] : "") : NUM_HAN[Math.floor(n / 10)] + "十" + (n % 10 ? NUM_HAN[n % 10] : "");
-const pyNum = n => n <= 10 ? NUM_PY[n] : n < 20 ? "shí" + (n % 10 ? NUM_PY[n % 10] : "") : NUM_PY[Math.floor(n / 10)] + "shí" + (n % 10 ? NUM_PY[n % 10] : "");
+const pyNum = n => n <= 10 ? NUM_PY[n] : (n < 20 ? "shí" : NUM_PY[Math.floor(n / 10)] + "shí") + (n % 10 ? NUM_PY[n % 10].replace(/^[aāáǎàeēéěèoōóǒò]/, "'$&") : ""); // shí'èr: apostrophe before a syllable starting a/e/o
 const dayOf = id => DAYS.findIndex(d => d.stops.some(x => x.id === id));
 const stopOf = id => { const d = dayOf(id); return d < 0 ? null : DAYS[d].stops.find(x => x.id === id); };
 const dayDone = i => DAYS[i].stops.every(x => done[x.id]);
