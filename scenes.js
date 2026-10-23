@@ -544,7 +544,7 @@ window.SCENES = [
       { npc: ["不过……你带纸了吗？里面可能没有。", "Búguò… nǐ dài zhǐ le ma? Lǐmiàn kěnéng méiyǒu.", "But… did you bring paper? There might not be any in there."], prompt: "You haven't. Ask where to buy tissues.",
         opts: [
           { h: "没带。哪儿能买纸巾？", b: "没带|哪儿|能|买|纸巾", p: "Méi dài. Nǎr néng mǎi zhǐjīn?", e: "I didn't. Where can I buy tissues?", k: "good", note: "没带 méi dài, \"didn't bring\". Tissues are 纸巾 zhǐjīn." },
-          { h: "什么纸？", p: "Shénme zhǐ?", e: "What paper?", k: "okay", tag: "listening", r: ["卫生纸啊！上厕所用的。", "Wèishēngzhǐ a! Shàng cèsuǒ yòng de.", "Toilet paper! For the toilet."], note: "Asking beats guessing, but here 纸 zhǐ is toilet paper, and you haven't brought any. Say so, and ask where to buy some.", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] },
+          { h: "什么纸？", p: "Shénme zhǐ?", e: "What paper?", k: "okay", tag: "listening", r: ["卫生纸啊！上厕所用的。", "Wèishēngzhǐ a! Shàng cèsuǒ yòng de.", "Toilet paper! For when you go."], note: "Asking beats guessing, but here 纸 zhǐ is toilet paper, and you haven't brought any. Say so, and ask where to buy some.", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] },
           { h: "带了！", p: "Dài le!", e: "I did!", k: "wrong", tag: "listening", carry: "Found out the hard way there was no paper", r: ["那就好，去吧。", "Nà jiù hǎo, qù ba.", "Good, off you go then."], note: "带了 means you brought it, so they let you go without any. You haven't: say 没带 and ask where to buy some.", fix: ["没带。哪儿能买纸巾？", "Méi dài. Nǎr néng mǎi zhǐjīn?"] }
         ] }
     ],
