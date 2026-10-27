@@ -9,10 +9,14 @@ const M = require('./ai/standin-model.js');
   pg.on('pageerror', e => errs.push(e.message)); await pg.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   await pg.addInitScript(() => {
     window.__said = [];
-    window.Capacitor = { isNativePlatform: () => true, registerPlugin: name => name === 'TextToSpeech' ? {
-      speak: o => { window.__said.push(o.text + '|' + o.lang); return new Promise(r => setTimeout(r, 30)); }, stop: () => Promise.resolve() } : {} };
+    // what Android's native bridge provides; capacitor.js builds registerPlugin on top of it
+    window.androidBridge = { postMessage() {} };
+    window.Capacitor = { PluginHeaders: [{ name: 'TextToSpeech', methods: ['speak', 'stop'] }, { name: 'WebView', methods: ['setServerBasePath', 'getServerBasePath', 'persistServerBasePath', 'setServerAssetPath'] },
+      { name: 'Filesystem', methods: ['writeFile', 'copy', 'mkdir', 'rmdir', 'readdir', 'getUri', 'readFile', 'deleteFile', 'stat'] }].map(h => ({ name: h.name, methods: h.methods.map(name => ({ name, rtype: 'promise' })) })), nativeCallback() {},
+      nativePromise: (name, op, o) => name !== 'TextToSpeech' ? Promise.reject(new Error('not here')) : op === 'speak' ? (window.__said.push(o.text + '|' + o.lang), new Promise(r => setTimeout(r, 30))) : Promise.resolve() };
     if (!sessionStorage.getItem('__init')) { sessionStorage.setItem('__init', '1'); localStorage.setItem('sm-said', '1'); }
   });
+  await pg.addInitScript({ path: require.resolve('@capacitor/core/dist/capacitor.js', { paths: [require('path').resolve(__dirname, '../../android-app')] }) });
   await pg.addInitScript({ path: require('path').resolve(__dirname, '../../android-app/app-shim.js') });
   await pg.goto(require('./pw').APP); await pg.waitForTimeout(1000);
   if (!/on this phone only/.test(await pg.locator('#foot').innerText())) bad.push('footer still says browser');

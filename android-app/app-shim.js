@@ -75,18 +75,27 @@
     for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
     return btoa(s);
   }
-  const fetchBuf = async url => { const r = await fetch(url, { cache: "no-store" }); if (!r.ok) throw new Error(url + " " + r.status); return r.arrayBuffer(); };
+  const fetchBuf = async url => {
+    const where = url.startsWith(BASE) ? "GitHub" : "the app's own files";
+    let r; try { r = await fetch(url, { cache: "no-store" }); } catch (e) { throw new Error(`couldn't reach ${where} (${e && e.message || e})`); }
+    if (!r.ok) throw new Error(`${where} answered ${r.status}`); return r.arrayBuffer();
+  };
+  // what the last check found, for the footer's "Check for updates"
+  const note = text => { set("sm-web-status", { text, at: Date.now() }); return text; };
+  const ready = v => banner(`Version ${v} is ready.`, "Restart now", () => apply());
 
   let checking = false, lastCheck = 0;
-  async function check() {
-    if (checking) return; checking = true; lastCheck = Date.now();
+  async function check(asked) {
+    if (checking) return "Already checking…"; checking = true; lastCheck = Date.now();
     try {
       const list = await fetchBuf(BASE + "web.json?t=" + Date.now()), up = JSON.parse(new TextDecoder().decode(list));
       const next = get("sm-web-next");
-      if (!(up.v > WEB.v) || up.v === get("sm-web-bad") || (next && next.v >= up.v)) return;
+      if (next && next.v >= up.v && next.v > WEB.v) { if (asked) ready(next.v); return note(`Version ${next.v} is ready. It starts the next time the app opens.`); }
+      if (!(up.v > WEB.v)) return note(`Up to date (version ${WEB.v}).`);
+      if (up.v === get("sm-web-bad")) return note(`Version ${up.v} didn't start properly here, so this one is kept.`);
       if (up.native !== WEB.native) {
-        if (get("sm-web-asked") !== up.v) { set("sm-web-asked", up.v); banner("A new version of the app is ready, and this one needs installing.", "Get it", () => { location.href = BASE + "street-mandarin.apk"; }); }
-        return;
+        if (asked || get("sm-web-asked") !== up.v) { set("sm-web-asked", up.v); banner("A new version of the app is ready, and this one needs installing.", "Get it", () => { location.href = BASE + "street-mandarin.apk"; }); }
+        return note(`Version ${up.v} needs the new app installed.`);
       }
       const mine = JSON.parse(new TextDecoder().decode(await fetchBuf("web.json")));
       const onDisk = /^\//.test((await WV.getServerBasePath()).path || ""); // a downloaded version, in web/<v>
@@ -107,13 +116,16 @@
       await FS.writeFile({ path: dir + "/web.json", data: b64(list), directory: D, recursive: true }); // its own list, for the next update
       const { uri } = await FS.getUri({ path: dir, directory: D });
       set("sm-web-next", { v: up.v, path: decodeURIComponent(uri.replace(/^file:\/\//, "")) });
+      ready(up.v);
       // older downloads aren't needed any more
       const { files } = await FS.readdir({ path: "web", directory: D });
       for (const e of files) { const n = e.name || e; if (n !== String(WEB.v) && n !== String(up.v)) await FS.rmdir({ path: "web/" + n, directory: D, recursive: true }).catch(() => {}); }
-    } catch (e) { console.warn("Update check:", e && e.message || e); }
+      return note(`Version ${up.v} is ready. It starts the next time the app opens.`);
+    } catch (e) { console.warn("Update check:", e && e.message || e); return note("Couldn't update: " + (e && e.message || e) + "."); }
     finally { checking = false; }
   }
 
+  WEB.check = () => check(true);
   addEventListener("load", () => setTimeout(async () => {
     if (typeof startHome !== "function" || !document.getElementById("foot")) return; // didn't start properly: not kept
     const t = get("sm-web-trying");

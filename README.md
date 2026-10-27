@@ -21,7 +21,7 @@ The rules every AI that isn't Claude follows live in `ai.js`, shared by the page
 
 ## The Android app
 
-`android-app/` wraps the same page as an Android app with [Capacitor](https://capacitorjs.com). There's no server: the phone talks to the learner's own AI (Claude, ChatGPT, Gemini, DeepSeek, GLM, Qwen, OpenRouter) with their key, which stays on that phone, and their progress lives on the phone too. Lines are read aloud by the phone's own voice (`app-shim.js`). Android's web view has no speech recognition, so the Speak button doesn't show; the keyboard's own mic works in its place.
+`android-app/` wraps the same page as an Android app with [Capacitor](https://capacitorjs.com). There's no server: the phone talks to the learner's own AI (Claude, ChatGPT, Gemini, DeepSeek, GLM, Qwen, OpenRouter) with their key, which stays on that phone, and their progress lives on the phone too. The page reaches the phone's plugins through Capacitor's own runtime (`capacitor.js`, copied in by `build-www.js`); lines are read aloud by the phone's own voice (`app-shim.js`). Android's web view has no speech recognition, so the Speak button doesn't show; the keyboard's own mic works in its place.
 
 GitHub builds it (`.github/workflows/android.yml`) on every push to `android-app` or `main` and puts the APK at [releases/android-latest](https://github.com/ReikenZ7-Coding/Street-Mandarin/releases/download/android-latest/street-mandarin.apk). To build it yourself (needs the Android SDK and Java 21):
 
@@ -40,6 +40,7 @@ Installed apps update themselves. Each build also puts the app's files on that r
 node tools/check-syntax.js     # the scripts inside index.html
 node tools/check-scenes.js     # after editing scenes.js
 node tools/run-tests.js        # the browser tests in tests/browser (needs Playwright: npm i -g playwright)
+                               # (t79 and t80, the Android app's, also need: cd android-app && npm ci)
 node tools/run-tests.js --ai   # also Unscripted and Long Story, played against a stand-in Claude
 node tools/run-tests.js --server   # also the website and solo mode, with stand-in AIs (starts the servers itself)
 node tools/build-artifact.js   # the claude.ai artifact version, in dist-artifact/

@@ -52,7 +52,11 @@ const DATA = '/data/user/0/com.streetmandarin.app/files/';
     if (op === 'getUri') return { uri: 'file://' + DATA + a.path };
   });
   await ctx.addInitScript(() => {
-    window.Capacitor = { isNativePlatform: () => true, registerPlugin: name => new Proxy({}, { get: (_, op) => op === 'then' ? undefined : a => name === 'TextToSpeech' ? Promise.resolve() : window.__native(name, op, a) }) };
+    // what Android's native bridge provides; capacitor.js (in the app's files) builds registerPlugin on top of it
+    window.androidBridge = { postMessage() {} };
+    window.Capacitor = { PluginHeaders: [{ name: 'TextToSpeech', methods: ['speak', 'stop'] }, { name: 'WebView', methods: ['setServerBasePath', 'getServerBasePath', 'persistServerBasePath', 'setServerAssetPath'] },
+      { name: 'Filesystem', methods: ['writeFile', 'copy', 'mkdir', 'rmdir', 'readdir', 'getUri', 'readFile', 'deleteFile', 'stat'] }].map(h => ({ name: h.name, methods: h.methods.map(name => ({ name, rtype: 'promise' })) })),
+      nativePromise: (name, op, a) => name === 'TextToSpeech' ? Promise.resolve() : window.__native(name, op, a), nativeCallback() {} };
     if (!localStorage.getItem('sm-said')) localStorage.setItem('sm-said', '1');
   });
   const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (/Update check/.test(m.text())) errs.push(m.text()); });
@@ -71,6 +75,9 @@ const DATA = '/data/user/0/com.streetmandarin.app/files/';
   const web6 = JSON.parse(rel['web.json']);
   for (const f of Object.keys(web6.files)) if (!disk.has('web/6/' + f) || !disk.get('web/6/' + f).equals(read(path.join(tmp, 'v6'), f))) bad.push('web/6/' + f + ' wrong');
   if (calls.includes('WebView.setServerBasePath')) bad.push('switched while open');
+  if (!/Version 6 is ready/.test(await pg.locator('.sm-banner').innerText().catch(() => '')) || !(await pg.locator('.sm-banner button', { hasText: 'Restart now' }).count())) bad.push('no ready note');
+  await pg.locator('#foot button', { hasText: 'Check for updates' }).click(); await pg.waitForTimeout(500);
+  if (!/Version 6 is ready\. It starts the next time/.test(await foot())) bad.push('check button: ' + await foot());
 
   // 2. the next launch switches to it before anything shows; once it has started it's kept, and says so
   fetched = []; await launch();
@@ -79,6 +86,8 @@ const DATA = '/data/user/0/com.streetmandarin.app/files/';
   if (!/Version 6\./.test(await foot())) bad.push('footer after: ' + await foot());
   if (!/updated itself/.test(await pg.locator('.sm-banner').innerText().catch(() => ''))) bad.push('no updated note');
   if (await ls('sm-test-progress') !== 'kept') bad.push('progress lost');
+  await pg.locator('#foot button', { hasText: 'Check for updates' }).click(); await pg.waitForTimeout(500);
+  if (!/Up to date \(version 6\)/.test(await foot())) bad.push('up to date: ' + await foot());
   if (!/<!-- version 6 -->/.test(await pg.evaluate(() => fetch('index.html').then(r => r.text())))) bad.push('not the new page');
   await pg.screenshot({ path: 't80-updated.png' });
 
@@ -88,7 +97,7 @@ const DATA = '/data/user/0/com.streetmandarin.app/files/';
   await launch(); // 6 finds 7 and copies its unchanged files from web/6
   if ((await ls('sm-web-next') || {}).v !== 7) bad.push('7 not found');
   if (!disk.has('web/7/films.js')) bad.push('7 not copied');
-  await launch(); // switches to 7, which never says it started
+  await pg.locator('.sm-banner button', { hasText: 'Restart now' }).click(); await pg.waitForTimeout(5000); // switches to 7 now; it never says it started
   errs.length = 0; // (7 is broken on purpose)
   if (serving !== DATA + 'web/7' || persisted !== DATA + 'web/6') bad.push('7 kept: ' + persisted);
   fetched = []; await launch(); // the phone opens what was kept: 6
