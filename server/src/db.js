@@ -11,6 +11,9 @@ create table if not exists users (
   api_key_hint text,
   created_at timestamptz not null default now()
 );
+-- Your AI, when it isn't Claude: which service and model, what its test showed, and its key (encrypted)
+alter table users add column if not exists ai_conn text;
+alter table users add column if not exists ai_key_enc text;
 create table if not exists sessions (
   token_hash text primary key,
   user_id integer not null references users(id) on delete cascade,

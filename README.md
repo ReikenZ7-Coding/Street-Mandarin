@@ -8,6 +8,17 @@ You walk into a noodle shop, a taxi, a night market, a street corner or a pharma
 
 Open `index.html` in a browser. There's no build step. It also runs inside Claude as an artifact, where the AI parts use the viewer's own Claude.
 
+## Your AI
+
+The AI parts (Unscripted, Long Story, Play it live, your own words) can be written by the AI you choose, picked in one place: **Your AI**, in the footer and on every "needs an AI" note.
+- **Claude:** inside Claude it's the viewer's own Claude; on the website, your own Claude API key.
+- **On this computer:** a model in [LM Studio](https://lmstudio.ai) or [Ollama](https://ollama.com). *Find it* looks on their usual ports (1234, 11434), or at an address you give. It's free, and your words stay on your computer. From the website or a file copy the page talks to the model itself, so LM Studio needs *Enable CORS* on (the panel says so when it's off); in solo mode the server reaches it, so it doesn't.
+- **Online, with your key:** OpenRouter (one click with *Connect OpenRouter*, or a key), DeepSeek, GLM (Z.ai), Qwen (Alibaba Cloud), Gemini, OpenAI. In solo mode and a file copy, any other OpenAI-style service by its address. On the website the key is kept encrypted on the server and only the services in the list are ever called; in a file copy it stays in that browser.
+
+Every choice is tested before it's switched on: three small real requests (checking four answers, a WeChat reply, a short Long Story scene). An AI that can't tell a wrong answer from a right one isn't switched on at all, because it would teach mistakes. Chats and Long Story each switch on only if their test passed too. *Test it* runs them again any time.
+
+The rules every AI that isn't Claude follows live in `ai.js`, shared by the page and the server: one system prompt of house rules (one valid JSON object, simplified characters, tone-mark pinyin, stay in character, be kind and accurate when judging), the exact JSON shape each answer must have (LM Studio, Ollama and most services hold the answer to it), stripping a model's thinking, and one more try when an answer isn't clean JSON.
+
 ## Checking a change
 
 ```
@@ -15,12 +26,13 @@ node tools/check-syntax.js     # the scripts inside index.html
 node tools/check-scenes.js     # after editing scenes.js
 node tools/run-tests.js        # the browser tests in tests/browser (needs Playwright: npm i -g playwright)
 node tools/run-tests.js --ai   # also Unscripted and Long Story, played against a stand-in Claude
+node tools/run-tests.js --server   # also the website and solo mode, with stand-in AIs (starts the servers itself)
 node tools/build-artifact.js   # the claude.ai artifact version, in dist-artifact/
 ```
 
 ## Running it on your own computer, with your own model
 
-Solo mode runs the app for one person on their own computer, with no accounts, and the AI parts come from a model you run yourself in [LM Studio](https://lmstudio.ai) or [Ollama](https://ollama.com). It costs nothing to run, and nothing leaves your computer.
+Solo mode runs the app for one person on their own computer, with no accounts. By default the AI parts come from a model you run yourself in [LM Studio](https://lmstudio.ai) or [Ollama](https://ollama.com), which costs nothing and keeps everything on your computer; Your AI can switch to any other.
 
 ```
 cd server
@@ -29,13 +41,11 @@ npm run solo       # http://localhost:8787
 ```
 
 - Start your model's server first: in LM Studio, load the model on the Developer tab and start the server (it listens on port 1234). Set the model's context length to at least 16384, because Long Story's prompts are long.
-- For Ollama, set `LOCAL_AI_URL=http://localhost:11434/v1` before `npm run solo`.
-- `LOCAL_AI_MODEL` picks a model by its id; by default the app uses the one that's loaded.
-- `LOCAL_AI_NAME` is what the page calls it ("Qwen is writing chapter 2…"). By default it says "your AI".
-- The 我 You button shows whether your model is running. Progress is saved in `server/data` as well as in the browser.
+- Ollama, another model or another address are picked in Your AI (*Find it*, or *Somewhere else on this computer?*). The old settings still work as the default: `LOCAL_AI_URL`, `LOCAL_AI_MODEL` (by default, the loaded model) and `LOCAL_AI_NAME` (by default, from the model's name: "Qwen is writing chapter 2…").
+- Progress is saved in `server/data` as well as in the browser.
 - The server only listens to your own computer (`127.0.0.1`).
 
-Chats, Long Story plans and chapters also send the exact JSON shape the page expects, which LM Studio and Ollama turn into a grammar, so a small model can only answer in that shape (a server that refuses this is asked plainly). A small model also gets extra house rules with every request (`server/src/local.js`): answer with one valid JSON object, simplified characters, tone-mark pinyin, stay in character, be kind and accurate when judging. Its thinking is stripped, and an answer that isn't valid JSON is asked for once more. Chats and "How do I say…?" suit a small model well. Long Story asks the most of it, so a chapter that doesn't come out right can simply be tried again.
+Chats and "How do I say…?" suit a small model well. Long Story asks the most of it, which is why it has its own test.
 
 ## Running it as a website
 
@@ -49,14 +59,14 @@ npm test           # server tests (TEST_DATABASE_URL=postgres://… runs them on
 ```
 
 The page is the same `index.html`. The server adds `client.js` to it, which brings:
-- the Account button (sign up, sign in, your Claude key, sign out, delete account)
+- the Account button (sign up, sign in, sign out, delete account); keys for the AI are added in Your AI
 - syncing everything the app saves
 - the AI connection, the same `sample.json(prompt)` call the app makes inside a Claude artifact
 
 Short Story, Mistakes, Notes and everything else that doesn't need AI work for everyone, signed in or not.
 
 **Who pays for the AI** is one setting, `AI_MODE`:
-- `byok` (the default): each learner adds their own Claude API key in Account, and their usage is billed to their own Anthropic account. The site costs its owner nothing for AI. Keys are checked when saved, stored encrypted with `APP_SECRET`, and never sent back to the browser.
+- `byok` (the default): each learner adds their own Claude API key (or another AI) in Your AI, and their usage is billed to their own Anthropic account. The site costs its owner nothing for AI. Keys are checked when saved, stored encrypted with `APP_SECRET`, and never sent back to the browser.
 - `mix`: a free daily allowance on the owner's `ANTHROPIC_API_KEY` (`DAILY_ALLOWANCE_USD`), and your own key for more.
 - `owner`: everyone uses the owner's key, within the daily allowance.
 
@@ -158,12 +168,12 @@ Everything above works with no AI at all:
 - The "say instead" line a slip teaches you always counts when you type it later, in the scene or in Mistakes.
 - Typed answers off the script are checked by the app itself. It finds the closest scripted line and spots common slips: the wrong measure word, 二 for 两, 不有, a wrong number, 是 before an adjective, 吗 after a question word, or missing key words. When it can't tell, it says so and shows the line that works.
 
-When Claude is available (inside a Claude artifact through `window.claude`, on the website through your account, or your own model in solo mode), you also get:
-- Claude replies in character to anything off the script, and explains any mistake not on file.
-- Long Story: the whole novel is written by Claude.
-- Unscripted: every reply, the notes under your messages, and "How do I say…?". Without Claude you can still see everyone and their first message.
+When there's an AI (Claude inside a Claude artifact through `window.claude`, or whichever you picked in Your AI), you also get:
+- The AI replies in character to anything off the script, and explains any mistake not on file.
+- Long Story: the whole novel is written by the AI.
+- Unscripted: every reply, the notes under your messages, and "How do I say…?". Without an AI you can still see everyone and their first message.
 - Play it live: a place replayed with no script, somewhere of the same kind, with a hidden twist.
-- After each run, Claude invents a new surprise for that place.
+- After each run, the AI invents a new surprise for that place.
 
 On the website, `client.js` provides the same `window.claude` and the server makes the calls.
 

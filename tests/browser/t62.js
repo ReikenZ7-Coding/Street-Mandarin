@@ -13,7 +13,7 @@ const URL = process.env.SM_URL || 'http://localhost:8799/';
   await a.evaluate(() => closeNotes());
   await a.evaluate(() => startChats()); await a.waitForTimeout(300);
   const note1 = await a.locator('#log, #scene').first().innerText();
-  if (!note1.includes('Sign in and add your Claude key to chat')) bad.push('signed-out chat hint: ' + note1.slice(0, 200));
+  if (!note1.includes('Pick one in Your AI to chat')) bad.push('signed-out chat hint: ' + note1.slice(0, 200));
   // Sign up
   await a.click('#acct-btn'); await a.click('dialog.acct .switch button:has-text("Create an account")');
   await a.fill('dialog.acct input[name=email]', email); await a.fill('dialog.acct input[name=password]', 'longenough1');
@@ -22,15 +22,17 @@ const URL = process.env.SM_URL || 'http://localhost:8799/';
   const notesKept = await a.evaluate(() => localStorage.getItem('sm-notes') || '');
   if (!notesKept.includes('牛肉面')) bad.push('local note lost on sign-up');
   await a.evaluate(() => startChats()); await a.waitForTimeout(300);
-  if (!(await a.locator('#scene').innerText()).includes('Add your Claude key in Account to chat')) bad.push('no add-key hint');
-  // Add a key
-  await a.click('#acct-btn');
-  await a.fill('dialog.acct input[name=key]', 'sk-ant-api03-wrong-000000000000000000000');
-  await a.click('dialog.acct button:has-text("Save key")'); await a.waitForTimeout(500);
-  const errText = await a.locator('dialog.acct .err').first().innerText();
+  if (!(await a.locator('#scene').innerText()).includes('Pick one in Your AI to chat')) bad.push('no pick-an-AI hint');
+  // Add a Claude key, in Your AI
+  await a.click('#ai-btn'); await a.click('.ai-tabs button:has-text("Claude")');
+  await a.fill('.ai-sec input[type=password]', 'sk-ant-api03-wrong-000000000000000000000');
+  await a.click('.ai-sec button:has-text("Save key")'); await a.waitForTimeout(500);
+  const errText = await a.locator('.ai-err').first().innerText();
   if (!errText.includes("didn't accept")) bad.push('bad key not refused: ' + errText);
-  await a.fill('dialog.acct input[name=key]', 'sk-ant-api03-good-000000000000000000000');
-  await Promise.all([a.waitForNavigation(), a.click('dialog.acct button:has-text("Save key")')]); await a.waitForTimeout(1000);
+  await a.fill('.ai-sec input[type=password]', 'sk-ant-api03-good-000000000000000000000');
+  await a.click('.ai-sec button:has-text("Save key")'); await a.waitForTimeout(800);
+  if (!/Claude.*with your Claude key/.test(await a.locator('.ai-now').innerText())) bad.push('not using Claude after the key');
+  await a.keyboard.press('Escape');
   // Chat
   await a.evaluate(() => startChat('chen')); await a.waitForTimeout(400);
   const inp = a.locator('#move input[type=text]').first();

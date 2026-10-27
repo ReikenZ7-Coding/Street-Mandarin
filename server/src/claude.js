@@ -51,10 +51,5 @@ export async function checkKey(apiKey, model) {
   }
 }
 
-export function parseJson(text) {
-  const t = String(text).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  try { return JSON.parse(t); } catch {}
-  const a = t.search(/[{[]/), b = Math.max(t.lastIndexOf("}"), t.lastIndexOf("]"));
-  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
-  return undefined;
-}
+// The same reader the page and every other AI use
+export { parseJson } from "./your-ai.js";

@@ -11,7 +11,7 @@ if (!s.endsWith('</body>')) throw new Error('index.html should end with </body><
 s = s.slice(0, -'</body>'.length).trimEnd() + '\n';
 fs.mkdirSync(path.join(out, 'films'), { recursive: true });
 fs.writeFileSync(path.join(out, 'street-mandarin.html'), s);
-const scripts = ['scenes.js', 'why.js', 'voices.js', 'daily.js', 'journey.js', 'people.js', 'films.js'];
+const scripts = ['ai.js', 'scenes.js', 'why.js', 'voices.js', 'daily.js', 'journey.js', 'people.js', 'films.js'];
 for (const f of scripts) fs.copyFileSync(path.join(root, f), path.join(out, f));
 for (const f of fs.readdirSync(path.join(out, 'films'))) fs.unlinkSync(path.join(out, 'films', f));
 const films = fs.readdirSync(path.join(root, 'films')).filter(f => /\.(webm|jpg)$/.test(f));

@@ -891,6 +891,41 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 .wrap.op-in header.top > *:nth-child(2) { animation-delay: .05s; } .wrap.op-in .rail > *:nth-child(n+2) { animation-delay: .08s; } .wrap.op-in .rail > *:nth-child(n+5) { animation-delay: .14s; } .wrap.op-in .scene { animation-delay: .1s; }
 @keyframes tablet { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .look-note { color: var(--muted); font-size: 12px; margin-left: 8px; }
+/* Your AI */
+dialog.ai-dlg { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); padding: 0; width: min(500px, calc(100vw - 32px)); max-height: calc(100vh - 40px); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog.ai-dlg::backdrop { background: rgba(10, 20, 16, .45); }
+.ai-in { padding: 20px 22px 22px; display: grid; gap: 12px; }
+.ai-head { display: flex; align-items: baseline; gap: 8px; }
+.ai-head .han { font-family: var(--f-han); font-size: 22px; color: var(--jade); font-weight: 700; }
+.ai-head h2 { margin: 0; font-size: 18px; }
+.ai-head .linkish { margin-left: auto; }
+.ai-in p { margin: 0; font-size: 14px; line-height: 1.5; }
+.ai-in .ai-muted { color: var(--muted); font-size: 13px; }
+.ai-now { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.ai-err { color: var(--cinnabar); font-weight: 600; }
+.ai-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ai-tabs { display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px dashed var(--line); padding-top: 12px; }
+.ai-tabs button { border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 13px; }
+.ai-tabs button[aria-selected="true"] { background: var(--jade-soft); border-color: var(--jade); }
+.ai-sec, .ai-form { display: grid; gap: 10px; }
+.ai-in label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.ai-in input, .ai-in select { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); min-width: 0; }
+.ai-in input:focus, .ai-in select:focus { outline: 2px solid var(--jade); outline-offset: 1px; }
+.ai-form .btn { justify-self: start; }
+.ai-found { border-left: 3px solid var(--jade); padding-left: 10px; display: grid; gap: 8px; }
+.ai-other summary { cursor: pointer; font-size: 13px; color: var(--muted); font-weight: 600; }
+.ai-other .ai-form { margin-top: 8px; }
+.ai-in a { color: var(--jade); font-weight: 600; }
+.ai-tests { display: grid; gap: 4px; }
+.ai-test { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; font-size: 14px; }
+.ai-test .ai-t-state { color: var(--muted); font-variant-numeric: tabular-nums; }
+.ai-test.ok .ai-t-state { color: var(--jade); }
+.ai-test.no .ai-t-state { color: var(--cinnabar); }
+.ai-test .ai-t-why { grid-column: 1 / -1; color: var(--muted); font-size: 13px; }
+.ai-outcome { display: grid; gap: 8px; }
+.sm-banner { position: fixed; z-index: 60; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); background: var(--surface); color: var(--fg); border: 1px solid var(--jade); border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,.18); font-size: 14px; }
+.sm-banner p { margin: 0; flex: 1; }
+
 .look-pick { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-left: auto; }
 .look-pick > button { white-space: nowrap; }
 @media (max-width: 760px) { .look-pick { margin-left: 0; } }
@@ -956,6 +991,7 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
   <footer class="foot" id="foot"></footer>
 </div>
 
+<script src="ai.js"></script>
 <script src="scenes.js"></script>
 <script src="why.js"></script>
 <script src="voices.js"></script>
@@ -965,8 +1001,8 @@ body { background: linear-gradient(to bottom, var(--sky) 0, var(--bg) 70vh) fixe
 <script src="films.js"></script>
 <script>
 const S = window.SCENES;
-// Who writes the AI parts, as the page says it: Claude, or your own model when the app runs on your computer
-const AI_NAME = window.SM_AI_NAME || "Claude", AI_CAP = AI_NAME[0].toUpperCase() + AI_NAME.slice(1);
+// Who writes the AI parts, as the page says it: Claude, or the AI you picked in Your AI (set by aiConnect)
+let AI_NAME = window.claude && !window.SM_HOST ? "Claude" : "an AI", AI_CAP = AI_NAME[0].toUpperCase() + AI_NAME.slice(1);
 // Places you made from your own wanders live alongside the built-in ones
 const TAGSET = ["sounds", "numbers", "agreeing", "listening", "grammar", "where", "words", "manners"];
 function validScene(x) {
@@ -1154,7 +1190,7 @@ function whyFor(c) {
   const h = c.said.text;
   return WHY[c.sid + "|" + h] || WHY[c.sid + "|" + h + "|" + String(c.note || "").slice(0, 16)] || null;
 }
-const canExplain = c => !!(whyFor(c) || sample);
+const canExplain = c => !!(whyFor(c) || aiCan("check"));
 async function explainWhy(btn, c) {
   const ready = whyFor(c);
   if (ready) {
@@ -1485,7 +1521,7 @@ function typer(t) {
     form.append(mic);
   }
   form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) submitTyped(v, t); };
-  box.append(form, el("p", "free-note", sample ? "Anything a script doesn't cover goes to " + AI_NAME + " playing " + cur.whoEn + "." : "Checked against what a local would understand."));
+  box.append(form, el("p", "free-note", aiCan("check") ? "Anything a script doesn't cover goes to " + AI_NAME + " playing " + cur.whoEn + "." : "Checked against what a local would understand."));
   setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch {} }, 0);
   return box;
 }
@@ -1630,7 +1666,7 @@ function submitTyped(text, t) {
   }
   // Off the script. First, what the app can judge by itself, with no AI at all
   // In a Long Story, Claude reads your own words in the story, so the app doesn't call a different number "wrong" first
-  const judged = judgeOffline(text, good, { also: m.also, real: mode === "long" && !!sample });
+  const judged = judgeOffline(text, good, { also: m.also, real: mode === "long" && aiCan("long") });
   if (judged) {
     addMe(text, "", "", judged.kind);
     addFeedback(judged.kind, judged.note, [good.h, good.p]);
@@ -1638,7 +1674,7 @@ function submitTyped(text, t) {
     if (judged.kind === "okay") return choose(Object.assign({}, good, { quiet: true }, mine(text)));
     return renderMove();
   }
-  if (sample) return offScript(text);
+  if (aiCan("check")) return offScript(text);
   // Honest about the limits: no guessing, just the line that works here
   addMe(text, "", "", "okay");
   addFeedback("okay", "That one's beyond what the app can check by itself, so it can't say whether a local would follow it. Here's what reliably works at this moment. Try typing it.", [good.h, good.p], { seal: "?", label: "Not sure" });
@@ -1837,7 +1873,7 @@ function finish(cutShort) {
   }
   lastGained = earnMarks(cutShort);
   done[cur.id] = true; store.set("sm-done", done); renderRail(); renderMove();
-  if (sample && !cur.custom) inventTwist(S.find(x => x.id === cur.id));
+  if (aiCan("chat") && !cur.custom) inventTwist(S.find(x => x.id === cur.id));
 }
 let twistBusy = false;
 async function inventTwist(s) {
@@ -1902,7 +1938,7 @@ function renderEnd() {
     line("Mistakes", ...parts);
   } else line("Mistakes", "None. A clean run.");
   const base = S.find(x => x.id === cur.id), poolN = (base.curveballs || []).length + twistPool(cur.id).length, met = (seenCb[cur.id] || []).length;
-  if (!cur._rematch && poolN) line("Surprises", (metHere.length ? metHere.map(x => x.cb.what).join(" and ").replace(/^./, c => c.toUpperCase()) + ". " : "None this time. ") + `You've met ${Math.min(met, poolN)} of ${poolN} that can happen here${sample ? ", and more keep appearing" : ""}.`);
+  if (!cur._rematch && poolN) line("Surprises", (metHere.length ? metHere.map(x => x.cb.what).join(" and ").replace(/^./, c => c.toUpperCase()) + ". " : "None this time. ") + `You've met ${Math.min(met, poolN)} of ${poolN} that can happen here${aiCan("chat") ? ", and more keep appearing" : ""}.`);
   const mk = mastery[cur.id] || {};
   if (!cur._rematch) {
     const can = CAN[cur.id] ? lcFirst(CAN[cur.id]) : "do this";
@@ -1918,7 +1954,7 @@ function renderEnd() {
   if (twistNote) line("New here", twistNote); // stays through a switch flip; cleared when you start a place
   // The person you just met adds you on WeChat: the conversation can carry on in Unscripted
   const pal = PEOPLE.find(x => x.met === cur.id);
-  if (pal && sample && !((CHATS[pal.id] || {}).msgs || []).some(m => m.me)) { const hi = el("button", "linkish", `Say hi to ${pal.en}`); hi.onclick = () => startChat(pal.id); line("WeChat", `${pal.han} added you. `, hi); }
+  if (pal && aiCan("chat") && !((CHATS[pal.id] || {}).msgs || []).some(m => m.me)) { const hi = el("button", "linkish", `Say hi to ${pal.en}`); hi.onclick = () => startChat(pal.id); line("WeChat", `${pal.han} added you. `, hi); }
   // One clear next step, the rest as quieter options
   const row = el("div", "endcard");
   const di = dayOf(cur.id), stops = di < 0 ? [] : DAYS[di].stops, si = stops.findIndex(x => x.id === cur.id);
@@ -1940,7 +1976,7 @@ function renderEnd() {
   const way = (label, go) => { const b = el("button", "chip", label); b.onclick = go; again.append(b); };
   way("Normally", () => start(cur.id));
   if (done[cur.id] && !cur._rematch) way("At rush hour", () => start(cur.id, { rush: true }));
-  if (sample && !cur._rematch) way("Live, somewhere like this", () => startLive(cur.id));
+  if (aiCan("chat") && !cur._rematch) way("Live, somewhere like this", () => startLive(cur.id));
   row.append(again);
   if (S.find(x => x.id === cur.id).custom) {
     const rm = el("button", "btn ghost", "Remove this place");
@@ -2851,10 +2887,10 @@ function startHome(day) {
     else pm.append(homeCard({ kind: past ? "That day's mistakes" : "Today's mistakes", han: "错题本", title: past ? `${plural(slips.length, "mistake")} still open from ${dayN}` : `${plural(slips.length, "mistake")} from today`, why: past ? "They're in Mistakes, coming back on their own schedule." : "They're in Mistakes, and they come back tomorrow morning.", go: () => openNotebook() }));
     if (pat) pm.append(homeCard({ kind: past ? "A drill for it" : "Tonight's drill", drill: 1, han: pat.zh, title: most ? `Mostly ${pat.en.toLowerCase()}` : pat.en, why: `${pat.tip} Drill that kind of moment across every place.`, go: () => startPattern(pat.id) }));
     // Without AI, the evening keeps to what works: no story or chat that would stop at "needs AI"
-    if (sample || LS) pm.append(lsTonight());
+    if (aiCan("long") || LS) pm.append(lsTonight());
     // Someone you met today can carry on the conversation in Unscripted
     const pal = PEOPLE.find(x => ids.includes(x.met) && done[x.met]);
-    if (pal && sample) { const pm2 = ((CHATS[pal.id] || {}).msgs || []), mine = pm2.some(m => m.me), last = pm2[pm2.length - 1];
+    if (pal && aiCan("chat")) { const pm2 = ((CHATS[pal.id] || {}).msgs || []), mine = pm2.some(m => m.me), last = pm2[pm2.length - 1];
       pm.append(homeCard({ kind: "Keep in touch", han: "随便聊", title: mine ? `Chat with ${pal.en}` : `${pal.han} ${pal.en} added you on WeChat`, why: mine && last ? (last.me ? `You: ${last.h}` : last.voice ? "Sent you a voice message." : last.h) : "Say hi. The chat carries on as long as you like, and they remember you.", go: () => startChat(pal.id) })); }
     pm.append(homeCard({ kind: "For real", han: "真的", title: "Anything happen out there for real?", why: "If you're in China, log what you said or heard. It joins today's mistakes.", go: () => startField(ids[0]) }));
     log.append(pm);
@@ -2932,7 +2968,7 @@ function lsTonight() {
   const nx = LS && lsNext();
   if (LS && nx && lsLocked(nx.v)) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v} opens tomorrow`, why: "You finished today's volume. Look back over the words it taught you.", go: () => startLong() });
   if (LS && nx) return homeCard({ kind: "Tonight's reading", han: "长篇", title: `${LS.bible.title_english}: volume ${nx.v}, chapter ${nx.c}`, why: `Read on in ${LS.bible.city || "your story"}. It ends on something you have to say.`, go: () => { lsAt = nx; lsCh(nx.v, nx.c) ? (startLong(), lsRead(nx.v, nx.c)) : (startLong(), lsWrite(nx.v, nx.c)); } });
-  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !sample ? `A light novel set in China, written around you. It needs ${AI_NAME}, so ${aiHow(true)} to start one.` : `A light novel set in China, written around you by ${AI_NAME}, a volume a day.`, go: () => startLong() });
+  return homeCard({ kind: "Tonight's reading", han: "长篇", title: LS ? "Your Long Story is finished" : "Start a Long Story", why: !LS && !aiCan("long") ? `A light novel set in China, written around you. It needs ${sample ? "a stronger AI than " + AI_NAME : AI_NAME}, so ${sample ? "pick one in Your AI" : aiHow(true)} to start one.` : `A light novel set in China, written around you by ${AI_NAME}, a volume a day.`, go: () => startLong() });
 }
 function renderHomeMove() {
   const m = $("#move"); m.textContent = "";
@@ -3071,7 +3107,7 @@ ${ns.map((t, i) => `Paragraph ${i + 1}: ${t}`).join("\n")}`;
 const lsZhJobs = {};
 function lsZhFetch(v, c) {
   const key = lsKey(v, c), ch = lsCh(v, c);
-  if (!ch || ch.zh || !sample) return Promise.resolve();
+  if (!ch || ch.zh || !aiCan("long")) return Promise.resolve();
   if (lsZhJobs[key]) return lsZhJobs[key];
   const story = LS, n = ch.blocks.filter(b => b.t === "n").length;
   return lsZhJobs[key] = (async () => {
@@ -3160,7 +3196,7 @@ const lsJobs = {};
 let lsWaiting = null;
 function lsFetch(v, c) {
   const key = lsKey(v, c);
-  if (!sample || !LS || v > LS.n || LS.chapters[key]) return Promise.resolve();
+  if (!aiCan("long") || !LS || v > LS.n || LS.chapters[key]) return Promise.resolve();
   if (lsJobs[key]) return lsJobs[key];
   const prompt = lsChapterPrompt(v, c), last = v === LS.n && c === LS_CH, story = LS;
   const prev = c > 1 ? lsCh(v, c - 1) : v > 1 ? lsCh(v - 1, LS_CH) : null;
@@ -3178,7 +3214,7 @@ function lsFetch(v, c) {
   })().finally(() => { delete lsJobs[key]; });
 }
 async function lsWrite(v, c) {
-  if (!sample) return;
+  if (!aiCan("long")) return;
   if (mode !== "long") return lsFetch(v, c).catch(() => {}); // you've gone elsewhere: write it quietly for later
   lsAt = { v, c }; lsWaiting = lsKey(v, c); lsErr = ""; lsView = "wait"; lsMoment = null;
   // While it's written: the page says which chapter is coming, and where the last one left off
@@ -3212,7 +3248,7 @@ function lsLogOwn(v, c, ch) {
 }
 let lsPlanning = false;
 async function lsBegin() {
-  if (!sample || lsPlanning) return;
+  if (!aiCan("long") || lsPlanning) return;
   const n = Math.max(7, Math.min(30, lsPick.n | 0)), theme = lsPick.theme === -1 ? lsPick.own.trim() : lsPick.theme >= 0 ? `${LS_THEMES[lsPick.theme][1]}: ${LS_THEMES[lsPick.theme][2]}` : "";
   lsPlanning = true; lsErr = ""; renderMove(); const form = $(".ls-setup"); if (form) form.classList.add("busy");
   try {
@@ -3278,8 +3314,8 @@ function lsSetup() {
   const he = el("div", "chips"); [["", "Either"], ["he", "他 he"], ["she", "她 she"]].forEach(([k, l]) => { const c = el("button", "chip", l); c.setAttribute("aria-pressed", (lsPick.he || "") === k); c.onclick = () => { lsPick.he = k; lsSetup(); }; he.append(c); });
   nm.append(ni, el("span", "ls-label", "How people talk about you"), he);
   box.append(len, pf, th, nm);
-  if (!sample) box.classList.add("off"); // nothing here can start without Claude, so it's shown, not offered
-  if (!sample) log.append(aiNote(`Long Story is written by ${AI_NAME} as you read, so it needs ${AI_NAME}. ${aiHow()} to start one. Short Story works without it.`));
+  if (!aiCan("long")) box.classList.add("off"); // nothing here can start without Claude, so it's shown, not offered
+  if (!aiCan("long")) log.append(aiOffNote("long", `Long Story is written as you read, so it needs ${AI_NAME}. ${aiHow()} to start one. Short Story works without it.`));
   if (lsPlanning) box.classList.add("busy");
   log.append(box); log.scrollTop = 0;
 }
@@ -3357,7 +3393,7 @@ function lsRead(v, c) {
   const zhOn = !!(lsZhMode() && ch.zh);
   if (canSpeak) { const lb = el("button", "linkish", zhOn ? "Listen to the chapter" : "Listen to the conversation"); lb.onclick = () => lsListen(lb); th.append(lb); }
   // A chapter that reads badly can be written again, until you've answered it
-  if (sample && !ch.said) { const re = el("button", "linkish ls-rewrite", "Rewrite it");
+  if (aiCan("long") && !ch.said) { const re = el("button", "linkish ls-rewrite", "Rewrite it");
     re.onclick = () => {
       if (ch.said) return re.remove();
       if (!re.dataset.sure) { re.dataset.sure = "1"; re.textContent = "Yes, write this chapter again"; return; }
@@ -3367,9 +3403,9 @@ function lsRead(v, c) {
   const zh = zhOn;
   if (lsZhMode() && !ch.zh) {
     // Not in Chinese yet: read the English meanwhile, and swap over when it's ready
-    const note = el("p", "ls-zh-note", sample ? "English is off, so this chapter is being put into Chinese. Read on in English meanwhile; it switches when it's ready." : `English is off, but putting this chapter into Chinese needs ${AI_NAME}, so it's in English for now.`);
+    const note = el("p", "ls-zh-note", aiCan("long") ? "English is off, so this chapter is being put into Chinese. Read on in English meanwhile; it switches when it's ready." : `English is off, but putting this chapter into Chinese needs ${sample ? "a stronger AI" : AI_NAME}, so it's in English for now.`);
     log.append(note);
-    if (sample) lsZhFetch(v, c).then(() => { if (lsAt && lsAt.v === v && lsAt.c === c && lsView === "read") lsRedraw(); })
+    if (aiCan("long")) lsZhFetch(v, c).then(() => { if (lsAt && lsAt.v === v && lsAt.c === c && lsView === "read") lsRedraw(); })
       .catch(() => { note.textContent = "Couldn't put this chapter into Chinese just now. "; const again = el("button", "linkish", "Try again"); again.onclick = () => lsRedraw(); note.append(again); });
   }
   let last = null, ni = 0;
@@ -3471,7 +3507,7 @@ function renderLongMove() {
   const m = $("#move"); m.textContent = "";
   const row = el("div", "endcard");
   if (lsErr) m.append(el("p", "ls-err", lsErr));
-  if (lsErr && LS && lsAt && !lsWaiting && !lsCh(lsAt.v, lsAt.c) && sample) { const again = el("button", "btn", "Try again"); again.onclick = () => lsWrite(lsAt.v, lsAt.c); row.append(again); }
+  if (lsErr && LS && lsAt && !lsWaiting && !lsCh(lsAt.v, lsAt.c) && aiCan("long")) { const again = el("button", "btn", "Try again"); again.onclick = () => lsWrite(lsAt.v, lsAt.c); row.append(again); }
   if (lsPlanning || lsWaiting) {
     m.append(el("div", "thinking", !LS ? `${AI_CAP} is planning your story: the city, the people, and all the days…` : `${AI_CAP} is writing volume ${lsAt.v}, chapter ${lsAt.c}…`));
     // Meanwhile: the words the story has taught you most recently
@@ -3481,7 +3517,7 @@ function renderLongMove() {
     return;
   }
   if (!LS) {
-    if (!sample) return; // the note above the form says why
+    if (!aiCan("long")) return; // the note above the form says why
     const go = el("button", "btn", "Begin the story"); go.onclick = () => lsBegin();
     row.append(go); m.append(row); return;
   }
@@ -3525,7 +3561,7 @@ function renderLongMove() {
   if (lsView === "home") {
     const nx = lsNext();
     if (nx && lsLocked(nx.v)) row.append(el("span", "ls-prompt", `Volume ${nx.v} opens tomorrow.`));
-    else if (nx) { const go = el("button", "btn", `Continue: volume ${nx.v}, chapter ${nx.c}`); go.disabled = !sample && !lsCh(nx.v, nx.c);
+    else if (nx) { const go = el("button", "btn", `Continue: volume ${nx.v}, chapter ${nx.c}`); go.disabled = !aiCan("long") && !lsCh(nx.v, nx.c);
       go.onclick = () => { lsAt = nx; lsCh(nx.v, nx.c) ? lsRead(nx.v, nx.c) : lsWrite(nx.v, nx.c); }; row.append(go); }
     const fresh = el("button", "btn ghost", lsNew ? "Yes, start a new story" : "Start a new story");
     fresh.onclick = () => { if (!lsNew) { lsNew = true; renderMove(); return; } lsNew = false; LS = null; try { localStorage.removeItem("sm-long"); } catch {} startLong(); };
@@ -3580,7 +3616,7 @@ function startChats() {
   if (yours.length) { log.append(el("h4", "pb-title", "Your chats")); const l = el("div", "chat-list"); yours.forEach(p => l.append(chatRow(p))); log.append(l); }
   log.append(el("h4", "pb-title", yours.length ? "Everyone else" : "Pick someone to chat with"));
   const l2 = el("div", "chat-list"); rest.forEach(p => l2.append(chatRow(p))); log.append(l2);
-  if (!sample) log.append(aiNote(`Chatting needs ${AI_NAME}, since every reply is written as you go. ${aiHow()} to chat. You can still read who everyone is.`));
+  if (!aiCan("chat")) log.append(aiOffNote("chat", `Chatting needs ${AI_NAME}, since every reply is written as you go. ${aiHow()} to chat. You can still read who everyone is.`));
   window.scrollTo(0, 0); renderRail(); renderMove();
 }
 const chatLast = p => { const m = (CHATS[p.id] || {}).msgs || []; return m.length ? m[m.length - 1].t : 0; };
@@ -3686,7 +3722,7 @@ function renderChatMove() {
   if (!chatWho) return;
   const p = personOf(chatWho), c = chatOf(chatWho), waiting = chatPending.has(chatWho);
   if (chatErrs[chatWho]) m.append(el("p", "ls-err", chatErrs[chatWho]));
-  if (!sample) { m.append(aiNote(`Chatting needs ${AI_NAME}, since every reply is written as you go. ${aiHow()} to chat.`)); return; }
+  if (!aiCan("chat")) { m.append(aiOffNote("chat", `Chatting needs ${AI_NAME}, since every reply is written as you go. ${aiHow()} to chat.`)); return; }
   // A beginner can start from a line that works, and edit it before sending
   if (c.msgs.filter(x => x.me).length < 2 && !chatHow) {
     const st = el("div", "chat-starters");
@@ -3746,10 +3782,10 @@ const CHAT_LEVEL = {
   simple: "Short, everyday sentences (HSK 2 to 3). No rare words.",
   natural: "Natural casual texting with your own slang and particles, but kept short: a beginner reading the pinyin should be able to follow."
 };
-// With your own model on your computer, the answers with the strictest shapes go with a JSON
-// schema, which LM Studio or Ollama turns into a grammar: a small model can then only answer in shape.
+// With any AI that isn't Claude, the answers with the strictest shapes go with a JSON schema, which
+// LM Studio, Ollama and most online services hold the answer to: a small model can then only answer in shape.
 // (Claude follows the prompt's own description, so it never needs one.)
-const LOCAL_AI = !!window.SM_AI_NAME;
+let LOCAL_AI = false;
 const shapeStr = { type: "string" }, shapeLine = { type: "array", items: shapeStr, minItems: 3, maxItems: 3 };
 const shapeObj = (props, required = Object.keys(props)) => ({ type: "object", properties: props, required, additionalProperties: false });
 const shapeHPE = shapeObj({ h: shapeStr, p: shapeStr, e: shapeStr });
@@ -3845,7 +3881,7 @@ async function chatSend(text, retry) {
 // Real people get in touch first: once a day, someone you've been chatting with who's gone quiet messages you
 let chatNudging = false;
 async function chatNudge() {
-  if (!sample || chatNudging) return;
+  if (!aiCan("chat") || chatNudging) return;
   const last = store.get("sm-chat-nudge", 0); if (Date.now() - last < 20 * 36e5) return;
   const quiet = PEOPLE.filter(p => { const m = (CHATS[p.id] || {}).msgs || []; return m.some(x => x.me) && m.length && Date.now() - m[m.length - 1].t > 18 * 36e5 && !chatPending.has(p.id); });
   if (!quiet.length) return;
@@ -3937,7 +3973,7 @@ function drawNotes() {
   d.append(ta);
   const tools = el("div", "nt-tools");
   if (canSpeak) { const r = el("button", "btn ghost small", "Read the Chinese aloud"); r.onclick = () => { const zh = (n.body.match(/[一-鿿，。！？、]+/g) || []).join("。"); if (zh) speak(zh, 0.8); }; tools.append(r); }
-  if (sample) { const g = el("button", "btn ghost small nt-gloss", noteBusy ? "Adding…" : "Add pinyin and meanings"); g.disabled = noteBusy || !isHanText(n.body); g.title = "Adds a list of the Chinese in this note with pinyin and English, under your own words"; g.onclick = () => noteGloss(n); tools.append(g); }
+  if (aiCan("check")) { const g = el("button", "btn ghost small nt-gloss", noteBusy ? "Adding…" : "Add pinyin and meanings"); g.disabled = noteBusy || !isHanText(n.body); g.title = "Adds a list of the Chinese in this note with pinyin and English, under your own words"; g.onclick = () => noteGloss(n); tools.append(g); }
   const del = el("button", "linkish nt-del", noteDel ? "Yes, delete this note" : "Delete"); del.onclick = () => { if (!noteDel) { noteDel = true; drawNotes(); return; } NOTES = NOTES.filter(x => x !== n); saveNotes(); noteOpen = null; noteDel = false; drawNotes(); renderRail(); };
   tools.append(del); d.append(tools);
   if (noteMsg) d.append(el("p", "ls-err", noteMsg));
@@ -3991,6 +4027,9 @@ function renderFoot() {
   };
   inn.onclick = () => { footOpen = footOpen === "in" ? "" : "in"; renderFoot(); };
   f.append(out, inn);
+  // Which AI writes the AI parts, one tap from anywhere
+  const aiPick = el("span", "look-pick"); aiPick.append("Your AI:");
+  const aiB = el("button", "linkish", sample ? AI.name : "none yet"); aiB.id = "ai-btn"; aiB.onclick = () => openAiPanel(); aiPick.append(aiB); f.append(aiPick);
   // The look: the jade kingdom, or paper and bamboo; and the opening again, for the jade one
   const look = el("span", "look-pick"); look.append("Look:");
   [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
@@ -4233,7 +4272,7 @@ function renderPhrasesMove() {
 let wTranscript = [], wDone = false, wGoal = false;
 async function startLive(id) {
   // The same place, unscripted: Claude plays it and throws in its own surprise
-  const base = S.find(x => x.id === id); if (!sample || !base) return;
+  const base = S.find(x => x.id === id); if (!aiCan("chat") || !base) return;
   mode = "wander"; busy = true; wDone = false; wGoal = false; wTranscript = []; outcomes = []; wSlips = 0;
   setHead(base.place, base.placePy, base.en + ", live", "Your goal: ", base.goal);
   $("#log").textContent = ""; addNarr("No script this time. Anything can happen…");
@@ -4265,7 +4304,7 @@ function renderWanderMove() {
   if (wDone) {
     head.append(el("h3", null, cur.failed ? "No scene yet" : wGoal ? (outcomes.length ? "You made it, at a price" : "You made it") : "Scene over"));
     const row = el("div", "endcard");
-    if (sample && cur.live) { const lv = cur.live, again = el("button", "btn", cur.failed ? "Try again" : "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
+    if (aiCan("chat") && cur.live) { const lv = cur.live, again = el("button", "btn", cur.failed ? "Try again" : "Live again, somewhere new"); again.onclick = () => startLive(lv); row.append(again); }
     const back = backBtn();
     row.append(back); m.append(head, row);
     return;
@@ -4335,18 +4374,386 @@ Return ONLY a JSON object:
   busy = false; renderMove();
 }
 
-/* ---------- off-script with Claude ---------- */
 let sample = null;
-// Where the AI parts come from: Claude itself inside an artifact, or your account on the website
-const aiHow = lower => { const t = window.SM_AI_HOW || "Open the app in Claude"; return lower ? t[0].toLowerCase() + t.slice(1) : t; };
+// What to do when there's no AI yet: inside Claude, allow it; anywhere else, pick one
+const aiHow = lower => { const t = IN_CLAUDE ? "Allow Claude when the app asks" : "Pick one in Your AI"; return lower ? t[0].toLowerCase() + t.slice(1) : t; };
 function aiNote(text) {
   const p = el("p", "ls-note", text);
-  if (window.SM_openAccount) { const b = el("button", "linkish", "Open Account"); b.type = "button"; b.onclick = () => window.SM_openAccount(); p.append(" ", b); }
+  const b = el("button", "linkish", "Your AI"); b.type = "button"; b.onclick = () => openAiPanel(); p.append(" ", b);
   return p;
 }
+/* ---------- Your AI: which AI writes the AI parts ---------- */
+// Where the app runs decides what can be chosen. Inside Claude (an artifact) it's Claude. On the website
+// and in solo mode the choice is kept by the server (window.SM_HOST, from client.js), except a model on
+// your own computer seen from the website, which only this page can reach. Opened from a file, the page
+// talks to the AI itself. The rules every AI follows are in ai.js (window.SM_AI).
+const HOST = window.SM_HOST || null, IN_CLAUDE = !!(window.claude && !HOST);
+let AI = { kind: "claude", name: "Claude", can: null, via: IN_CLAUDE ? "claude" : "" };
+// A connection the page makes itself lives in this browser only: never synced, never in a progress code
+const AI_PAGE = "smai-conn";
+const aiSaved = () => { try { const c = JSON.parse(localStorage.getItem(AI_PAGE) || "null"); return c && c.url && c.model ? c : null; } catch { return null; } };
+// A part of the app is on when there's an AI, and it passed that part's test (Claude needs none)
+const aiCan = f => !!sample && (!AI.can || !!AI.can[f]);
+const AI_PARTS = { check: ["checking answers", "Checking your answers"], chat: ["chats", "Chats"], long: ["Long Story", "Long Story"] };
+function aiOffNote(f, noneText) {
+  if (!sample) return aiNote(noneText);
+  const t = ((AI.tested || {}).results || []).find(r => r.id === (AI.can && !AI.can.check ? "check" : f));
+  const part = AI.can && !AI.can.check && f !== "check" ? "checking answers" : AI_PARTS[f][0];
+  return aiNote(`${AI_CAP} didn't pass the ${part} test${t && t.why ? ` (${t.why.replace(/\.$/, "").replace(/^./, c => c.toLowerCase())})` : ""}, so ${f === "long" ? "Long Story stays" : f === "chat" ? "chatting stays" : "this stays"} off with it. A bigger model, or Claude, can do it.`);
+}
+
+// The page's own road to an AI, shaped like the sample.json the app calls everywhere
+function pageSample(conn) {
+  return {
+    async json(prompt, opts = {}) {
+      try { return (await SM_AI.ask(conn, prompt, { quick: opts.modelTier === "quick", shape: opts.shape })).result; }
+      catch (e) {
+        if (["bad_key", "no_credit", "model_offline", "too_big"].includes(e.code)) aiBanner(e.message);
+        // The app already knows two codes: one says "no access", the other "try again soon"
+        if (e.code === "bad_key" || e.code === "no_credit") e.code = "not_granted";
+        throw e;
+      }
+    },
+  };
+}
+function aiBanner(text) {
+  document.querySelectorAll(".sm-banner").forEach(b => b.remove());
+  const b = el("div", "sm-banner"); b.setAttribute("role", "status");
+  const go = el("button", "btn small", "Your AI"); go.onclick = () => { b.remove(); openAiPanel(); };
+  const x = el("button", "linkish", "Close"); x.onclick = () => b.remove();
+  b.append(el("p", null, text), go, x); document.body.append(b);
+}
+
+// Which AI the app uses now: your own pick in this browser, else Claude in Claude, else what the server says
+async function aiConnect() {
+  const own = window.SM_AI && aiSaved();
+  let s = null, info;
+  if (own) { s = pageSample(own); info = { kind: own.kind, provider: own.provider, model: own.model, name: own.name || SM_AI.nameFor(own.model), can: own.can || null, tested: own.tested || null, via: "page" }; }
+  else if (window.claude && claude.use) {
+    try { s = await claude.use("sample"); } catch {}
+    const a = HOST && HOST.account;
+    info = a && a.ai ? { ...a.ai, via: "server" } : { kind: "claude", name: "Claude", can: null, via: IN_CLAUDE ? "claude" : "server" };
+  }
+  sample = s || null;
+  AI = info || { kind: "claude", name: "Claude", can: null, via: "" };
+  // Without an AI, the notes say what's needed: Claude inside Claude, any AI elsewhere
+  AI_NAME = sample ? AI.name : IN_CLAUDE ? "Claude" : "an AI"; AI_CAP = AI_NAME[0].toUpperCase() + AI_NAME.slice(1);
+  LOCAL_AI = !!sample && AI.kind !== "claude";
+  return !!sample;
+}
+function aiRedraw() {
+  renderRail(); renderFoot();
+  if (mode === "chat" && !chatWho) startChats(); else if (mode === "home") startHome(homeDay); else if (mode === "long" && lsView === "home") startLong(); else renderMove();
+}
+
+/* the panel */
+let aiDlg = null, aiP = { tab: "", draft: {}, busy: "", err: "", found: null, models: null, steps: null, done: null };
+const aiWhere = () => HOST ? HOST.kind : IN_CLAUDE ? "claude" : "file";
+// From the website, a model on your computer is reached by this page; everything else on the website and in solo goes through the server
+const aiViaServer = kind => !!HOST && !(kind === "computer" && HOST.kind === "website");
+function openAiPanel(tab) {
+  if (!aiDlg) {
+    aiDlg = el("dialog", "ai-dlg"); aiDlg.setAttribute("aria-label", "Your AI"); aiDlg.append(el("div", "ai-in"));
+    aiDlg.addEventListener("click", e => { if (e.target === aiDlg && !aiP.busy) aiDlg.close(); });
+    document.body.append(aiDlg);
+  }
+  aiP = { tab: tab || aiP.tab || (AI.kind === "claude" ? "" : AI.kind), draft: aiP.draft || {}, busy: "", err: "", found: null, models: aiP.models, steps: null, done: null };
+  drawAi(); if (!aiDlg.open) aiDlg.showModal();
+}
+window.SM_openAi = openAiPanel;
+
+function aiNowLine() {
+  const p = el("p", "ai-now");
+  if (!sample) { p.append(el("b", null, "No AI yet. ")); p.append(IN_CLAUDE ? "Allow Claude when the app asks, and the AI parts switch on." : "The scripted places, Mistakes and every \"Why, exactly?\" work without one."); return p; }
+  const sub = AI.model && AI.kind !== "claude" ? ` (${AI.model})` : "";
+  p.append(el("b", null, AI.name + sub));
+  p.append(AI.kind === "claude" ? (AI.via === "claude" ? ", through your Claude account." : ", with your Claude key.") : AI.kind === "computer" ? " on this computer. Your words stay on this computer." : `, online with your key. Your words go to ${(SM_AI.provider(AI.provider) || {}).name || "that service"}.`);
+  return p;
+}
+function aiResults(res, steps) {
+  const box = el("div", "ai-tests");
+  SM_AI.TESTS.forEach(t => {
+    const r = (res || []).find(x => x.id === t.id), s = steps && steps[t.id];
+    const row = el("p", "ai-test" + (r ? (r.ok ? " ok" : " no") : ""));
+    row.append(el("span", "ai-t-name", t.name), el("span", "ai-t-state", r ? (r.ok ? `Passed (${(r.ms / 1000).toFixed(1)} s)` : "Didn't pass") : s === "running" ? "Testing…" : s === "error" ? "Stopped" : "Waiting"));
+    if (r && !r.ok && r.why) row.append(el("span", "ai-t-why", r.why));
+    box.append(row);
+  });
+  return box;
+}
+
+function drawAi() {
+  const box = aiDlg.querySelector(".ai-in"); box.textContent = "";
+  const head = el("div", "ai-head"), close = el("button", "linkish", "Close"); close.type = "button"; close.disabled = !!aiP.busy; close.onclick = () => aiDlg.close();
+  head.append(el("span", "han", "助手"), el("h2", null, "Your AI"), close); box.append(head);
+  box.append(el("p", "ai-muted", "Unscripted chats, Long Story, Play it live and your own words are written by an AI as you go. Pick which one."));
+  box.append(aiNowLine());
+
+  // What the one in use passed, and a way to test it again or stop using it
+  if (aiP.steps || aiP.done) box.append(aiOutcome());
+  else if (sample && AI.kind !== "claude") {
+    if (AI.tested && AI.tested.results) box.append(aiResults(AI.tested.results));
+    else box.append(el("p", "ai-muted", "Not tested yet. Test it to see which parts it can be trusted with."));
+  }
+  if (sample && AI.kind !== "claude" && !aiP.steps) {
+    const row = el("div", "ai-row");
+    const again = el("button", "btn ghost small", "Test it"); again.type = "button"; again.disabled = !!aiP.busy; again.onclick = () => aiRetest();
+    const stop = el("button", "linkish", "Stop using it"); stop.type = "button"; stop.disabled = !!aiP.busy; stop.onclick = () => aiStop();
+    row.append(again); if (!AI.fromEnv) row.append(stop); box.append(row);
+  }
+  if (aiP.err) { const e = el("p", "ai-err", aiP.err); e.setAttribute("role", "alert"); box.append(e); }
+
+  const where = aiWhere();
+  if (where === "claude") {
+    box.append(el("p", "ai-muted", "Inside Claude, the AI parts are always Claude. To use another AI, or a free model on your own computer, run Street Mandarin on your computer or open its website."));
+    return;
+  }
+  // Three ways, one open at a time
+  const tabs = el("div", "ai-tabs"); tabs.setAttribute("role", "tablist");
+  [["claude", "Claude"], ["computer", "On this computer"], ["online", "Online, with your key"]].forEach(([k, t]) => {
+    const b = el("button", null, t); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(aiP.tab === k)); b.disabled = !!aiP.busy;
+    b.onclick = () => { if (aiP.tab === k) return; aiP.tab = k; aiP.err = ""; aiP.found = null; aiP.models = null; drawAi(); }; tabs.append(b);
+  });
+  box.append(tabs);
+  if (aiP.tab === "claude") box.append(aiClaudeTab());
+  if (aiP.tab === "computer") box.append(aiComputerTab());
+  if (aiP.tab === "online") box.append(aiOnlineTab());
+}
+
+function aiClaudeTab() {
+  const sec = el("div", "ai-sec");
+  const a = HOST && HOST.account;
+  if (!HOST) { sec.append(el("p", null, "Claude works when you open Street Mandarin inside Claude, or on its website with your own Claude key. In a copy opened from a file, pick another AI here.")); return sec; }
+  if (!a || !a.signedIn) { sec.append(el("p", null, "Sign in first, so your Claude key is kept safely in your account.")); const go = el("button", "btn small", "Sign in"); go.onclick = () => { aiDlg.close(); HOST.signIn(); }; sec.append(go); return sec; }
+  sec.append(el("p", null, "Claude writes the AI parts on your own Claude API key, so their cost goes to your Anthropic account."));
+  if (a.freeToday) sec.append(el("p", "ai-muted", `Free today: about $${a.freeLeftToday.toFixed(2)} of AI left. With your own key there's no daily limit.`));
+  const usingClaude = sample && AI.kind === "claude";
+  if (a.hasKey) {
+    const row = el("div", "ai-row"); row.append(el("p", null, `Your key is saved (${a.keyHint}).`));
+    if (!usingClaude) { const use = el("button", "btn small", "Use Claude"); use.onclick = () => aiUseClaude(); row.append(use); }
+    const rm = el("button", "linkish", "Remove it"); rm.onclick = () => aiRun("Removing…", async () => { await HOST.api("DELETE", "/api/account/key"); await aiAfterServerChange(); }); row.append(rm);
+    sec.append(row); return sec;
+  }
+  if (a.freeToday && !usingClaude) { const use = el("button", "btn ghost small", "Use the free Claude"); use.onclick = () => aiUseClaude(); sec.append(use); }
+  const form = el("form", "ai-form");
+  const lab = el("label", null, "Your Claude API key"), key = el("input"); key.type = "password"; key.autocomplete = "off"; key.spellcheck = false; key.placeholder = "sk-ant-…"; lab.append(key);
+  const help = el("p", "ai-muted"); help.append("Make one at ", aiLink("console.anthropic.com", "https://console.anthropic.com/settings/keys"), ", under API keys. It's stored encrypted and never shown again.");
+  const go = el("button", "btn", aiP.busy || "Save key and use Claude"); go.type = "submit"; go.disabled = !!aiP.busy;
+  form.append(lab, help, go);
+  form.onsubmit = ev => { ev.preventDefault(); aiRun("Checking…", async () => { await HOST.api("PUT", "/api/account/key", { key: key.value.trim() }); try { localStorage.removeItem(AI_PAGE); } catch {} await aiAfterServerChange(); }); };
+  sec.append(form); return sec;
+}
+
+function aiComputerTab() {
+  const sec = el("div", "ai-sec");
+  sec.append(el("p", null, "Run a model with LM Studio or Ollama on this computer, and the app finds it. It's free, and your words stay on this computer."));
+  if (!aiViaServer("computer") && location.protocol === "https:") sec.append(el("p", "ai-muted", "Your browser may ask whether this site can reach devices on your network. Choose Allow: that's how the page talks to your model."));
+  const row = el("div", "ai-row"), find = el("button", "btn small", aiP.busy === "Looking…" ? "Looking…" : "Find it"); find.disabled = !!aiP.busy; find.onclick = () => aiFind();
+  row.append(find); sec.append(row);
+  (aiP.found || []).forEach(f => sec.append(aiFoundRow(f)));
+  if (aiP.found && !aiP.found.some(f => f.running)) {
+    const p = el("p", "ai-muted"); p.append("Nothing found. Install ", aiLink("LM Studio", "https://lmstudio.ai"), ", download a model (Qwen3.5 9B suits a laptop with a graphics card), load it, and start its server in the Developer tab. Then Find it again.");
+    sec.append(p);
+  }
+  // Something else that speaks the same API (llama.cpp, say), at its own address
+  const other = el("details", "ai-other"); other.open = !!aiP.draft.otherOpen;
+  other.ontoggle = () => { aiP.draft.otherOpen = other.open; };
+  other.append(el("summary", null, "Somewhere else on this computer?"));
+  const f = el("form", "ai-form"), lab = el("label", null, "Its address"), inp = el("input"); inp.type = "url"; inp.placeholder = "http://localhost:8080/v1"; inp.value = aiP.draft.otherUrl || ""; lab.append(inp);
+  const look = el("button", "btn ghost small", "Look there"); look.type = "submit"; look.disabled = !!aiP.busy;
+  f.append(lab, look); f.onsubmit = ev => { ev.preventDefault(); aiP.draft.otherUrl = inp.value.trim(); aiFind(inp.value.trim()); };
+  other.append(f); sec.append(other);
+  return sec;
+}
+function aiFoundRow(f) {
+  const p = el("div", "ai-found");
+  if (f.running && f.models.length) {
+    p.append(el("p", null, f.provider === "other" ? "Found it." : `${f.name} is running.`));
+    const conn = { kind: "computer", provider: f.provider, url: f.url };
+    p.append(aiModelPick(f.models, conn));
+  } else if (f.running) p.append(el("p", null, `${f.provider === "other" ? "Something is running there" : f.name + " is running"}, but no model is loaded. Load one, then Find it again.`));
+  else if (f.blocked) p.append(el("p", null, f.provider === "ollama"
+    ? `Ollama is running but isn't letting this page in. Set OLLAMA_ORIGINS to ${location.origin === "null" ? "*" : location.origin} and restart Ollama, then Find it again.`
+    : f.provider === "other" ? "Something is running there, but it isn't letting this page in. Turn on its CORS setting (in LM Studio: Developer tab, server settings, Enable CORS), then try again."
+    : `${f.name} is running but isn't letting this page in. In LM Studio's Developer tab, open the server settings and turn on Enable CORS, then Find it again.`));
+  else return document.createDocumentFragment();
+  return p;
+}
+function aiModelPick(models, conn) {
+  const f = el("form", "ai-form ai-pick");
+  const lab = el("label", null, models.length > 1 ? "Model" : "Model: " + models[0]);
+  let pick;
+  if (models.length > 40) { pick = el("input"); pick.setAttribute("list", "ai-models"); pick.placeholder = "Type to search " + models.length + " models"; const dl = el("datalist"); dl.id = "ai-models"; models.forEach(m => { const o = el("option"); o.value = m; dl.append(o); }); f.append(dl); }
+  else { pick = el("select"); models.forEach(m => { const o = el("option", null, m); o.value = m; pick.append(o); }); }
+  pick.value = (aiP.draft.model && models.includes(aiP.draft.model)) ? aiP.draft.model : models.length > 40 ? "" : models[0];
+  if (models.length > 1) lab.append(pick);
+  const go = el("button", "btn small", "Use it"); go.type = "submit"; go.disabled = !!aiP.busy;
+  f.append(lab, go);
+  f.onsubmit = ev => { ev.preventDefault(); const model = models.length > 1 ? pick.value.trim() : models[0]; if (!model) return; aiTry({ ...conn, model }); };
+  return f;
+}
+
+function aiOnlineTab() {
+  const sec = el("div", "ai-sec"), a = HOST && HOST.account;
+  if (HOST && (!a || !a.signedIn)) { sec.append(el("p", null, "Sign in first, so your key is kept safely in your account.")); const go = el("button", "btn small", "Sign in"); go.onclick = () => { aiDlg.close(); HOST.signIn(); }; sec.append(go); return sec; }
+  const d = aiP.draft, list = SM_AI.PROVIDERS.concat(HOST && HOST.kind === "website" ? [] : [{ id: "other", name: "Another service (its address)", about: "Anything that speaks the OpenAI-style API." }]);
+  if (!list.some(p => p.id === d.provider)) d.provider = "openrouter";
+  const prov = list.find(p => p.id === d.provider);
+  const lab = el("label", null, "Service"), sel = el("select"); list.forEach(p => { const o = el("option", null, p.name); o.value = p.id; sel.append(o); }); sel.value = d.provider;
+  sel.onchange = () => { d.provider = sel.value; d.key = ""; d.model = ""; aiP.models = null; aiP.err = ""; drawAi(); };
+  lab.append(sel); sec.append(lab, el("p", "ai-muted", prov.about || ""));
+  // OpenRouter can connect with one click (it makes a key for this app on your OpenRouter account)
+  if (d.provider === "openrouter" && /^https?:$/.test(location.protocol) && window.crypto && crypto.subtle && !d.key) {
+    const row = el("div", "ai-row"), con = el("button", "btn small", "Connect OpenRouter"); con.type = "button"; con.disabled = !!aiP.busy; con.onclick = () => orConnect();
+    row.append(con, el("span", "ai-muted", "or paste a key")); sec.append(row);
+  }
+  const f = el("form", "ai-form");
+  let url = null;
+  if (d.provider === "other") { const ul = el("label", null, "Its address"); url = el("input"); url.type = "url"; url.placeholder = "https://…/v1"; url.value = d.url || ""; ul.append(url); f.append(ul); }
+  const kl = el("label", null, "Your key"), key = el("input"); key.type = "password"; key.autocomplete = "off"; key.spellcheck = false; key.value = d.key || "";
+  const saved = AI.kind === "online" && AI.via !== "page" && AI.provider === d.provider && AI.keyHint;
+  key.placeholder = saved ? `Saved (${AI.keyHint}). Paste a new one to change it` : "Paste it here"; kl.append(key);
+  const help = el("p", "ai-muted");
+  if (prov.keys) help.append("Get one at ", aiLink(new URL(prov.keys).host, prov.keys), ". ");
+  help.append(HOST ? "It's stored encrypted on the server and never shown again." : "It's kept in this browser only, and sent only to " + (d.provider === "other" ? "that service" : prov.name) + ".");
+  const go = el("button", "btn ghost small", aiP.busy === "Finding models…" ? "Finding models…" : "Find models"); go.type = "submit"; go.disabled = !!aiP.busy;
+  f.append(kl, help, go);
+  f.onsubmit = ev => { ev.preventDefault(); d.key = key.value.trim(); if (url) d.url = url.value.trim(); aiModels(); };
+  sec.append(f);
+  if (aiP.models) {
+    if (!aiP.models.length) sec.append(el("p", "ai-muted", "That service listed no models that can chat."));
+    else sec.append(aiModelPick(aiP.models, aiOnlineDraft()));
+  }
+  return sec;
+}
+const aiOnlineDraft = () => { const d = aiP.draft, p = SM_AI.provider(d.provider); return { kind: "online", provider: d.provider, url: d.provider === "other" ? (d.url || "").replace(/\/+$/, "") : p.url, key: d.key || "" }; };
+const aiLink = (t, href) => { const a = el("a", null, t); a.href = href; a.target = "_blank"; a.rel = "noopener"; return a; };
+
+// One thing at a time: the buttons wait, and any error is said plainly in the panel
+async function aiRun(busy, fn) {
+  if (aiP.busy) return;
+  aiP.busy = busy; aiP.err = ""; drawAi();
+  try { await fn(); } catch (e) { aiP.err = (e && e.message) || "That didn't work. Try again."; }
+  aiP.busy = ""; if (aiDlg && aiDlg.open) drawAi();
+}
+async function aiAfterServerChange() {
+  await HOST.refresh(); await aiConnect(); aiRedraw();
+}
+const aiUseClaude = () => aiRun("Switching…", async () => {
+  try { localStorage.removeItem(AI_PAGE); } catch {}
+  if (HOST) { if (HOST.account && HOST.account.ai && HOST.account.ai.kind !== "claude" && !HOST.account.ai.fromEnv) await HOST.api("DELETE", "/api/ai/conn"); await aiAfterServerChange(); }
+  else { await aiConnect(); aiRedraw(); }
+});
+const aiStop = () => aiRun("Switching…", async () => {
+  if (AI.via === "page") { try { localStorage.removeItem(AI_PAGE); } catch {} if (HOST) await HOST.refresh(); await aiConnect(); aiRedraw(); }
+  else { await HOST.api("DELETE", "/api/ai/conn"); await aiAfterServerChange(); }
+});
+
+// Looking for a model on this computer: the server looks in solo mode; elsewhere this page does
+async function aiFind(url) {
+  await aiRun("Looking…", async () => {
+    const apps = url ? [{ provider: "other", name: "It", url: url.replace(/\/+$/, "") }] : SM_AI.COMPUTER;
+    if (aiViaServer("computer")) {
+      aiP.found = url ? [await HOST.api("POST", "/api/ai/models", { kind: "computer", url }).then(j => ({ ...apps[0], running: true, models: j.models }), e => { if (e.code === "bad_request") throw e; return { ...apps[0], running: false, models: [] }; })]
+        : (await HOST.api("POST", "/api/ai/models", { find: true })).found;
+    } else {
+      aiP.found = await Promise.all(apps.map(async p => {
+        try { return { ...p, running: true, models: await SM_AI.listModels({ kind: "computer", url: p.url }, { ms: 2500 }) }; }
+        catch {
+          // Something answers but won't let the page read it: that's the cross-site setting, not a stopped model
+          let blocked = false;
+          try { await fetch(p.url + "/models", { mode: "no-cors", signal: AbortSignal.timeout(2500) }); blocked = true; } catch {}
+          return { ...p, running: false, blocked, models: [] };
+        }
+      }));
+    }
+    if (url && !aiP.found[0].running && !aiP.found[0].blocked) throw new Error("Nothing answered at that address.");
+  });
+}
+async function aiModels() {
+  await aiRun("Finding models…", async () => {
+    const draft = aiOnlineDraft();
+    if (draft.provider === "other" && !/^https?:\/\/\S+/.test(draft.url)) throw new Error("Put in the service's address first, like https://…/v1");
+    aiP.models = aiViaServer("online") ? (await HOST.api("POST", "/api/ai/models", draft)).models : await SM_AI.listModels(draft);
+    if (!aiP.models.length) aiP.models = [];
+  });
+}
+
+// Using a new AI: test it first, through the same road the app will use. It's only switched on if it can
+// check answers; the parts it doesn't pass stay off with it.
+async function aiTry(conn) {
+  aiP.draft.model = conn.model;
+  const viaServer = aiViaServer(conn.kind);
+  const json = viaServer
+    ? (prompt, opts) => HOST.api("POST", "/api/ai/try", { ...conn, prompt, tier: opts.modelTier || "", shape: opts.shape }).then(j => j.result)
+    : (prompt, opts) => SM_AI.ask(conn, prompt, { quick: opts.modelTier === "quick", shape: opts.shape }).then(r => r.result);
+  aiP.steps = {}; aiP.done = null;
+  await aiRun("Testing…", async () => {
+    let out;
+    try { out = await SM_AI.test(json, s => { aiP.steps[s.id] = s.state; drawAi(); }); }
+    catch (e) { aiP.steps = null; throw e; }
+    const name = SM_AI.nameFor(conn.model);
+    aiP.done = { name, model: conn.model, ...out, switched: out.can.check };
+    if (!out.can.check) return;
+    if (viaServer) { await HOST.api("PUT", "/api/ai/conn", { ...conn, can: out.can, results: out.results }); try { localStorage.removeItem(AI_PAGE); } catch {} await aiAfterServerChange(); }
+    else { try { localStorage.setItem(AI_PAGE, JSON.stringify({ ...conn, name, can: out.can, tested: { at: out.at, results: out.results } })); } catch {} await aiConnect(); aiRedraw(); }
+  });
+  aiP.steps = null; if (aiDlg.open) drawAi();
+}
+async function aiRetest() {
+  aiP.steps = {}; aiP.done = null;
+  await aiRun("Testing…", async () => {
+    let out;
+    try { out = await SM_AI.test((p, o) => sample.json(p, o), s => { aiP.steps[s.id] = s.state; drawAi(); }); }
+    catch (e) { aiP.steps = null; throw e; }
+    aiP.done = { name: AI.name, model: AI.model, ...out, switched: true, again: true };
+    if (AI.via === "page") { const c = aiSaved(); if (c) { c.can = out.can; c.tested = { at: out.at, results: out.results }; try { localStorage.setItem(AI_PAGE, JSON.stringify(c)); } catch {} } await aiConnect(); }
+    else { await HOST.api("PATCH", "/api/ai/conn", { can: out.can, results: out.results }); await HOST.refresh(); await aiConnect(); }
+    aiRedraw();
+  });
+  aiP.steps = null; if (aiDlg.open) drawAi();
+}
+function aiOutcome() {
+  const box = el("div", "ai-outcome"), d = aiP.done;
+  if (!d) { box.append(el("p", null, "Testing it with three small requests, the kind the app makes…"), aiResults([], aiP.steps)); return box; }
+  const off = ["chat", "long"].filter(f => !d.can[f]).map(f => AI_PARTS[f][0]);
+  box.append(el("p", null, !d.switched
+    ? `Not switched. ${d.name} couldn't be trusted to check your answers, and an AI that calls a wrong sentence right would teach you mistakes. Try a bigger model.`
+    : `${d.again ? "Tested again" : `Now using ${d.name}`}.${off.length ? ` ${off.join(" and ").replace(/^./, c => c.toUpperCase())} ${off.length > 1 ? "stay" : "stays"} off with it: ${off.length > 1 ? "they need" : "it needs"} a stronger model.` : " Everything passed."}`));
+  box.append(aiResults(d.results));
+  return box;
+}
+
+/* OpenRouter's one-click connect (OAuth with PKCE): it hands this page a key on your own OpenRouter account */
+const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function orConnect() {
+  const v = b64url(crypto.getRandomValues(new Uint8Array(32))), state = b64url(crypto.getRandomValues(new Uint8Array(12)));
+  const ch = b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v))));
+  try { sessionStorage.setItem("smai-or", JSON.stringify({ v, state })); } catch {}
+  location.href = "https://openrouter.ai/auth?" + new URLSearchParams({ callback_url: location.origin + location.pathname, code_challenge: ch, code_challenge_method: "S256", state, key_label: "Street Mandarin" });
+}
+async function orReturn() {
+  const q = new URLSearchParams(location.search), code = q.get("code");
+  let saved = null; try { saved = JSON.parse(sessionStorage.getItem("smai-or") || "null"); } catch {}
+  if (!code || !saved) return;
+  try { sessionStorage.removeItem("smai-or"); } catch {}
+  history.replaceState(null, "", location.pathname + location.hash);
+  aiP.draft = { provider: "openrouter" };
+  openAiPanel("online");
+  if (q.get("state") !== saved.state) { aiP.err = "That OpenRouter sign-in didn't come from here. Try Connect OpenRouter again."; return drawAi(); }
+  await aiRun("Connecting…", async () => {
+    let j = {};
+    try { const r = await fetch("https://openrouter.ai/api/v1/auth/keys", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code, code_verifier: saved.v, code_challenge_method: "S256" }) }); j = await r.json(); } catch {}
+    if (!j.key) throw new Error("OpenRouter didn't finish connecting. Try Connect OpenRouter again.");
+    aiP.draft.key = j.key;
+  });
+  if (aiP.draft.key) aiModels();
+}
+
+/* ---------- off-script with Claude ---------- */
 let freeOpen = false;
 function renderFree(m) {
-  if (!sample || mode !== "scene") return;
+  if (!aiCan("check") || mode !== "scene") return;
   // While you're picking or building, your own words stay one tap away, so their Send button
   // can't be mistaken for the one that sends your answer
   if (!finished && !freeOpen) {
@@ -4361,7 +4768,7 @@ function renderFree(m) {
   const send = el("button", "btn", busy ? "…" : "Send"); send.type = "submit"; send.disabled = busy; inp.disabled = busy;
   form.append(inp, send);
   form.onsubmit = ev => { ev.preventDefault(); const v = inp.value.trim(); if (v) offScript(v); };
-  m.append(form, el("p", "free-note", window.SM_AI_NAME ? `Replies to your own words come from ${AI_NAME}.` : "Replies to your own words come from Claude, using your Claude account."));
+  m.append(form, el("p", "free-note", AI.via === "claude" ? "Replies to your own words come from Claude, using your Claude account." : `Replies to your own words come from ${AI_NAME}.`));
 }
 
 async function offScript(text) {
@@ -5450,7 +5857,9 @@ if (said) startHome(); else start(lastScene());
 jadeOpening();
 
 (async () => {
-  try { if (window.claude && claude.use) { const s = await claude.use("sample"); if (s) { sample = s; renderRail(); if (mode === "chat" && !chatWho) startChats(); else if (mode === "home") startHome(homeDay); else renderMove(); chatNudge(); } } } catch {}
+  // Coming back from OpenRouter's connect page finishes it in Your AI
+  try { const was = AI_NAME, on = await aiConnect(); if (on || AI_NAME !== was) aiRedraw(); else renderFoot(); if (on) chatNudge(); } catch {}
+  orReturn();
 })();
 </script>
 </body>

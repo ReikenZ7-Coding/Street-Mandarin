@@ -1,5 +1,6 @@
 /* Street Mandarin on its own website: connects the app to the server.
-   - Account: sign up or sign in, and add your own Claude key for the AI parts.
+   - Account: sign up or sign in. (Which AI writes the AI parts is chosen in the app's Your AI panel,
+     which reaches the server through window.SM_HOST below.)
    - Sync: everything the app saves (the same keys the progress code copies) follows you to any device.
    - AI: the app asks for Claude through sample.json(prompt), the same call it makes inside a Claude
      artifact, so this file provides that call and sends it to the server.
@@ -86,7 +87,7 @@
         return j.result;
       } catch (e) {
         const why = e.code;
-        if (["needs_key", "bad_key", "no_credit", "allowance", "budget", "signed_out", "model_offline", "too_big"].includes(why)) banner(e.message, true);
+        if (["needs_key", "bad_key", "no_credit", "allowance", "budget", "signed_out", "model_offline", "too_big"].includes(why)) banner(e.message, why === "signed_out" ? "account" : "ai");
         // The app already knows these two codes: one says "no access", the other "try again soon"
         e.code = why === "rate_limited" || why === "allowance" || why === "budget" ? "rate_limited"
           : why === "needs_key" || why === "signed_out" || why === "bad_key" || why === "no_credit" ? "not_granted" : why;
@@ -96,9 +97,17 @@
   };
   let ready;
   const accountReady = new Promise(r => { ready = r; });
-  window.claude = { use: async cap => { const a = await accountReady; return cap === "sample" && a && a.signedIn && a.canUseAi ? sample : null; } };
-  // What the app says when an AI part isn't available yet
-  window.SM_AI_HOW = "Sign in and add your Claude key";
+  // Read the account as it is now: Your AI can change it after the page has started
+  window.claude = { use: async cap => { await accountReady; const a = account; return cap === "sample" && a && a.signedIn && a.canUseAi ? sample : null; } };
+  // What the Your AI panel needs from the server: who you are, and its routes
+  window.SM_HOST = {
+    ready: accountReady,
+    get account() { return account; },
+    get kind() { return account && account.solo ? "solo" : "website"; },
+    api,
+    async refresh() { try { account = await api("GET", "/api/account"); } catch {} drawButton(); return account; },
+    signIn: () => openAccount(),
+  };
 
   /* ---------- starting up ---------- */
   const hide = document.createElement("style");
@@ -106,7 +115,6 @@
   async function start() {
     try { account = await api("GET", "/api/account"); } catch { account = null; }
     if (account && account.signedIn) {
-      window.SM_AI_HOW = account.canUseAi ? "Sign in" : "Add your Claude key in Account";
       document.head.append(hide);
       const showAnyway = setTimeout(() => hide.remove(), 3000);
       try {
@@ -159,19 +167,18 @@ dialog.acct::backdrop { background: rgba(10, 20, 16, .45); }
 .acct .switch button[aria-pressed="true"] { background: var(--jade-soft); border-color: var(--jade); }
 .acct .danger { color: var(--cinnabar, #b3412e); }
 .acct a { color: var(--jade); font-weight: 600; }
-.sm-banner { position: fixed; z-index: 60; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); background: var(--surface); color: var(--fg); border: 1px solid var(--jade); border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 30px rgba(0,0,0,.18); font-size: 14px; }
-.sm-banner p { margin: 0; flex: 1; }
 `;
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   let btn, dlg, view = "signin", busy = false, err = "", confirmDelete = false;
 
   function setSync(s) { syncState = s; const n = document.getElementById("acct-sync"); if (n) n.textContent = s; }
 
-  function banner(text, withButton) {
+  function banner(text, go) {
     document.querySelectorAll(".sm-banner").forEach(b => b.remove());
     const b = el("div", "sm-banner"); b.setAttribute("role", "status");
     b.append(el("p", null, text));
-    if (withButton) { const o = el("button", "btn small", "Account"); o.onclick = () => { b.remove(); openAccount(); }; b.append(o); }
+    const ai = go === "ai" && window.SM_openAi;
+    if (go) { const o = el("button", "btn small", ai ? "Your AI" : "Account"); o.onclick = () => { b.remove(); ai ? window.SM_openAi() : openAccount(); }; b.append(o); }
     const x = el("button", "linkish", "Close"); x.onclick = () => b.remove(); b.append(x);
     document.body.append(b);
   }
@@ -240,47 +247,12 @@ dialog.acct::backdrop { background: rgba(10, 20, 16, .45); }
       const s = el("p", "muted", syncState || (account.solo ? "Saved on this computer" : "Saved to your account")); s.id = "acct-sync"; box.append(s);
     }
 
-    if (account.provider === "local") {
-      // Your own model: whether it's running, and what to do if it isn't
-      const sec = el("div", "sec"); sec.append(el("h3", null, "Your AI"));
-      if (account.localOk) sec.append(el("p", null, `Running: ${account.localModel}. Chats, Long Story and "How do I say…?" use it, for free.`));
-      else sec.append(el("p", null, "Not running right now. Open LM Studio, load your model, and start its local server (Developer tab). Then reload this page."));
-      const re = el("button", "btn ghost small", "Check again"); re.type = "button";
-      re.onclick = async () => { try { account = await api("GET", "/api/account"); } catch {} draw(); };
-      sec.append(re); box.append(sec);
-      if (account.solo) return;
-    }
-
-    // The AI parts
-    const sec = el("div", "sec"); sec.append(el("h3", null, "Claude, for the AI parts"));
-    if (account.provider === "local") sec.hidden = true;
-    sec.append(el("p", null, "Unscripted chats, Long Story and \"How do I say…?\" are written by Claude as you go. They run on your own Claude API key, so their cost goes to your Anthropic account. Short Story, Mistakes, Notes and everything else are free and need no key."));
-    if (account.freeToday) sec.append(el("p", "muted", `Free today: about $${account.freeLeftToday.toFixed(2)} of AI left. With your own key there's no daily limit.`));
-    if (account.hasKey) {
-      const row = el("div", "row");
-      row.append(el("p", null, `Your key is saved (${account.keyHint}).`));
-      const rm = el("button", "btn ghost small", "Remove it"); rm.type = "button";
-      rm.onclick = async () => { busy = true; draw(); try { await api("DELETE", "/api/account/key"); account = await api("GET", "/api/account"); } catch (x) { err = x.message; } busy = false; draw(); };
-      row.append(rm); sec.append(row);
-      if (account.hasKey && !window.__smAiOn) sec.append(el("p", "muted", "Reload the page to start using it."));
-    } else {
-      const form = el("form"); form.style.display = "grid"; form.style.gap = "10px";
-      const [lk, key] = field("Your Claude API key", "password", "key", "off"); key.placeholder = "sk-ant-…"; key.spellcheck = false;
-      const help = el("p", "muted"); help.append("Make one at ");
-      const a = el("a", null, "console.anthropic.com"); a.href = "https://console.anthropic.com/settings/keys"; a.target = "_blank"; a.rel = "noopener";
-      help.append(a, ", under API keys. It's stored encrypted and never shown again; you can remove it any time.");
-      const e = el("p", "err", err); e.setAttribute("role", "alert");
-      const go = el("button", "btn", busy ? "Checking…" : "Save key"); go.type = "submit"; go.disabled = busy;
-      form.append(lk, help, e, go);
-      form.onsubmit = async ev => {
-        ev.preventDefault(); if (busy) return;
-        busy = true; err = ""; draw();
-        try { await api("PUT", "/api/account/key", { key: key.value.trim() }); location.reload(); }
-        catch (x) { busy = false; err = x.message; draw(); }
-      };
-      sec.append(form);
-    }
-    box.append(sec);
+    // Which AI writes the AI parts lives in Your AI, one place for every way of running the app
+    const aiSec = el("div", "sec"); aiSec.append(el("h3", null, "The AI parts"));
+    const aiP = el("p", null, account.ai && account.ai.kind !== "claude" ? `Written by ${account.ai.name}. ` : account.hasKey ? "Written by Claude, with your key. " : "Not set up yet. ");
+    if (window.SM_openAi) { const go = el("button", "linkish", "Your AI"); go.type = "button"; go.onclick = () => { dlg.close(); window.SM_openAi(); }; aiP.append(go); }
+    aiSec.append(aiP); box.append(aiSec);
+    if (account.solo) return;
 
     const sec2 = el("div", "sec");
     const row = el("div", "row");
@@ -318,6 +290,6 @@ dialog.acct::backdrop { background: rgba(10, 20, 16, .45); }
     dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
     document.body.append(dlg);
     drawButton();
-    accountReady.then(a => { window.__smAiOn = !!(a && a.canUseAi); drawButton(); });
+    accountReady.then(() => drawButton());
   });
 })();
