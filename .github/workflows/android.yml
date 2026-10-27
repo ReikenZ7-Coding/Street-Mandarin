@@ -28,7 +28,7 @@ jobs:
         working-directory: android-app
         run: |
           npm ci --no-audit --no-fund
-          node build-www.js
+          SM_WEB_V=${{ github.run_number }} node build-www.js
           npx cap add android
           npm run icons
           npx cap sync android
@@ -58,3 +58,14 @@ jobs:
           else
             gh release create android-latest street-mandarin.apk --title "Street Mandarin for Android (test build)" --notes "$notes" --prerelease --target "$GITHUB_SHA"
           fi
+
+      - name: Put the app's files there too, so installed apps update themselves
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # only files no earlier version had, then web.json (the list phones check) last; unused files are removed
+          gh release view android-latest --json assets --jq '.assets[].name' > have.txt
+          node android-app/publish-web.js < have.txt
+          if [ -n "$(ls up)" ]; then gh release upload android-latest up/*; fi
+          gh release upload android-latest android-app/www/web.json --clobber
+          grep '^w-' have.txt | grep -vxFf want.txt | while read -r n; do gh release delete-asset android-latest "$n" -y; done || true

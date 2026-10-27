@@ -30,6 +30,8 @@ cd android-app && npm ci && npm run www && npx cap add android && npm run icons 
 cd android && ./gradlew assembleDebug
 ```
 
+Installed apps update themselves. Each build also puts the app's files on that release (each under a name made from its SHA-256) with `web.json`, the list of them. A while after opening, the app checks the list, downloads only the files that changed, checks each one and keeps them on the phone (`app-shim.js`); the next time it opens it switches to them. A version is kept only once it has started properly, otherwise the app goes back to the one before. When the Android side changes (plugins or `capacitor.config.json`), the app asks for the new APK instead. The footer shows the version.
+
 `debug.keystore` is a test signing key (password `android`), committed so each build installs over the last one and keeps the learner's progress. A Play Store release needs a private key of your own instead.
 
 ## Checking a change

@@ -4019,7 +4019,7 @@ function loadProgress(code) {
 let footOpen = "";
 function renderFoot() {
   const f = $("#foot"); f.textContent = "";
-  f.append(el("span", null, `Your progress lives ${APP ? "on this phone" : "in this browser"} only.`));
+  f.append(el("span", null, `Your progress lives ${APP ? "on this phone" : "in this browser"} only.` + (APP && window.SM_APP && SM_APP.v ? ` Version ${SM_APP.v}.` : "")));
   const out = el("button", "linkish", "Copy it to move it"), inn = el("button", "linkish", "Bring progress in");
   out.onclick = async () => {
     const code = progressCode(); footOpen = "out"; renderFoot();
