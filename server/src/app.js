@@ -6,13 +6,13 @@ import { Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { hashPassword, checkPassword, newToken, sha256, encrypt, decrypt, limiter } from "./security.js";
 import { callClaude, checkKey, parseJson, AiError } from "./claude.js";
-import { callLocal, localStatus } from "./local.js";
+import { askAi, listModels, localStatus, isLocalUrl, nameFor, PROVIDERS, COMPUTER } from "./your-ai.js";
 import { priceOf } from "./config.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(here, "../..");
 // Only these files are served: never the server's code, the repo's history or anything else in it
-const APP_FILES = ["index.html", "client.js", "scenes.js", "why.js", "voices.js", "daily.js", "journey.js", "people.js", "films.js"];
+const APP_FILES = ["index.html", "client.js", "ai.js", "scenes.js", "why.js", "voices.js", "daily.js", "journey.js", "people.js", "films.js"];
 // The filmed world's clips and posters (made by tools/make-films.js), served from films/ by name only
 const FILMS_DIR = path.join(APP_ROOT, "films"), FILM_RE = /^[a-z0-9-]{1,40}\.(webm|jpg)$/;
 const FILM_TYPES = { ".webm": "video/webm", ".jpg": "image/jpeg" };
@@ -24,17 +24,18 @@ const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 // The progress keys the app keeps (the same ones its progress code copies), and how big they may get
 const KEY_RE = /^sm-[a-z0-9-]{1,40}$/;
 const MAX_VALUE = 2_000_000, MAX_TOTAL = 8_000_000;
+const USER_COLS = "id, email, api_key_enc, api_key_hint, ai_conn, ai_key_enc";
 
 export function createApp({ db, config, ai: aiIn = {} }) {
-  const ai = { callClaude, checkKey, callLocal, localStatus, ...aiIn };
-  const local = config.ai.provider === "local";
+  const ai = { callClaude, checkKey, askAi, listModels, localStatus, ...aiIn };
+  // Without a choice of their own, solo learners get the model this computer runs (LOCAL_AI_URL)
+  const envLocal = config.ai.provider === "local"
+    ? { kind: "computer", provider: "", url: config.ai.localUrl, model: config.ai.localModel, key: config.ai.localKey, name: config.ai.localName } : null;
   const app = new Hono();
   const files = new Map(APP_FILES.map(f => {
     let body = fs.readFileSync(path.join(APP_ROOT, f), "utf8");
     // The page is the same one the Claude artifact uses; client.js connects it to this server
     if (f === "index.html") body = body.replace('<script src="scenes.js"></script>', '<script src="client.js"></script>\n<script src="scenes.js"></script>');
-    // With your own model, the page names it instead of Claude
-    if (f === "client.js" && local) body = `window.SM_AI_NAME = ${JSON.stringify(config.ai.localName)};\n` + body;
     return [f, body];
   }));
   const loginLimit = limiter(10, 15 * 60 * 1000), signupLimit = limiter(5, 60 * 60 * 1000), aiLimit = limiter(30, 60 * 1000);
@@ -63,19 +64,18 @@ export function createApp({ db, config, ai: aiIn = {} }) {
   const body = async c => { try { return await c.req.json(); } catch { return {}; } };
 
   // Solo mode has one person, always signed in
-  let soloUser = null;
+  let soloMade = false;
   async function theSoloUser() {
-    if (soloUser) return soloUser;
-    await db.query("insert into users (email, pass) values ('me@solo.local', 'solo') on conflict (email) do nothing");
-    soloUser = (await db.query("select id, email, api_key_enc, api_key_hint from users where email = 'me@solo.local'"))[0];
-    return soloUser;
+    if (!soloMade) { await db.query("insert into users (email, pass) values ('me@solo.local', 'solo') on conflict (email) do nothing"); soloMade = true; }
+    // Read fresh each time: Your AI can change between requests
+    return (await db.query(`select ${USER_COLS} from users where email = 'me@solo.local'`))[0];
   }
   async function currentUser(c) {
     if (config.solo) return theSoloUser();
     const token = getCookie(c, COOKIE);
     if (!token) return null;
     const rows = await db.query(
-      "select u.id, u.email, u.api_key_enc, u.api_key_hint from sessions s join users u on u.id = s.user_id where s.token_hash = $1 and s.expires_at > now()",
+      `select ${USER_COLS.replace(/(^|, )/g, "$1u.")} from sessions s join users u on u.id = s.user_id where s.token_hash = $1 and s.expires_at > now()`,
       [sha256(token)]);
     return rows[0] || null;
   }
@@ -144,13 +144,130 @@ export function createApp({ db, config, ai: aiIn = {} }) {
     return { mode, hasKey, keyHint: u.api_key_hint || "", freeToday: free, freeLeftToday: left / 1e6, canUseAi: hasKey || (free && left > 0) };
   }
 
+  /* ---------- Your AI: Claude, an online AI with your own key, or (solo) a model on this computer ---------- */
+  // The connection a learner's AI requests use: their own choice, then their Claude key, then this server's default
+  function connOf(u) {
+    if (u.ai_conn) {
+      let conn; try { conn = JSON.parse(u.ai_conn); } catch { conn = null; }
+      if (conn) {
+        let key = "";
+        if (u.ai_key_enc) { try { key = decrypt(config.secret, u.ai_key_enc); } catch { return { ...conn, broken: true }; } }
+        return { ...conn, key };
+      }
+    }
+    if (u.api_key_enc || !envLocal) return { kind: "claude" };
+    return { ...envLocal, fromEnv: true };
+  }
+  // What the page is told about it (never the key)
+  async function aiInfo(conn) {
+    if (conn.kind === "claude") return { kind: "claude", name: "Claude", can: null };
+    const out = { kind: conn.kind, provider: conn.provider || "", model: conn.model || "", name: conn.name || nameFor(conn.model), can: conn.can || null, tested: conn.tested || null, keyHint: conn.keyHint || "", fromEnv: !!conn.fromEnv };
+    if (conn.kind === "computer" || conn.provider === "other") out.url = conn.url;
+    if (conn.kind === "computer") { const st = await ai.localStatus(conn); out.ok = st.ok; out.model = st.model || out.model; if (!conn.name) out.name = nameFor(out.model); }
+    return out;
+  }
+
   app.get("/api/account", async c => {
     const u = await currentUser(c);
     const where = { solo: config.solo, provider: config.ai.provider };
     if (!u) return c.json({ signedIn: false, mode: config.ai.mode, ...where });
-    // Your own model: free, no key; the dialog shows whether it's running
-    if (local) { const st = await ai.localStatus(config.ai); return c.json({ signedIn: true, email: u.email, ...where, canUseAi: true, localOk: st.ok, localModel: st.model }); }
-    return c.json({ signedIn: true, email: u.email, ...where, ...aiStatus(u, await spentTodayMicros(u.id)) });
+    const conn = connOf(u), info = await aiInfo(conn);
+    const claude = aiStatus(u, await spentTodayMicros(u.id));
+    // Any AI that isn't Claude is the learner's own, so it's always theirs to use
+    return c.json({ signedIn: true, email: u.email, ...where, ...claude, canUseAi: conn.kind !== "claude" || claude.canUseAi, ai: info });
+  });
+
+  // The connection a learner is setting up, checked: on the website only the known services, and never an address of their own
+  function draftConn(u, b) {
+    const kind = b.kind === "computer" ? "computer" : "online";
+    let conn;
+    if (kind === "computer") {
+      if (!config.solo) throw new AiError("bad_request", "On the website, a model on your computer is reached from the page itself.", 400);
+      const url = String(b.url || "").trim().replace(/\/+$/, "");
+      if (!isLocalUrl(url)) throw new AiError("bad_request", "That isn't an address on this computer (localhost).", 400);
+      conn = { kind, provider: (COMPUTER.find(p => p.url === url) || {}).id || "other", url };
+    } else if (b.provider === "other") {
+      if (!config.solo) throw new AiError("bad_request", "Pick one of the services in the list.", 400);
+      const url = String(b.url || "").trim().replace(/\/+$/, "");
+      if (!/^https?:\/\/[^\s/]+/.test(url)) throw new AiError("bad_request", "That doesn't look like a web address.", 400);
+      conn = { kind, provider: "other", url };
+    } else {
+      const p = PROVIDERS.find(x => x.id === b.provider);
+      if (!p) throw new AiError("bad_request", "Pick one of the services in the list.", 400);
+      conn = { kind, provider: p.id, url: p.url };
+    }
+    let key = String(b.key || "").trim();
+    // Picking another model from the same service keeps the key you already saved
+    const saved = u.ai_conn ? connOf(u) : null;
+    if (!key && saved && saved.kind === conn.kind && saved.provider === conn.provider && saved.url === conn.url) key = saved.key || "";
+    if (key && (key.length > 400 || /\s/.test(key))) throw new AiError("bad_key", "That doesn't look like a key.", 400);
+    if (!key && kind === "online") throw new AiError("needs_key", "Paste your key first.", 400);
+    return { ...conn, key };
+  }
+  const testOf = b => !b.can ? { can: null, tested: null } : {
+    can: { check: !!b.can.check, chat: !!(b.can.check && b.can.chat), long: !!(b.can.check && b.can.long) },
+    tested: { at: Date.now(), results: (Array.isArray(b.results) ? b.results : []).slice(0, 5).map(r => ({ id: String(r.id || "").slice(0, 10), ok: !!r.ok, why: String(r.why || "").slice(0, 200), ms: Math.max(0, Number(r.ms) || 0) })) },
+  };
+  const aiErr = (c, e) => { if (e instanceof AiError || (e && typeof e.code === "string" && Number.isInteger(e.status))) return c.json({ code: e.code, error: e.message }, e.status); throw e; };
+
+  // The models a service offers you (which also checks the key, for free). In solo, {find: true} looks for LM Studio and Ollama.
+  app.post("/api/ai/models", needUser, async c => {
+    const u = c.get("user"), b = await body(c);
+    if (!aiLimit(String(u.id))) return c.json({ code: "rate_limited", error: "Too many tries at once. Wait a moment." }, 429);
+    if (b.find) {
+      if (!config.solo) return c.json({ code: "bad_request", error: "Only in solo mode." }, 400);
+      const found = await Promise.all(COMPUTER.map(async p => { try { return { provider: p.id, name: p.name, url: p.url, running: true, models: await ai.listModels({ kind: "computer", url: p.url }, { ms: 2500 }) }; } catch { return { provider: p.id, name: p.name, url: p.url, running: false, models: [] }; } }));
+      return c.json({ found });
+    }
+    try { const conn = draftConn(u, b); return c.json({ models: await ai.listModels(conn) }); } catch (e) { return aiErr(c, e); }
+  });
+
+  app.put("/api/ai/conn", needUser, async c => {
+    const u = c.get("user"), b = await body(c);
+    if (!aiLimit(String(u.id))) return c.json({ code: "rate_limited", error: "Too many tries at once. Wait a moment." }, 429);
+    let conn;
+    try {
+      conn = draftConn(u, b);
+      conn.model = String(b.model || "").trim().slice(0, 200);
+      if (!conn.model) throw new AiError("bad_request", "Pick a model.", 400);
+      await ai.listModels(conn); // the key works, and the service is there
+    } catch (e) { return aiErr(c, e); }
+    const { key, ...keep } = conn;
+    const saved = { ...keep, name: nameFor(conn.model), keyHint: key ? "…" + key.slice(-4) : "", ...testOf(b) };
+    await db.query("update users set ai_conn = $1, ai_key_enc = $2 where id = $3", [JSON.stringify(saved), key ? encrypt(config.secret, key) : null, u.id]);
+    return c.json({ ai: await aiInfo(saved) });
+  });
+
+  // What Test it found, so the app knows which parts this AI can be trusted with
+  app.patch("/api/ai/conn", needUser, async c => {
+    const u = c.get("user"), b = await body(c);
+    const now = connOf(u);
+    if (now.kind === "claude") return c.json({ code: "bad_request", error: "Pick an AI first." }, 400);
+    // Testing this computer's default model keeps it, results and all
+    const { key, fromEnv, ...conn } = now;
+    Object.assign(conn, testOf(b));
+    await db.query("update users set ai_conn = $1, ai_key_enc = $2 where id = $3", [JSON.stringify(conn), key ? encrypt(config.secret, key) : null, u.id]);
+    return c.json({ ok: true });
+  });
+
+  // Test it, before anything is saved: the same call /api/ai makes, with the AI being set up
+  app.post("/api/ai/try", needUser, async c => {
+    const u = c.get("user"), b = await body(c);
+    if (!aiLimit(String(u.id))) return c.json({ code: "rate_limited", error: "Too many tries at once. Wait a moment." }, 429);
+    if (typeof b.prompt !== "string" || !b.prompt.trim() || b.prompt.length > 20000) return c.json({ code: "bad_request", error: "Nothing to ask." }, 400);
+    try {
+      const conn = draftConn(u, b);
+      conn.model = String(b.model || "").trim().slice(0, 200);
+      if (!conn.model) throw new AiError("bad_request", "Pick a model.", 400);
+      const shape = b.shape && typeof b.shape === "object" && JSON.stringify(b.shape).length < 20000 ? b.shape : null;
+      return c.json({ result: (await ai.askAi(conn, b.prompt, { quick: b.tier === "quick", shape })).result });
+    } catch (e) { return aiErr(c, e); }
+  });
+
+  // Back to Claude (or, in solo, the model this computer runs)
+  app.delete("/api/ai/conn", needUser, async c => {
+    await db.query("update users set ai_conn = null, ai_key_enc = null where id = $1", [c.get("user").id]);
+    return c.json({ ok: true });
   });
 
   app.put("/api/account/key", needUser, async c => {
@@ -159,7 +276,8 @@ export function createApp({ db, config, ai: aiIn = {} }) {
     if (!/^sk-ant-[A-Za-z0-9_-]{20,300}$/.test(key)) return c.json({ code: "bad_key", error: "That doesn't look like a Claude API key. It starts with sk-ant-." }, 400);
     try { if (!(await ai.checkKey(key, config.ai.modelQuick))) return c.json({ code: "bad_key", error: "Claude didn't accept that key. Check you copied all of it." }, 400); }
     catch (e) { return c.json({ code: e.code || "upstream", error: e.message }, e.status || 502); }
-    await db.query("update users set api_key_enc = $1, api_key_hint = $2 where id = $3", [encrypt(config.secret, key), "…" + key.slice(-4), u.id]);
+    // Saving a Claude key is choosing Claude, so any other AI is set aside
+    await db.query("update users set api_key_enc = $1, api_key_hint = $2, ai_conn = null, ai_key_enc = null where id = $3", [encrypt(config.secret, key), "…" + key.slice(-4), u.id]);
     return c.json({ ok: true, keyHint: "…" + key.slice(-4) });
   });
 
@@ -213,11 +331,13 @@ export function createApp({ db, config, ai: aiIn = {} }) {
     const u = c.get("user");
     if (!aiLimit(String(u.id))) return c.json({ code: "rate_limited", error: "Too many messages at once. Wait a moment." }, 429);
     const { prompt, tier, cache, shape: shapeIn } = await body(c);
-    // The JSON schema an answer must match, for a local model (its server turns it into a grammar)
+    // The JSON schema an answer must match, for any AI that isn't Claude (its server holds the answer to it)
     const shape = shapeIn && typeof shapeIn === "object" && !Array.isArray(shapeIn) && JSON.stringify(shapeIn).length < 20000 ? shapeIn : null;
     if (typeof prompt !== "string" || !prompt.trim()) return c.json({ code: "bad_request", error: "Nothing to ask." }, 400);
     if (prompt.length > config.ai.maxPromptChars) return c.json({ code: "too_big", error: "That request is too long." }, 413);
-    const quick = tier === "quick", model = local ? "local:" + (config.ai.localModel || "loaded") : quick ? config.ai.modelQuick : config.ai.modelMain;
+    const conn = connOf(u), other = conn.kind !== "claude";
+    if (conn.broken) return c.json({ code: "needs_key", error: "Your saved key can't be read any more. Add it again in Your AI." }, 403);
+    const quick = tier === "quick", model = other ? `${conn.kind}:${conn.provider || ""}:${conn.model || "loaded"}` : quick ? config.ai.modelQuick : config.ai.modelMain;
 
     // Shared answers are free: someone already paid for exactly this one
     const hash = cache ? sha256(model + "\n" + prompt) : null;
@@ -226,37 +346,27 @@ export function createApp({ db, config, ai: aiIn = {} }) {
       if (hit.length) return c.json({ result: JSON.parse(hit[0].body), cached: true });
     }
 
-    if (local) {
-      let out;
+    // Your own AI: the learner's key or computer pays, so nothing is counted against anyone's allowance
+    if (other) {
       try {
-        out = await ai.callLocal(config.ai, { prompt, quick, shape });
-        let result = parseJson(out.text);
-        // Small models sometimes wrap or break the JSON: one more try, showing them their reply
-        if (!result || typeof result !== "object") {
-          out = await ai.callLocal(config.ai, { prompt, quick, shape, retryNote: { previous: out.text.slice(0, 4000), ask: "That wasn't one valid JSON object. Reply again with only the JSON object the request asks for." } });
-          result = parseJson(out.text);
-        }
+        const out = await ai.askAi(conn, prompt, { quick, shape });
         await db.query("insert into ai_usage (user_id, model, input_tokens, output_tokens, cost_micros, own_key) values ($1, $2, $3, $4, 0, true)",
-          [u.id, "local:" + (out.model || ""), out.usage.input, out.usage.output]);
-        if (!result || typeof result !== "object") return c.json({ code: "shape", error: out.truncated ? "The answer was cut off. Raise the context length or max tokens in LM Studio, then try again." : "The answer didn't come back in the right shape. Try again." }, 502);
-        if (hash) await db.query("insert into ai_cache (hash, body) values ($1, $2) on conflict (hash) do nothing", [hash, JSON.stringify(result)]);
-        return c.json({ result });
-      } catch (e) {
-        if (e instanceof AiError) return c.json({ code: e.code, error: e.message }, e.status);
-        throw e;
-      }
+          [u.id, `${conn.kind}:${conn.provider || ""}:${out.model || ""}`, out.usage.input, out.usage.output]);
+        if (hash) await db.query("insert into ai_cache (hash, body) values ($1, $2) on conflict (hash) do nothing", [hash, JSON.stringify(out.result)]);
+        return c.json({ result: out.result });
+      } catch (e) { return aiErr(c, e); }
     }
 
     // Whose key pays: the learner's own if they added one, otherwise the owner's within the limits
     let apiKey = "", ownKey = false;
     if (u.api_key_enc) {
       try { apiKey = decrypt(config.secret, u.api_key_enc); ownKey = true; }
-      catch { return c.json({ code: "needs_key", error: "Your saved Claude key can't be read any more. Add it again in Account." }, 403); }
+      catch { return c.json({ code: "needs_key", error: "Your saved Claude key can't be read any more. Add it again in Your AI." }, 403); }
     } else if (config.ai.mode === "byok" || !config.ai.ownerKey) {
-      return c.json({ code: "needs_key", error: "Add your Claude API key in Account to use this." }, 403);
+      return c.json({ code: "needs_key", error: "Choose an AI in Your AI to use this." }, 403);
     } else {
-      if (await spentTodayMicros(u.id) >= config.ai.dailyAllowanceUsd * 1e6) return c.json({ code: "allowance", error: "You've used today's free AI. Add your own Claude key in Account for more, or come back tomorrow." }, 429);
-      if (config.ai.monthlyBudgetUsd > 0 && await spentMonthMicros() >= config.ai.monthlyBudgetUsd * 1e6) return c.json({ code: "budget", error: "The free AI is paused until next month. Add your own Claude key in Account to keep going." }, 429);
+      if (await spentTodayMicros(u.id) >= config.ai.dailyAllowanceUsd * 1e6) return c.json({ code: "allowance", error: "You've used today's free AI. Add your own Claude key, or another AI, in Your AI for more, or come back tomorrow." }, 429);
+      if (config.ai.monthlyBudgetUsd > 0 && await spentMonthMicros() >= config.ai.monthlyBudgetUsd * 1e6) return c.json({ code: "budget", error: "The free AI is paused until next month. Add your own Claude key, or another AI, in Your AI to keep going." }, 429);
       apiKey = config.ai.ownerKey;
     }
 

@@ -20,14 +20,14 @@ export function loadConfig(env = process.env) {
     // Used to encrypt learners' own Claude keys at rest. Changing it makes stored keys unreadable.
     secret: secret || "dev-only-secret-do-not-use-in-production",
     ai: {
-      // Where the AI runs: Claude's API, or a model on your own computer (LM Studio, Ollama,
-      // llama.cpp: anything with an OpenAI-style /v1/chat/completions)
+      // Where the AI runs unless you pick another in Your AI: Claude's API, or a model on your own
+      // computer (LM Studio, Ollama, llama.cpp: anything with an OpenAI-style /v1/chat/completions)
       provider,
       localUrl: (env.LOCAL_AI_URL || "http://localhost:1234/v1").replace(/\/+$/, ""),
       // Empty means whichever model the local server has loaded
       localModel: env.LOCAL_AI_MODEL || "",
-      // What the app calls your model in its own words ("Qwen is writing chapter 2…")
-      localName: (env.LOCAL_AI_NAME || "your AI").slice(0, 30),
+      // What the app calls your model in its own words ("Qwen is writing chapter 2…"); by default, from the model's name
+      localName: (env.LOCAL_AI_NAME || "").slice(0, 30),
       localKey: env.LOCAL_AI_KEY || "",
       mode,
       // Matthew's key, only used in mix and owner modes

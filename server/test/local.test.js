@@ -35,7 +35,7 @@ test("solo: always you, no sign-in, nothing to delete", async () => {
   const app = await soloApp();
   const a = (await call(app, "GET", "/api/account")).json;
   assert.equal(a.signedIn, true); assert.equal(a.solo, true); assert.equal(a.canUseAi, true);
-  assert.equal(a.localOk, true); assert.equal(a.localModel, "qwen3.5-9b-test");
+  assert.equal(a.ai.kind, "computer"); assert.equal(a.ai.ok, true); assert.equal(a.ai.model, "qwen3.5-9b-test"); assert.equal(a.ai.name, "Qwen");
   assert.equal((await call(app, "POST", "/api/auth/signup", { email: "x@y.co", password: "longenough" })).status, 404);
   assert.equal((await call(app, "DELETE", "/api/account")).status, 403);
   assert.equal((await call(app, "PUT", "/api/progress", { keys: { "sm-said": { v: "3", t: 5 } } })).status, 200);
@@ -81,17 +81,16 @@ test("LOCAL_AI_MODEL picks the model; a stopped model says how to start it", asy
   assert.equal(seen[0].model, "my-qwen");
   const off = createApp({ db: await openDb(""), config: loadConfig({ SOLO: "1", AI_PROVIDER: "local", LOCAL_AI_URL: "http://localhost:9/v1" }) });
   const a = (await call(off, "GET", "/api/account")).json;
-  assert.equal(a.localOk, false);
+  assert.equal(a.ai.ok, false);
   const r = await call(off, "POST", "/api/ai", { prompt: "hi", tier: "quick" });
   assert.equal(r.status, 503); assert.equal(r.json.code, "model_offline"); assert.match(r.json.error, /LM Studio/);
 });
 
 test("the page calls your model by its name, not Claude", async () => {
-  const app = await soloApp({ LOCAL_AI_NAME: "Qwen" });
-  const js = await (await app.request("http://localhost/client.js")).text();
-  assert.match(js, /^window\.SM_AI_NAME = "Qwen";/);
-  const plain = createApp({ db: await openDb(""), config: loadConfig({}) });
-  assert.doesNotMatch(await (await plain.request("http://localhost/client.js")).text(), /SM_AI_NAME =/);
+  assert.equal((await call(await soloApp({ LOCAL_AI_NAME: "Xiaoqing" }), "GET", "/api/account")).json.ai.name, "Xiaoqing");
+  assert.equal((await call(await soloApp(), "GET", "/api/account")).json.ai.name, "Qwen");
+  // ai.js, the rules the page follows, is served beside it
+  assert.match(await (await (await soloApp()).request("http://localhost/ai.js")).text(), /house rules|SYSTEM/);
 });
 
 test("answers are held to the shape the page asks for, and a server without schemas is asked plainly", async () => {
