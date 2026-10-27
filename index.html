@@ -4019,7 +4019,7 @@ function loadProgress(code) {
 let footOpen = "";
 function renderFoot() {
   const f = $("#foot"); f.textContent = "";
-  f.append(el("span", null, "Your progress lives in this browser only."));
+  f.append(el("span", null, `Your progress lives ${APP ? "on this phone" : "in this browser"} only.`));
   const out = el("button", "linkish", "Copy it to move it"), inn = el("button", "linkish", "Bring progress in");
   out.onclick = async () => {
     const code = progressCode(); footOpen = "out"; renderFoot();
@@ -4388,6 +4388,8 @@ function aiNote(text) {
 // your own computer seen from the website, which only this page can reach. Opened from a file, the page
 // talks to the AI itself. The rules every AI follows are in ai.js (window.SM_AI).
 const HOST = window.SM_HOST || null, IN_CLAUDE = !!(window.claude && !HOST);
+// The Android app (Capacitor): the phone talks to the learner's online AI itself, and keeps the key on the phone
+const APP = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 let AI = { kind: "claude", name: "Claude", can: null, via: IN_CLAUDE ? "claude" : "" };
 // A connection the page makes itself lives in this browser only: never synced, never in a progress code
 const AI_PAGE = "smai-conn";
@@ -4457,7 +4459,7 @@ function openAiPanel(tab) {
     aiDlg.addEventListener("click", e => { if (e.target === aiDlg && !aiP.busy) aiDlg.close(); });
     document.body.append(aiDlg);
   }
-  aiP = { tab: tab || aiP.tab || (AI.kind === "claude" ? "" : AI.kind), draft: aiP.draft || {}, busy: "", err: "", found: null, models: aiP.models, steps: null, done: null };
+  aiP = { tab: tab || aiP.tab || (APP ? "online" : AI.kind === "claude" ? (HOST ? "" : "online") : AI.kind), draft: aiP.draft || {}, busy: "", err: "", found: null, models: aiP.models, steps: null, done: null };
   drawAi(); if (!aiDlg.open) aiDlg.showModal();
 }
 window.SM_openAi = openAiPanel;
@@ -4508,9 +4510,12 @@ function drawAi() {
     box.append(el("p", "ai-muted", "Inside Claude, the AI parts are always Claude. To use another AI, or a free model on your own computer, run Street Mandarin on your computer or open its website."));
     return;
   }
-  // Three ways, one open at a time
-  const tabs = el("div", "ai-tabs"); tabs.setAttribute("role", "tablist");
-  [["claude", "Claude"], ["computer", "On this computer"], ["online", "Online, with your key"]].forEach(([k, t]) => {
+  // The ways there are here, one open at a time: Claude has its own tab only where the server keeps its key
+  // (elsewhere it's one of the online AIs), and a phone has no computer to look on
+  const ways = HOST ? [["claude", "Claude"], ["computer", "On this computer"], ["online", "Online, with your key"]] : APP ? [["online", "Online, with your key"]] : [["online", "Online, with your key"], ["computer", "On this computer"]];
+  if (!ways.some(w => w[0] === aiP.tab)) aiP.tab = ways[0][0];
+  const tabs = el("div", "ai-tabs"); tabs.setAttribute("role", "tablist"); if (ways.length < 2) tabs.hidden = true;
+  ways.forEach(([k, t]) => {
     const b = el("button", null, t); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(aiP.tab === k)); b.disabled = !!aiP.busy;
     b.onclick = () => { if (aiP.tab === k) return; aiP.tab = k; aiP.err = ""; aiP.found = null; aiP.models = null; drawAi(); }; tabs.append(b);
   });
@@ -4522,8 +4527,7 @@ function drawAi() {
 
 function aiClaudeTab() {
   const sec = el("div", "ai-sec");
-  const a = HOST && HOST.account;
-  if (!HOST) { sec.append(el("p", null, "Claude works when you open Street Mandarin inside Claude, or on its website with your own Claude key. In a copy opened from a file, pick another AI here.")); return sec; }
+  const a = HOST.account;
   if (!a || !a.signedIn) { sec.append(el("p", null, "Sign in first, so your Claude key is kept safely in your account.")); const go = el("button", "btn small", "Sign in"); go.onclick = () => { aiDlg.close(); HOST.signIn(); }; sec.append(go); return sec; }
   sec.append(el("p", null, "Claude writes the AI parts on your own Claude API key, so their cost goes to your Anthropic account."));
   if (a.freeToday) sec.append(el("p", "ai-muted", `Free today: about $${a.freeLeftToday.toFixed(2)} of AI left. With your own key there's no daily limit.`));
@@ -4596,7 +4600,8 @@ function aiModelPick(models, conn) {
 function aiOnlineTab() {
   const sec = el("div", "ai-sec"), a = HOST && HOST.account;
   if (HOST && (!a || !a.signedIn)) { sec.append(el("p", null, "Sign in first, so your key is kept safely in your account.")); const go = el("button", "btn small", "Sign in"); go.onclick = () => { aiDlg.close(); HOST.signIn(); }; sec.append(go); return sec; }
-  const d = aiP.draft, list = SM_AI.PROVIDERS.concat(HOST && HOST.kind === "website" ? [] : [{ id: "other", name: "Another service (its address)", about: "Anything that speaks the OpenAI-style API." }]);
+  // Claude has its own tab where the server keeps its key; the website only calls the services in the list
+  const d = aiP.draft, list = SM_AI.PROVIDERS.filter(p => !(HOST && p.id === "anthropic")).concat(HOST && HOST.kind === "website" ? [] : [{ id: "other", name: "Another service (its address)", about: "Anything that speaks the OpenAI-style API." }]);
   if (!list.some(p => p.id === d.provider)) d.provider = "openrouter";
   const prov = list.find(p => p.id === d.provider);
   const lab = el("label", null, "Service"), sel = el("select"); list.forEach(p => { const o = el("option", null, p.name); o.value = p.id; sel.append(o); }); sel.value = d.provider;
@@ -4615,7 +4620,7 @@ function aiOnlineTab() {
   key.placeholder = saved ? `Saved (${AI.keyHint}). Paste a new one to change it` : "Paste it here"; kl.append(key);
   const help = el("p", "ai-muted");
   if (prov.keys) help.append("Get one at ", aiLink(new URL(prov.keys).host, prov.keys), ". ");
-  help.append(HOST ? "It's stored encrypted on the server and never shown again." : "It's kept in this browser only, and sent only to " + (d.provider === "other" ? "that service" : prov.name) + ".");
+  help.append(HOST ? "It's stored encrypted on the server and never shown again." : `It's kept ${APP ? "on this phone" : "in this browser"} only, and sent only to ` + (d.provider === "other" ? "that service" : prov.name) + ".");
   const go = el("button", "btn ghost small", aiP.busy === "Finding models…" ? "Finding models…" : "Find models"); go.type = "submit"; go.disabled = !!aiP.busy;
   f.append(kl, help, go);
   f.onsubmit = ev => { ev.preventDefault(); d.key = key.value.trim(); if (url) d.url = url.value.trim(); aiModels(); };

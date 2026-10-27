@@ -13,11 +13,24 @@ Open `index.html` in a browser. There's no build step. It also runs inside Claud
 The AI parts (Unscripted, Long Story, Play it live, your own words) can be written by the AI you choose, picked in one place: **Your AI**, in the footer and on every "needs an AI" note.
 - **Claude:** inside Claude it's the viewer's own Claude; on the website, your own Claude API key.
 - **On this computer:** a model in [LM Studio](https://lmstudio.ai) or [Ollama](https://ollama.com). *Find it* looks on their usual ports (1234, 11434), or at an address you give. It's free, and your words stay on your computer. From the website or a file copy the page talks to the model itself, so LM Studio needs *Enable CORS* on (the panel says so when it's off); in solo mode the server reaches it, so it doesn't.
-- **Online, with your key:** OpenRouter (one click with *Connect OpenRouter*, or a key), DeepSeek, GLM (Z.ai), Qwen (Alibaba Cloud), Gemini, OpenAI. In solo mode and a file copy, any other OpenAI-style service by its address. On the website the key is kept encrypted on the server and only the services in the list are ever called; in a file copy it stays in that browser.
+- **Online, with your key:** Claude (an Anthropic API key, outside Claude), ChatGPT (an OpenAI API key), Gemini, DeepSeek, GLM (Z.ai), Qwen (Alibaba Cloud), and OpenRouter (one click with *Connect OpenRouter*, or a key). A ChatGPT or Claude.ai plan can't be used by other apps, so it's a key or OpenRouter. In solo mode and a file copy, any other OpenAI-style service by its address. On the website the key is kept encrypted on the server and only the services in the list are ever called; in a file copy it stays in that browser.
 
 Every choice is tested before it's switched on: three small real requests (checking four answers, a WeChat reply, a short Long Story scene). An AI that can't tell a wrong answer from a right one isn't switched on at all, because it would teach mistakes. Chats and Long Story each switch on only if their test passed too. *Test it* runs them again any time.
 
 The rules every AI that isn't Claude follows live in `ai.js`, shared by the page and the server: one system prompt of house rules (one valid JSON object, simplified characters, tone-mark pinyin, stay in character, be kind and accurate when judging), the exact JSON shape each answer must have (LM Studio, Ollama and most services hold the answer to it), stripping a model's thinking, and one more try when an answer isn't clean JSON.
+
+## The Android app
+
+`android-app/` wraps the same page as an Android app with [Capacitor](https://capacitorjs.com). There's no server: the phone talks to the learner's own AI (Claude, ChatGPT, Gemini, DeepSeek, GLM, Qwen, OpenRouter) with their key, which stays on that phone, and their progress lives on the phone too. Lines are read aloud by the phone's own voice (`app-shim.js`). Android's web view has no speech recognition, so the Speak button doesn't show; the keyboard's own mic works in its place.
+
+GitHub builds it (`.github/workflows/android.yml`) on every push to `android-app` or `main` and puts the APK at [releases/android-latest](https://github.com/ReikenZ7-Coding/Street-Mandarin/releases/download/android-latest/street-mandarin.apk). To build it yourself (needs the Android SDK and Java 21):
+
+```
+cd android-app && npm ci && npm run www && npx cap add android && npm run icons && npx cap sync android
+cd android && ./gradlew assembleDebug
+```
+
+`debug.keystore` is a test signing key (password `android`), committed so each build installs over the last one and keeps the learner's progress. A Play Store release needs a private key of your own instead.
 
 ## Checking a change
 

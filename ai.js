@@ -21,12 +21,13 @@ Rules for every answer:
 
   // Online services that speak the OpenAI-style API. On the website only these addresses are called.
   const PROVIDERS = [
+    { id: "anthropic", name: "Claude (Anthropic)", url: "https://api.anthropic.com/v1", keys: "https://console.anthropic.com/settings/keys", about: "Claude, with an API key from Anthropic (a Claude.ai plan can't be used here).", dialect: "anthropic" },
     { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", keys: "https://openrouter.ai/settings/keys", about: "One account for Claude, GPT, Gemini, DeepSeek, GLM, Qwen and hundreds more." },
     { id: "deepseek", name: "DeepSeek", url: "https://api.deepseek.com/v1", keys: "https://platform.deepseek.com/api_keys", about: "Strong Chinese, low prices." },
     { id: "zai", name: "GLM (Z.ai)", url: "https://api.z.ai/api/paas/v4", keys: "https://z.ai/manage-apikey/apikey-list", about: "Zhipu's GLM models." },
     { id: "qwen", name: "Qwen (Alibaba Cloud)", url: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", keys: "https://modelstudio.console.alibabacloud.com/", about: "Alibaba's Qwen models, through Model Studio." },
     { id: "gemini", name: "Gemini (Google)", url: "https://generativelanguage.googleapis.com/v1beta/openai", keys: "https://aistudio.google.com/apikey", about: "Has a free tier." },
-    { id: "openai", name: "OpenAI", url: "https://api.openai.com/v1", keys: "https://platform.openai.com/api-keys", about: "GPT models, with an OpenAI API key (not a ChatGPT plan)." },
+    { id: "openai", name: "ChatGPT (OpenAI)", url: "https://api.openai.com/v1", keys: "https://platform.openai.com/api-keys", about: "ChatGPT's models, with an OpenAI API key (a ChatGPT plan can't be used here)." },
   ];
   // Apps that run a model on your own computer, on their usual ports
   const COMPUTER = [
@@ -54,8 +55,11 @@ Rules for every answer:
   const fail = (code, message, status = 502) => Object.assign(new Error(message), { code, status });
   // How a connection is named in a message: "Your local AI", "DeepSeek"
   const who = conn => conn.kind === "computer" ? "Your local AI" : (provider(conn.provider) || {}).name || "That AI";
-  const headers = conn => ({ "content-type": "application/json", ...(conn.key ? { authorization: `Bearer ${conn.key}` } : {}),
-    ...(conn.provider === "openrouter" ? { "X-Title": "Street Mandarin" } : {}) });
+  // Claude speaks its own API (its OpenAI-style one refuses the settings small models need); everything else is OpenAI-style
+  const isClaude = conn => conn.provider === "anthropic";
+  const headers = conn => isClaude(conn)
+    ? { "content-type": "application/json", "x-api-key": conn.key || "", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }
+    : { "content-type": "application/json", ...(conn.key ? { authorization: `Bearer ${conn.key}` } : {}), ...(conn.provider === "openrouter" ? { "X-Title": "Street Mandarin" } : {}) };
   const timeout = ms => (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
   const offline = conn => conn.kind === "computer"
     ? fail("model_offline", "Your local AI isn't running. Start the server in LM Studio (or Ollama) with your model loaded, then try again.", 503)
@@ -74,7 +78,7 @@ Rules for every answer:
 
   // Servers that can hold an answer to a JSON schema (LM Studio, Ollama, llama.cpp, most online ones) get one,
   // so a small model can't wander off into chatter or a half-closed bracket. A server that refuses is remembered.
-  const noSchema = new Set();
+  const noSchema = new Set(), quirks = new Map();
   async function call(conn, { prompt, quick, shape, retryNote }, { fetch = globalThis.fetch } = {}) {
     const url = conn.url.replace(/\/+$/, ""), local = conn.kind === "computer";
     let model = conn.model;
@@ -84,21 +88,32 @@ Rules for every answer:
     if (retryNote) messages.push({ role: "assistant", content: retryNote.previous }, { role: "user", content: retryNote.ask });
     // Online models get more room: some think before they answer, and that counts towards the limit
     const max = local ? (quick ? 2000 : 7000) : (quick ? 4000 : 12000);
-    const ask = withSchema => fetch(url + "/chat/completions", {
-      method: "POST", headers: headers(conn),
-      body: JSON.stringify({
-        model, messages, temperature: quick ? 0.6 : 0.8, max_tokens: max, stream: false,
-        ...(withSchema ? { response_format: { type: "json_schema", json_schema: { name: "answer", strict: true, schema: shape || { type: "object" } } } } : {}),
-      }),
-      signal: timeout(quick ? 120000 : 600000),
-    });
+    const id = url + "|" + model, quirk = quirks.get(id) || {};
+    const ask = withSchema => isClaude(conn)
+      ? fetch(url + "/messages", { method: "POST", headers: headers(conn), signal: timeout(quick ? 120000 : 600000),
+          body: JSON.stringify({ model, max_tokens: max, system: SYSTEM, messages: messages.slice(1) }) })
+      : fetch(url + "/chat/completions", {
+          method: "POST", headers: headers(conn),
+          body: JSON.stringify({
+            model, messages, stream: false,
+            // Reasoning models (OpenAI's newer ones) refuse a temperature and want max_completion_tokens: learnt from their first refusal
+            ...(quirk.noTemp ? {} : { temperature: quick ? 0.6 : 0.8 }), ...(quirk.completion ? { max_completion_tokens: max } : { max_tokens: max }),
+            ...(withSchema ? { response_format: { type: "json_schema", json_schema: { name: "answer", strict: true, schema: shape || { type: "object" } } } } : {}),
+          }),
+          signal: timeout(quick ? 120000 : 600000),
+        });
     let r;
     try {
-      const withSchema = !noSchema.has(url + "|" + model);
-      r = await ask(withSchema);
-      if (withSchema && r.status >= 400 && r.status < 500 && r.status !== 401 && r.status !== 403 && r.status !== 429) {
+      for (let tries = 0; tries < 4; tries++) {
+        const withSchema = !isClaude(conn) && !noSchema.has(id);
+        r = await ask(withSchema);
+        if (isClaude(conn) || r.status !== 400) break;
         const t = await r.clone().text().catch(() => "");
-        if (/response_format|json_schema|schema|grammar|structured/i.test(t)) { noSchema.add(url + "|" + model); r = await ask(false); }
+        if (withSchema && /response_format|json_schema|schema|grammar|structured/i.test(t)) noSchema.add(id);
+        else if (!quirk.noTemp && /temperature/i.test(t)) quirk.noTemp = true;
+        else if (!quirk.completion && /max_tokens|max_completion_tokens/i.test(t)) quirk.completion = true;
+        else break;
+        quirks.set(id, quirk);
       }
     } catch (e) {
       if (e && e.name === "TimeoutError") throw fail("rate_limited", `${who(conn)} took too long. Try again, or try a shorter request.`, 504);
@@ -107,13 +122,18 @@ Rules for every answer:
     if (!r.ok) {
       const t = await r.text().catch(() => "");
       if (r.status === 401 || r.status === 403) throw fail("bad_key", `${who(conn)} refused the key.`, 403);
-      if (r.status === 402 || /credit|balance|billing|quota|insufficient/i.test(t) && r.status !== 400) throw fail("no_credit", `${who(conn)} says the account is out of credit.`, 402);
-      if (r.status === 429) throw fail("rate_limited", `${who(conn)} is busy. Try again in a moment.`, 429);
+      if (r.status === 402 || /credit|balance|billing|quota|insufficient/i.test(t)) throw fail("no_credit", `${who(conn)} says the account is out of credit.`, 402);
+      if (r.status === 429 || r.status === 529) throw fail("rate_limited", `${who(conn)} is busy. Try again in a moment.`, 429);
       if (/context|too long|exceed|maximum.*tokens/i.test(t)) throw fail("too_big", local ? "That's too long for your local AI's context window. Raise the context length in LM Studio (16384 or more)." : `That's too long for ${who(conn)}.`, 413);
       if (r.status === 404) throw fail("upstream", `${who(conn)} doesn't have the model ${model}. Pick another in Your AI.`, 502);
       throw fail("upstream", `${who(conn)} couldn't answer that time.`, 502);
     }
     const j = await r.json().catch(() => ({}));
+    if (isClaude(conn)) {
+      const u = j.usage || {};
+      if (j.stop_reason === "refusal") throw fail("refused", "Claude wouldn't answer that one.", 422);
+      return { text: (j.content || []).filter(b => b.type === "text").map(b => b.text).join(""), usage: { input: u.input_tokens || 0, output: u.output_tokens || 0 }, truncated: j.stop_reason === "max_tokens", model };
+    }
     const choice = (j.choices || [])[0] || {}, u = j.usage || {};
     return { text: stripThinking(choice.message && choice.message.content), usage: { input: u.prompt_tokens || 0, output: u.completion_tokens || 0 }, truncated: choice.finish_reason === "length", model };
   }
