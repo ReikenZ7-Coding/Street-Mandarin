@@ -10,10 +10,15 @@ if (s.endsWith('</html>')) s = s.slice(0, -'</html>'.length).trimEnd();
 if (!s.endsWith('</body>')) throw new Error('index.html should end with </body></html>');
 s = s.slice(0, -'</body>'.length).trimEnd() + '\n';
 fs.mkdirSync(path.join(out, 'films'), { recursive: true });
+const THREE_V = require(path.join(root, 'tools/three/package.json')).devDependencies.three;
+s = s.replace('<title>', `<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@${THREE_V}/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@${THREE_V}/examples/jsm/" } }</script>\n<title>`);
 fs.writeFileSync(path.join(out, 'street-mandarin.html'), s);
 const scripts = ['ai.js', 'scenes.js', 'why.js', 'voices.js', 'daily.js', 'journey.js', 'people.js', 'films.js', 'street.js'];
 for (const f of scripts) fs.copyFileSync(path.join(root, f), path.join(out, f));
-fs.mkdirSync(path.join(out, 'vendor'), { recursive: true }); fs.copyFileSync(path.join(root, 'vendor/three-street.js'), path.join(out, 'vendor/three-street.js'));
+// 夜城's street: in the artifact, three.js comes from jsDelivr (the allowed CDN) through an import map, and
+// vendor/three-street.js is just the list of parts it uses (tools/three/entry.js) instead of the bundled copy
+fs.mkdirSync(path.join(out, 'vendor'), { recursive: true });
+fs.writeFileSync(path.join(out, 'vendor/three-street.js'), fs.readFileSync(path.join(root, 'tools/three/entry.js'), 'utf8'));
 for (const f of fs.readdirSync(path.join(out, 'films'))) fs.unlinkSync(path.join(out, 'films', f));
 const films = fs.readdirSync(path.join(root, 'films')).filter(f => /\.(webm|jpg)$/.test(f));
 for (const f of films) fs.copyFileSync(path.join(root, 'films', f), path.join(out, 'films', f));
