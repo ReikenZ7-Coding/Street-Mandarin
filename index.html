@@ -1108,7 +1108,7 @@ function validScene(x) {
 /* ---------- storage (per-viewer convenience only) ---------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} if (cyStreet && (k === "sm-done" || k === "sm-notebook")) cyStreet.refresh(); }
 };
 store.get("sm-custom", []).filter(validScene).forEach(x => { x.custom = true; if (!S.some(s => s.id === x.id)) S.push(x); });
 let notebook = store.get("sm-notebook", []);
@@ -4133,6 +4133,7 @@ function renderFoot() {
   THEMES.forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
   if ((isJade() || isCyber()) && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => isJade() ? jadeOpening(true) : cyberOpening(true); look.append(re); }
   // say plainly when the full world can't play, so a quiet screen is never a mystery (when the films play, there's nothing to explain)
+  if (isCyber() && !cyStreet) look.append(el("span", "look-note", `Your street is off here (${cyWhy || "starting"}), so a quiet night is shown.`));
   if (isJade() && (!jadeF || stillMotion())) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
   // the device setting wins by default, but it's your app: you can ask for the motion anyway
   const asked = document.documentElement.dataset.motion === "on";
@@ -5829,6 +5830,7 @@ function pageIn(node, dir, delay, ms) {
 // Moving to another major page
 let sweepKey = "", sweepAt = 0;
 function jadeSweep(key) {
+  if (cyStreet) setTimeout(() => cyStreet && cyStreet.focus(mode === "scene" && cur ? cur.id : null)); // 夜城: the camera goes to the place you're in
   const first = !sweepKey; // the first page of a visit just appears
   if (!first && isCyber() && !stillMotion() && key !== sweepKey && Date.now() - sweepAt >= 700) {
     sweepKey = key; sweepAt = Date.now(); cyberPass(); pageIn($(mode === "notebook" ? ".notebook" : ".scene"), /^home/.test(key) ? -1 : 1, 60, 200); return;
@@ -5949,6 +5951,27 @@ function jadeOpening(force) {
    Nothing moves, so it never competes with the page. */
 const isCyber = () => document.documentElement.dataset.look === "cyber";
 let cyCity = null;
+var cyStreet = null, cyWhy = ""; // var: store.set may ask for it before this line has run
+// 夜城's street (street.js): your ten days as a live 3D street, on a device with a real graphics chip; otherwise the
+// quiet night below stays, and the footer says why
+function cyberStreet(sc) {
+  if (cyStreet || cyberStreet.trying || !isCyber() || !sc) return;
+  const gl = document.createElement("canvas").getContext("webgl");
+  if (!gl) { cyWhy = "this browser has WebGL turned off"; return; }
+  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"), r = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ""; if (/swiftshader|llvmpipe|software|basic render/i.test(r) && !window.SM_FORCE_GL) { cyWhy = "no graphics chip found"; return; } } catch {}
+  gl.getExtension("WEBGL_lose_context")?.loseContext();
+  cyberStreet.trying = true;
+  import("./street.js").then(({ startStreet }) => {
+    if (!isCyber()) return;
+    const cv = el("canvas", "cy cy-street"); cv.setAttribute("aria-hidden", "true"); sc.append(cv);
+    const days = DAYS.map(d => [d.han, d.stops.map(st => ({ id: st.id, place: S.find(x => x.id === st.id).place }))]);
+    const state = () => ({ done: new Set(Object.keys(done).filter(k => done[k])), tripped: new Set(notebook.filter(n => !n.learned).map(n => n.sid)) });
+    try { cyStreet = startStreet(cv, { days, state, still: stillMotion() }); } catch (e) { cv.remove(); cyWhy = "the graphics chip refused it"; console.warn("夜城 street:", e); return; }
+    cyStreet.focus(mode === "scene" && cur ? cur.id : null);
+    cv.animate && cv.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 900, easing: "ease-out" });
+    renderFoot();
+  }).catch(e => { cyWhy = "it couldn't load"; console.warn("夜城 street:", e); renderFoot(); }).finally(() => { cyberStreet.trying = false; });
+}
 function cyberCity(sc) {
   if (cyCity || !sc) return cyCity;
   const cv = el("canvas", "cy"); sc.append(cv);
@@ -5990,12 +6013,13 @@ function cyberOpening(force) {
 const THEMES = [["jade", "玉境 Jade"], ["cyber", "夜城 Cyberpunk"], ["paper", "Paper"]];
 function setLook(look) {
   document.documentElement.dataset.look = look; try { localStorage.setItem("sm-look", look); } catch {}
-  if (look === "cyber") cyberCity($(".scenery"));
+  if (look === "cyber") { cyberCity($(".scenery")); cyberStreet($(".scenery")); }
+  else if (cyStreet) { cyStreet.stop(); $(".cy-street")?.remove(); cyStreet = null; }
   renderFoot(); setSky(); jadeF && jadeF.sync();
 }
 scenery();
 jadeWorld($(".scenery"));
-if (isCyber()) cyberCity($(".scenery"));
+if (isCyber()) { cyberCity($(".scenery")); cyberStreet($(".scenery")); }
 applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
 $("#ts-seg").onclick = e => { const b = e.target.closest("button"); if (b) stepTextSize(+b.dataset.d); };

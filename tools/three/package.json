@@ -1,0 +1,6 @@
+{
+  "name": "street-three",
+  "private": true,
+  "description": "Builds vendor/three-street.js: the parts of three.js that 夜城's street (street.js) uses, in one file the app carries with it. Run: npm ci && node build.js",
+  "devDependencies": { "esbuild": "0.24.2", "three": "0.160.0" }
+}

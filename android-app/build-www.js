@@ -17,8 +17,9 @@ function build(www = path.join(__dirname, 'www'), v = Number(process.env.SM_WEB_
   if (page.split(at).length !== 2) throw new Error('expected one ai.js script tag in index.html');
   page = page.replace(at, '<script src="capacitor.js"></script>\n<script src="app-shim.js"></script>\n' + at);
   fs.writeFileSync(path.join(www, 'index.html'), page);
-  const scripts = ['ai.js', 'scenes.js', 'why.js', 'voices.js', 'daily.js', 'journey.js', 'people.js', 'films.js'];
+  const scripts = ['ai.js', 'scenes.js', 'why.js', 'voices.js', 'daily.js', 'journey.js', 'people.js', 'films.js', 'street.js'];
   for (const f of scripts) fs.copyFileSync(path.join(root, f), path.join(www, f));
+  fs.mkdirSync(path.join(www, 'vendor')); fs.copyFileSync(path.join(root, 'vendor/three-street.js'), path.join(www, 'vendor/three-street.js'));
   fs.copyFileSync(require.resolve('@capacitor/core/dist/capacitor.js', { paths: [__dirname] }), path.join(www, 'capacitor.js'));
   const films = fs.readdirSync(path.join(root, 'films')).filter(f => /\.(webm|jpg)$/.test(f));
   for (const f of films) fs.copyFileSync(path.join(root, 'films', f), path.join(www, 'films', f));

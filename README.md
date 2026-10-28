@@ -118,6 +118,8 @@ The day's main button follows the day: review your slips first in the morning, t
 
 Progress is one list: **what you can do on your own** ("Check into a hotel", "Pay and split a bill"…). A place goes on it when you get through it with no slips. After the ten days, the day page points you at what's most worth going deeper on.
 
+**Themes**: 玉境 Jade (the default), 夜城 Cyberpunk and Paper, picked in the footer. A theme's backdrop shows your own progress, not stock scenery. In Cyberpunk your ten days are one rainy neon street, drawn live in 3D (`street.js`, with the parts of three.js it uses in `vendor/three-street.js`, rebuilt by `tools/three/build.js`). Each place in the story is a sign that lights up once you've done it and stutters while a mistake from there is still in your notebook. The blocks ahead stay dark, and the camera stands in front of the place you're in. Without a graphics chip a quiet night is shown instead, and the footer says why.
+
 The side list shows the ten days, one open at a time, with a Next up tag. Tap the title to get back to your day. One find box above them searches places and phrases together ("toilet", "多少", "duoshao").
 
 **Long Story**: a light novel Claude writes around you, set in a real Chinese city, 7 to 30 volumes long (a week to a month), one day per volume and four chapters per day. You pick the length and a theme (or your own idea, or "surprise me"). Claude plans the whole story first: a story question, a turn in the middle, a cast of three to five people who each talk their own way, and the everyday situations each day teaches. Then it writes each chapter as you reach it.
