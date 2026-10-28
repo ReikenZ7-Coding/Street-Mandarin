@@ -12,7 +12,7 @@ import { priceOf } from "./config.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(here, "../..");
 // Only these files are served: never the server's code, the repo's history or anything else in it
-const APP_FILES = ["index.html", "client.js", "ai.js", "scenes.js", "why.js", "voices.js", "daily.js", "journey.js", "people.js", "films.js"];
+const APP_FILES = ["index.html", "client.js", "ai.js", "scenes.js", "why.js", "voices.js", "daily.js", "journey.js", "people.js", "films.js", "street.js", "vendor/three-street.js"];
 // The filmed world's clips and posters (made by tools/make-films.js), served from films/ by name only
 const FILMS_DIR = path.join(APP_ROOT, "films"), FILM_RE = /^[a-z0-9-]{1,40}\.(webm|jpg)$/;
 const FILM_TYPES = { ".webm": "video/webm", ".jpg": "image/jpeg" };
@@ -405,6 +405,11 @@ export function createApp({ db, config, ai: aiIn = {} }) {
       return c.body(buf, 206, { ...head, "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(buf.length) });
     }
     return c.body(fs.readFileSync(file), 200, { ...head, "Content-Length": String(size) });
+  });
+  app.get("/vendor/:file", c => { // three.js for 夜城's street, carried with the app
+    const f = "vendor/" + c.req.param("file");
+    if (!files.has(f)) return c.notFound();
+    return c.body(files.get(f), 200, { "Content-Type": TYPES[".js"], "Cache-Control": "public, max-age=86400" });
   });
   app.get("/:file", c => {
     const f = c.req.param("file");

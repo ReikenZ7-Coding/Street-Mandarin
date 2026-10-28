@@ -1,0 +1,20 @@
+{
+  "name": "street-mandarin-android",
+  "private": true,
+  "description": "Street Mandarin as an Android app: the same page, with the learner's own AI",
+  "scripts": {
+    "www": "node build-www.js",
+    "icons": "capacitor-assets generate --android --iconBackgroundColor '#0b1411' --iconBackgroundColorDark '#0b1411' --splashBackgroundColor '#0b1411' --splashBackgroundColorDark '#0b1411'",
+    "sync": "npm run www && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "8.0.2",
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.5"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.5.3"
+  }
+}

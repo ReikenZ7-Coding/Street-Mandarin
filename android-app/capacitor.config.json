@@ -1,0 +1,12 @@
+{
+  "appId": "com.streetmandarin.app",
+  "appName": "Street Mandarin",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["openrouter.ai"]
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}

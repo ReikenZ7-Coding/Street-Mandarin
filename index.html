@@ -933,6 +933,99 @@ dialog.ai-dlg::backdrop { background: rgba(10, 20, 16, .45); }
 @media (max-width: 760px) { .jw-aurora { height: 16vh; } .jw-glow { display: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) .jw-aurora, :root:not([data-motion="on"]) .jw-shaft, :root:not([data-motion="on"]) .jw .vein, :root:not([data-motion="on"]) .jw .lamp, :root:not([data-motion="on"]) .jw .fall, :root:not([data-motion="on"]) .jw-mist, :root:not([data-motion="on"]) .jw-haze, :root:not([data-motion="on"]) .ripple, :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root[data-look="jade"]:not([data-motion="on"]) .thinking::before, :root[data-look="jade"]:not([data-motion="on"]) .ink, :root:not([data-motion="on"]) .wrap.op-in, :root:not([data-motion="on"]) .wrap.op-in * { animation: none !important; } :root:not([data-motion="on"]) .sweep, :root:not([data-motion="on"]) .dawn, :root:not([data-motion="on"]) .opening, :root:not([data-motion="on"]) .ripple { display: none !important; } :root:not([data-motion="on"]) .wrap.op-wait { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { :root[data-look="jade"]:not([data-motion="on"]) .fb::after { display: none; } :root:not([data-motion="on"]) .fb.wrong, :root:not([data-motion="on"]) .fb .seal, :root:not([data-motion="on"]) .notes, :root:not([data-motion="on"]) .layout.menu-open .rail, :root:not([data-motion="on"]) .chat-typing::after, :root:not([data-motion="on"]) .opts > .opt, :root:not([data-motion="on"]) #move .move-head h3, :root:not([data-motion="on"]) #move .score > * { animation: none !important; } }
+/* ==========================================================================================
+   夜城 Cyberpunk: the same streets at night, in the rain, under neon. Behind the page a live city
+   (cyberCity): rain, towers, and signs for the places in the story. The interface is a cool glass
+   HUD with cut corners; cyan is the working colour, magenta is you, and electric yellow is kept
+   for what matters most, as gold is in Jade.
+   ========================================================================================== */
+:root[data-look="cyber"] {
+  --cyan: #00e5ff; --magenta: #ff2bd6; --volt: #f4ff52; --gold: #f4ff52;
+  --bg: #07050f; --surface: #0d0a1c; --surface-2: #141030; --fg: #ece8ff; --muted: #9f98cc; --line: rgba(0, 229, 255, .2);
+  --cinnabar: #ff4f8b; --cinnabar-soft: rgba(255, 79, 139, .14); --ochre: #f6d64a; --ochre-soft: rgba(246, 214, 74, .13);
+  --jade: #2ef5d2; --jade-soft: rgba(46, 245, 210, .1); --npc: #120e27; --me: #4a0f63; --me-fg: #fdeaff;
+  --btn: #b0179a; --btn-fg: #fff2fd; --head-mt: #00e5ff; --done-bg: #0a6d7c; --done-fg: #e6fdff;
+  --stalk: #1b1440; --stalk-hi: #2a2060; --node: #0d0a1c; --leaf: #ff2bd6; --crane: #00e5ff;
+  --f-hud: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+:root[data-look="cyber"] body { background: #07050f; }
+/* the paper landscape and the jade world give way to the city */
+:root[data-look="cyber"] .scenery > :not(.cy) { display: none !important; }
+.cy { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+:root[data-look="cyber"] .cy { display: block; }
+:root[data-look="cyber"] .leaves, :root[data-look="cyber"] .cranes { display: none; }
+/* the brand is a neon sign: a cyan tube under a magenta glow */
+:root[data-look="cyber"] .brand h1 { color: #fff5fe; text-shadow: 0 0 2px #fff, 0 0 10px var(--magenta), 0 0 26px rgba(255, 43, 214, .6); }
+:root[data-look="cyber"] .brand h1::after { background: linear-gradient(90deg, var(--cyan), var(--magenta)); opacity: .9; height: 3px; bottom: -6px; -webkit-mask: none; mask: none; box-shadow: 0 0 12px var(--cyan); }
+:root[data-look="cyber"] header.top :is(.tagline, .streak, .brand .en), :root[data-look="cyber"] .rail h2 { text-shadow: 0 1px 2px #000, 0 0 12px rgba(7, 5, 15, .9); }
+:root[data-look="cyber"] .rail h2, :root[data-look="cyber"] .day-part .dp-en, :root[data-look="cyber"] .scene-head .eyebrow, :root[data-look="cyber"] .look-pick, :root[data-look="cyber"] .foot { font-family: var(--f-hud); letter-spacing: .04em; }
+/* panels are glass over the street: dark, a fine cyan edge, cut corners top-left and bottom-right */
+:root[data-look="cyber"] .scene, :root[data-look="cyber"] .notebook {
+  border-radius: 0; background: linear-gradient(180deg, rgba(16, 12, 36, .94), rgba(9, 7, 22, .96));
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, .28), 0 0 40px -12px rgba(0, 229, 255, .25), 0 30px 60px -30px #000;
+}
+:root[data-look="cyber"] .scene-head { background: linear-gradient(90deg, rgba(255, 43, 214, .16), rgba(0, 229, 255, .06) 60%, transparent); border-bottom: 1px solid rgba(0, 229, 255, .25); }
+:root[data-look="cyber"] .scene-head::after { background: repeating-linear-gradient(90deg, var(--cyan) 0 2px, transparent 2px 7px); opacity: .18; -webkit-mask: linear-gradient(90deg, transparent, #000); mask: linear-gradient(90deg, transparent, #000); height: 3px; width: 50%; bottom: 0; }
+:root[data-look="cyber"] .scene-head h2, :root[data-look="cyber"] .tc-title, :root[data-look="cyber"] .daily-title, :root[data-look="cyber"] #place-en, :root[data-look="cyber"] .notebook .place-en { letter-spacing: .02em; }
+:root[data-look="cyber"] #place, :root[data-look="cyber"] .notebook .place { color: #f2fdff; text-shadow: -1px 0 rgba(255, 43, 214, .75), 1px 0 rgba(0, 229, 255, .75), 0 0 22px rgba(0, 229, 255, .45); }
+:root[data-look="cyber"] :is(.today-card, .daily-card, .scn, .opt, .bubble, .cando, .foot, .menu-btn) { background: rgba(14, 11, 32, .95); border-color: rgba(0, 229, 255, .2); border-radius: 0; }
+:root[data-look="cyber"] :is(.today-card, .daily-card, .opt, .scn, .btn, .chip, .seg, .menu-btn, .cando) { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+:root[data-look="cyber"] :is(.btn, .chip, .seg, .seg button) { border-radius: 0; }
+:root[data-look="cyber"] .row.me .bubble { background: linear-gradient(180deg, #5d1479, #3a0b52); border-color: rgba(255, 43, 214, .45); }
+:root[data-look="cyber"] .row.npc .bubble { border-left: 2px solid var(--cyan); }
+:root[data-look="cyber"] .today-card.first { box-shadow: inset 0 0 0 1px var(--volt), inset 0 0 26px -10px rgba(244, 255, 82, .6); }
+:root[data-look="cyber"] .tc-han, :root[data-look="cyber"] .dc-han, :root[data-look="cyber"] .day-part .dp-zh { color: var(--cyan); text-shadow: 0 0 12px rgba(0, 229, 255, .55); }
+:root[data-look="cyber"] .cando .cd-bar i { background: linear-gradient(90deg, var(--magenta), var(--volt)); box-shadow: 0 0 12px rgba(244, 255, 82, .55); }
+:root[data-look="cyber"] .day-dot { background: rgba(0, 229, 255, .05); border-radius: 0; }
+:root[data-look="cyber"] .day-dot.done { background: linear-gradient(180deg, #0c8899, #075763); box-shadow: 0 0 14px -2px rgba(0, 229, 255, .6); }
+:root[data-look="cyber"] .day-dot.on { outline-color: var(--magenta); }
+:root[data-look="cyber"] .day-part { background: linear-gradient(90deg, rgba(0, 229, 255, .5), rgba(255, 43, 214, .2) 50%, transparent) left bottom / 100% 1px no-repeat; }
+:root[data-look="cyber"] .scn.tool .han { background: linear-gradient(180deg, #0c8899, #075763); box-shadow: 0 0 0 1px rgba(0, 229, 255, .45); border-radius: 0; }
+:root[data-look="cyber"] .scn.review#tool-nb .han { background: linear-gradient(180deg, #c21a6a, #7d0f45); box-shadow: 0 0 0 1px rgba(255, 79, 139, .45); }
+:root[data-look="cyber"] .scn[aria-current="true"] { box-shadow: inset 3px 0 0 var(--magenta), inset 0 0 22px -8px rgba(255, 43, 214, .5); border-color: rgba(255, 43, 214, .5); }
+:root[data-look="cyber"] .btn:not(.ghost) { background: linear-gradient(180deg, #c81aae, #8d0f7c); border-color: transparent; box-shadow: inset 0 1px 0 rgba(255, 220, 250, .35), inset 0 0 0 1px rgba(255, 120, 235, .5); text-shadow: 0 0 8px rgba(255, 255, 255, .35); }
+:root[data-look="cyber"] .btn.ghost { border-color: rgba(0, 229, 255, .4); color: var(--fg); background: rgba(0, 229, 255, .04); }
+:root[data-look="cyber"] :is(.btn, .opt, .today-card, .scn, .chip) { transition: background-color .15s, border-color .15s, box-shadow .15s, transform .1s, filter .15s; }
+:root[data-look="cyber"] .btn:hover:not([disabled]) { filter: brightness(1.15) saturate(1.1); }
+:root[data-look="cyber"] :is(.opt, .today-card, .scn):hover { border-color: var(--cyan); background: rgba(0, 229, 255, .07); box-shadow: inset 0 0 18px -6px rgba(0, 229, 255, .55); }
+:root[data-look="cyber"] :is(.btn:not([disabled]), .opt, .today-card, .scn, .chip):active { transform: translateY(1px); }
+:root[data-look="cyber"] .chip[aria-pressed="true"], :root[data-look="cyber"] .seg button[aria-pressed="true"] { background: rgba(0, 229, 255, .16); color: #e9fdff; border-color: var(--cyan); box-shadow: inset 0 0 12px -2px rgba(0, 229, 255, .6); }
+:root[data-look="cyber"] .seg, :root[data-look="cyber"] .notes-btn, :root[data-look="cyber"] #acct-btn { border-color: rgba(0, 229, 255, .35); background: rgba(9, 7, 22, .7); }
+:root[data-look="cyber"] a, :root[data-look="cyber"] .linkish { color: var(--cyan); }
+:root[data-look="cyber"] input, :root[data-look="cyber"] textarea, :root[data-look="cyber"] select { background: rgba(5, 4, 12, .8); color: var(--fg); border-color: rgba(0, 229, 255, .3); border-radius: 0; }
+:root[data-look="cyber"] :is(input, textarea):focus { outline: 1px solid var(--cyan); box-shadow: 0 0 14px -4px var(--cyan); }
+/* a verdict lands like a HUD readout: good in cyan, a slip in hot pink with a short glitch */
+:root[data-look="cyber"] .fb { background: rgba(10, 8, 24, .92); border-radius: 0; border-left: 3px solid var(--jade); position: relative; overflow: hidden; }
+:root[data-look="cyber"] .fb.okay { border-left-color: var(--ochre); background: rgba(40, 34, 10, .55); }
+:root[data-look="cyber"] .fb.wrong { border-left-color: var(--cinnabar); background: rgba(52, 10, 30, .6); animation: cy-glitch .32s steps(2, end); }
+:root[data-look="cyber"] .fb .seal { border-radius: 0; animation: cy-on .3s steps(3, end) both; }
+:root[data-look="cyber"] .fb .seal::after, :root[data-look="cyber"] .fb.wrong::before { display: none; }
+:root[data-look="cyber"] .fb.good .seal { background: #0a6d7c; box-shadow: 0 0 16px -2px rgba(0, 229, 255, .7); }
+@keyframes cy-on { 0% { opacity: 0; } 34% { opacity: 1; } 50% { opacity: .2; } 100% { opacity: 1; } }
+@keyframes cy-glitch { 0% { transform: translateX(-3px); clip-path: inset(0 0 55% 0); } 33% { transform: translateX(3px); clip-path: inset(40% 0 0 0); } 66% { transform: translateX(-1px); clip-path: none; } 100% { transform: none; } }
+:root[data-look="cyber"] #move .move-head.won h3 { color: var(--volt); text-shadow: 0 0 16px rgba(244, 255, 82, .55); }
+/* what people say arrives like a terminal line typing out */
+:root[data-look="cyber"] .row.npc.fresh .han { animation: cy-type .38s steps(12, end) both; }
+@keyframes cy-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+/* while the AI works: a scanning bar */
+:root[data-look="cyber"] .thinking { display: flex; align-items: center; gap: 10px; font-style: normal; color: var(--muted); font-family: var(--f-hud); }
+:root[data-look="cyber"] .thinking::before { content: ""; flex: none; width: 54px; height: 6px; background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent) 0 0 / 40% 100% no-repeat, rgba(0, 229, 255, .12); animation: cy-scan 1.1s ease-in-out infinite alternate; }
+@keyframes cy-scan { from { background-position: 0 0, 0 0; } to { background-position: 100% 0, 0 0; } }
+:root[data-look="cyber"] .chat-typing::after { content: "_"; margin-left: 4px; color: var(--cyan); animation: cy-blink 1s steps(1) infinite; }
+@keyframes cy-blink { 50% { opacity: 0; } }
+:root[data-look="cyber"] .sm-banner { border-radius: 0; border-color: var(--cyan); box-shadow: 0 0 24px -6px rgba(0, 229, 255, .6); }
+:root[data-look="cyber"] dialog { border-radius: 0; }
+/* moving between pages: a scan line passes and the page snaps in */
+.cy-pass { position: fixed; inset: 0; z-index: 75; pointer-events: none; background: linear-gradient(180deg, transparent 0 46%, rgba(0, 229, 255, .5) 49.6%, #fff 50%, rgba(255, 43, 214, .5) 50.4%, transparent 54% 100%) 0 0 / 100% 200% no-repeat; mix-blend-mode: screen; animation: cy-pass .34s cubic-bezier(.4, 0, .2, 1) forwards; }
+@keyframes cy-pass { from { background-position: 0 100%; opacity: 1; } to { background-position: 0 -100%; opacity: .6; } }
+/* the opening: the sign buzzes on in the dark, then the city behind it */
+.cy-open { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: #05030b; pointer-events: none; animation: cy-open-out .5s 1.5s ease-in forwards; }
+.cy-open b { font-family: var(--f-han); font-weight: 900; font-size: min(18vw, 120px); letter-spacing: .06em; color: #fff4fe; opacity: 0; text-shadow: 0 0 4px #fff, 0 0 18px var(--magenta), 0 0 48px rgba(255, 43, 214, .7), 0 0 90px rgba(0, 229, 255, .35); animation: cy-buzz 1.1s .1s steps(1) forwards; }
+.cy-open i { position: absolute; top: calc(50% + min(13vw, 86px)); font-style: normal; font-family: var(--f-hud); font-size: 13px; letter-spacing: .5em; color: var(--cyan); opacity: 0; animation: cy-on .4s .8s steps(3, end) forwards; }
+@keyframes cy-buzz { 0% { opacity: 0; } 8% { opacity: 1; } 12% { opacity: .1; } 20% { opacity: 1; } 24% { opacity: .3; } 30%, 100% { opacity: 1; } }
+@keyframes cy-open-out { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { :root[data-look="cyber"]:not([data-motion="on"]) :is(.fb, .fb .seal, .row.npc.fresh .han, .thinking::before) { animation: none !important; } :root:not([data-motion="on"]) .cy-pass, :root:not([data-motion="on"]) .cy-open { display: none; } }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="on"]) * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
@@ -1015,7 +1108,7 @@ function validScene(x) {
 /* ---------- storage (per-viewer convenience only) ---------- */
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} if (cyStreet && (k === "sm-done" || k === "sm-notebook")) cyStreet.refresh(); }
 };
 store.get("sm-custom", []).filter(validScene).forEach(x => { x.custom = true; if (!S.some(s => s.id === x.id)) S.push(x); });
 let notebook = store.get("sm-notebook", []);
@@ -4019,7 +4112,12 @@ function loadProgress(code) {
 let footOpen = "";
 function renderFoot() {
   const f = $("#foot"); f.textContent = "";
-  f.append(el("span", null, "Your progress lives in this browser only."));
+  f.append(el("span", null, `Your progress lives ${APP ? "on this phone" : "in this browser"} only.` + (APP && window.SM_APP && SM_APP.v ? ` Version ${SM_APP.v}.` : "")));
+  if (APP && window.SM_APP && SM_APP.check) { // the app keeps itself up to date; this checks now and says what it found
+    const up = el("button", "linkish", "Check for updates");
+    up.onclick = async () => { up.disabled = true; up.textContent = "Checking…"; up.textContent = await SM_APP.check(); up.disabled = false; };
+    f.append(up);
+  }
   const out = el("button", "linkish", "Copy it to move it"), inn = el("button", "linkish", "Bring progress in");
   out.onclick = async () => {
     const code = progressCode(); footOpen = "out"; renderFoot();
@@ -4030,11 +4128,12 @@ function renderFoot() {
   // Which AI writes the AI parts, one tap from anywhere
   const aiPick = el("span", "look-pick"); aiPick.append("Your AI:");
   const aiB = el("button", "linkish", sample ? AI.name : "none yet"); aiB.id = "ai-btn"; aiB.onclick = () => openAiPanel(); aiPick.append(aiB); f.append(aiPick);
-  // The look: the jade kingdom, or paper and bamboo; and the opening again, for the jade one
-  const look = el("span", "look-pick"); look.append("Look:");
-  [["jade", "玉境 Jade"], ["paper", "Paper"]].forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
-  if (isJade() && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => jadeOpening(true); look.append(re); }
+  // The theme, and its opening again (Jade and Cyberpunk have one)
+  const look = el("span", "look-pick"); look.append("Theme:");
+  THEMES.forEach(([k, label]) => { const b = el("button", "linkish", label); b.setAttribute("aria-pressed", document.documentElement.dataset.look === k ? "true" : "false"); b.onclick = () => setLook(k); look.append(b); });
+  if ((isJade() || isCyber()) && !stillMotion()) { const re = el("button", "linkish", "Replay the opening"); re.onclick = () => isJade() ? jadeOpening(true) : cyberOpening(true); look.append(re); }
   // say plainly when the full world can't play, so a quiet screen is never a mystery (when the films play, there's nothing to explain)
+  if (isCyber() && !cyStreet) look.append(el("span", "look-note", `Your street is off here (${cyWhy || "starting"}), so a quiet night is shown.`));
   if (isJade() && (!jadeF || stillMotion())) look.append(el("span", "look-note", stillMotion() ? "Motion is off because this device asks for less motion." : jadeW ? `3D world on, drawn by ${jadeGPU || "your graphics chip"}.${jadeGPU && /windows/i.test(navigator.userAgent) && !/nvidia|geforce|rtx|radeon rx/i.test(jadeGPU) ? " That's the built-in graphics, not the main graphics card, so it may lag. On Windows: Settings › System › Display › Graphics, pick your browser, set it to High performance, then restart the browser." : ""}` : `3D is off here (${jadeWhy || "not started yet"}), so the drawn world is shown.`));
   // the device setting wins by default, but it's your app: you can ask for the motion anyway
   const asked = document.documentElement.dataset.motion === "on";
@@ -4388,6 +4487,8 @@ function aiNote(text) {
 // your own computer seen from the website, which only this page can reach. Opened from a file, the page
 // talks to the AI itself. The rules every AI follows are in ai.js (window.SM_AI).
 const HOST = window.SM_HOST || null, IN_CLAUDE = !!(window.claude && !HOST);
+// The Android app (Capacitor): the phone talks to the learner's online AI itself, and keeps the key on the phone
+const APP = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
 let AI = { kind: "claude", name: "Claude", can: null, via: IN_CLAUDE ? "claude" : "" };
 // A connection the page makes itself lives in this browser only: never synced, never in a progress code
 const AI_PAGE = "smai-conn";
@@ -4457,7 +4558,7 @@ function openAiPanel(tab) {
     aiDlg.addEventListener("click", e => { if (e.target === aiDlg && !aiP.busy) aiDlg.close(); });
     document.body.append(aiDlg);
   }
-  aiP = { tab: tab || aiP.tab || (AI.kind === "claude" ? "" : AI.kind), draft: aiP.draft || {}, busy: "", err: "", found: null, models: aiP.models, steps: null, done: null };
+  aiP = { tab: tab || aiP.tab || (APP ? "online" : AI.kind === "claude" ? (HOST ? "" : "online") : AI.kind), draft: aiP.draft || {}, busy: "", err: "", found: null, models: aiP.models, steps: null, done: null };
   drawAi(); if (!aiDlg.open) aiDlg.showModal();
 }
 window.SM_openAi = openAiPanel;
@@ -4508,9 +4609,12 @@ function drawAi() {
     box.append(el("p", "ai-muted", "Inside Claude, the AI parts are always Claude. To use another AI, or a free model on your own computer, run Street Mandarin on your computer or open its website."));
     return;
   }
-  // Three ways, one open at a time
-  const tabs = el("div", "ai-tabs"); tabs.setAttribute("role", "tablist");
-  [["claude", "Claude"], ["computer", "On this computer"], ["online", "Online, with your key"]].forEach(([k, t]) => {
+  // The ways there are here, one open at a time: Claude has its own tab only where the server keeps its key
+  // (elsewhere it's one of the online AIs), and a phone has no computer to look on
+  const ways = HOST ? [["claude", "Claude"], ["computer", "On this computer"], ["online", "Online, with your key"]] : APP ? [["online", "Online, with your key"]] : [["online", "Online, with your key"], ["computer", "On this computer"]];
+  if (!ways.some(w => w[0] === aiP.tab)) aiP.tab = ways[0][0];
+  const tabs = el("div", "ai-tabs"); tabs.setAttribute("role", "tablist"); if (ways.length < 2) tabs.hidden = true;
+  ways.forEach(([k, t]) => {
     const b = el("button", null, t); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(aiP.tab === k)); b.disabled = !!aiP.busy;
     b.onclick = () => { if (aiP.tab === k) return; aiP.tab = k; aiP.err = ""; aiP.found = null; aiP.models = null; drawAi(); }; tabs.append(b);
   });
@@ -4522,8 +4626,7 @@ function drawAi() {
 
 function aiClaudeTab() {
   const sec = el("div", "ai-sec");
-  const a = HOST && HOST.account;
-  if (!HOST) { sec.append(el("p", null, "Claude works when you open Street Mandarin inside Claude, or on its website with your own Claude key. In a copy opened from a file, pick another AI here.")); return sec; }
+  const a = HOST.account;
   if (!a || !a.signedIn) { sec.append(el("p", null, "Sign in first, so your Claude key is kept safely in your account.")); const go = el("button", "btn small", "Sign in"); go.onclick = () => { aiDlg.close(); HOST.signIn(); }; sec.append(go); return sec; }
   sec.append(el("p", null, "Claude writes the AI parts on your own Claude API key, so their cost goes to your Anthropic account."));
   if (a.freeToday) sec.append(el("p", "ai-muted", `Free today: about $${a.freeLeftToday.toFixed(2)} of AI left. With your own key there's no daily limit.`));
@@ -4596,7 +4699,8 @@ function aiModelPick(models, conn) {
 function aiOnlineTab() {
   const sec = el("div", "ai-sec"), a = HOST && HOST.account;
   if (HOST && (!a || !a.signedIn)) { sec.append(el("p", null, "Sign in first, so your key is kept safely in your account.")); const go = el("button", "btn small", "Sign in"); go.onclick = () => { aiDlg.close(); HOST.signIn(); }; sec.append(go); return sec; }
-  const d = aiP.draft, list = SM_AI.PROVIDERS.concat(HOST && HOST.kind === "website" ? [] : [{ id: "other", name: "Another service (its address)", about: "Anything that speaks the OpenAI-style API." }]);
+  // Claude has its own tab where the server keeps its key; the website only calls the services in the list
+  const d = aiP.draft, list = SM_AI.PROVIDERS.filter(p => !(HOST && p.id === "anthropic")).concat(HOST && HOST.kind === "website" ? [] : [{ id: "other", name: "Another service (its address)", about: "Anything that speaks the OpenAI-style API." }]);
   if (!list.some(p => p.id === d.provider)) d.provider = "openrouter";
   const prov = list.find(p => p.id === d.provider);
   const lab = el("label", null, "Service"), sel = el("select"); list.forEach(p => { const o = el("option", null, p.name); o.value = p.id; sel.append(o); }); sel.value = d.provider;
@@ -4615,7 +4719,7 @@ function aiOnlineTab() {
   key.placeholder = saved ? `Saved (${AI.keyHint}). Paste a new one to change it` : "Paste it here"; kl.append(key);
   const help = el("p", "ai-muted");
   if (prov.keys) help.append("Get one at ", aiLink(new URL(prov.keys).host, prov.keys), ". ");
-  help.append(HOST ? "It's stored encrypted on the server and never shown again." : "It's kept in this browser only, and sent only to " + (d.provider === "other" ? "that service" : prov.name) + ".");
+  help.append(HOST ? "It's stored encrypted on the server and never shown again." : `It's kept ${APP ? "on this phone" : "in this browser"} only, and sent only to ` + (d.provider === "other" ? "that service" : prov.name) + ".");
   const go = el("button", "btn ghost small", aiP.busy === "Finding models…" ? "Finding models…" : "Find models"); go.type = "submit"; go.disabled = !!aiP.busy;
   f.append(kl, help, go);
   f.onsubmit = ev => { ev.preventDefault(); d.key = key.value.trim(); if (url) d.url = url.value.trim(); aiModels(); };
@@ -4939,7 +5043,7 @@ function setSky() {
 const stillMotion = () => document.documentElement.dataset.motion !== "on" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 // A new day: two or three cranes cross the mountains
 function cranes() {
-  if (stillMotion() || isJade()) return;
+  if (stillMotion() || isJade() || isCyber()) return;
   const box = el("div", "cranes"); box.setAttribute("aria-hidden", "true");
   const n = 2 + Math.floor(Math.random() * 2);
   for (let i = 0; i < n; i++) {
@@ -4955,6 +5059,7 @@ function cranes() {
 function leafFall() {
   if (stillMotion()) return;
   if (isJade() && jadeW && jadeLeaves()) return; // in 玉境 the leaves are real 3D ones from the grove
+  if (isCyber()) return; // 夜城's street stays still
   // A gust goes through the bamboo first, and the leaves blow off downwind
   const sc = document.querySelector(".scenery");
   if (sc) { sc.classList.remove("gust"); void sc.offsetWidth; sc.classList.add("gust"); setTimeout(() => sc.classList.remove("gust"), 3400); }
@@ -5725,7 +5830,11 @@ function pageIn(node, dir, delay, ms) {
 // Moving to another major page
 let sweepKey = "", sweepAt = 0;
 function jadeSweep(key) {
+  if (cyStreet) setTimeout(() => cyStreet && cyStreet.focus(mode === "scene" && cur ? cur.id : null)); // 夜城: the camera goes to the place you're in
   const first = !sweepKey; // the first page of a visit just appears
+  if (!first && isCyber() && !stillMotion() && key !== sweepKey && Date.now() - sweepAt >= 700) {
+    sweepKey = key; sweepAt = Date.now(); cyberPass(); pageIn($(mode === "notebook" ? ".notebook" : ".scene"), /^home/.test(key) ? -1 : 1, 60, 200); return;
+  }
   if (first || !isJade() || stillMotion() || key === sweepKey || document.querySelector(".opening")) { sweepKey = key; return; }
   sweepKey = key; if (Date.now() - sweepAt < 700) return; sweepAt = Date.now();
   const dir = /^home/.test(key) ? -1 : 1, sc = $(mode === "notebook" ? ".notebook" : ".scene");
@@ -5739,6 +5848,7 @@ function brushIn(node, delay, ms) {
 }
 // A new day: a slower pass through the grove while the sun really rises in the world behind, and the day's name is brushed in
 function jadeDawn(n) {
+  if (isCyber() && !stillMotion()) { sweepAt = Date.now(); cyberPass(); pageIn($(".scene"), 1, 80, 260); return; }
   if (!isJade() || stillMotion() || document.querySelector(".opening")) return;
   sweepAt = Date.now();
   if (jadeF) { // filmed: through the bamboo, out into the morning
@@ -5836,13 +5946,80 @@ function jadeOpening(force) {
   op.querySelector(".op-skip").onclick = finish;
   addEventListener("keydown", finish, true); addEventListener("pointerdown", finish, true);
 }
-// The look: 玉境 Jade (the default) or Paper (the light bamboo one)
+/* ---------- 夜城 Cyberpunk: the city at night behind the page ----------
+   Until the filmed shots come, no pretend city: just the night, and the glow neon throws into it from below.
+   Nothing moves, so it never competes with the page. */
+const isCyber = () => document.documentElement.dataset.look === "cyber";
+let cyCity = null;
+var cyStreet = null, cyWhy = ""; // var: store.set may ask for it before this line has run
+// 夜城's street (street.js): your ten days as a live 3D street, on a device with a real graphics chip; otherwise the
+// quiet night below stays, and the footer says why
+function cyberStreet(sc) {
+  if (cyStreet || cyberStreet.trying || !isCyber() || !sc) return;
+  const gl = document.createElement("canvas").getContext("webgl");
+  if (!gl) { cyWhy = "this browser has WebGL turned off"; return; }
+  try { const ext = gl.getExtension("WEBGL_debug_renderer_info"), r = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : ""; if (/swiftshader|llvmpipe|software|basic render/i.test(r) && !window.SM_FORCE_GL) { cyWhy = "no graphics chip found"; return; } } catch {}
+  gl.getExtension("WEBGL_lose_context")?.loseContext();
+  cyberStreet.trying = true;
+  import("./street.js").then(({ startStreet }) => {
+    if (!isCyber()) return;
+    const cv = el("canvas", "cy cy-street"); cv.setAttribute("aria-hidden", "true"); sc.append(cv);
+    const days = DAYS.map(d => [d.han, d.stops.map(st => ({ id: st.id, place: S.find(x => x.id === st.id).place }))]);
+    const state = () => ({ done: new Set(Object.keys(done).filter(k => done[k])), tripped: new Set(notebook.filter(n => !n.learned).map(n => n.sid)) });
+    try { cyStreet = startStreet(cv, { days, state, still: stillMotion() }); } catch (e) { cv.remove(); cyWhy = "the graphics chip refused it"; console.warn("夜城 street:", e); return; }
+    cyStreet.focus(mode === "scene" && cur ? cur.id : null);
+    cv.animate && cv.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 900, easing: "ease-out" });
+    renderFoot();
+  }).catch(e => { cyWhy = "it couldn't load"; console.warn("夜城 street:", e); renderFoot(); }).finally(() => { cyberStreet.trying = false; });
+}
+function cyberCity(sc) {
+  if (cyCity || !sc) return cyCity;
+  const cv = el("canvas", "cy"); sc.append(cv);
+  const ctx = cv.getContext("2d"); if (!ctx) return null;
+  function draw() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5), W = innerWidth, H = innerHeight, time = sc.dataset.time || "out";
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#04030a"); bg.addColorStop(.55, time === "morning" ? "#120d2a" : "#0a0718"); bg.addColorStop(1, "#06040d");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    // a wide haze of colour where the signs are thickest, low in the frame
+    for (const [x, y, r, c, a] of [[.18, .78, .7, "255, 43, 190", .16], [.82, .7, .65, "0, 200, 255", .13], [.55, .95, .5, "255, 140, 60", .08]]) {
+      const g = ctx.createRadialGradient(W * x, H * y, 0, W * x, H * y, Math.max(W, H) * r);
+      g.addColorStop(0, `rgba(${c}, ${a})`); g.addColorStop(1, `rgba(${c}, 0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    // a lens's darker corners, and a little darker overall so the page in front stays the thing you read
+    const v = ctx.createRadialGradient(W / 2, H * .55, Math.min(W, H) * .2, W / 2, H * .55, Math.max(W, H) * .8);
+    v.addColorStop(0, "rgba(4, 3, 10, .25)"); v.addColorStop(1, "rgba(4, 3, 10, .75)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  }
+  draw();
+  addEventListener("resize", draw, { passive: true });
+  new MutationObserver(draw).observe(sc, { attributes: true, attributeFilter: ["data-time"] });
+  cyCity = { canvas: cv };
+  return cyCity;
+}
+// a page change: one scan line passes over and the new page snaps in
+function cyberPass() {
+  const p = el("div", "cy-pass"); p.setAttribute("aria-hidden", "true"); document.body.append(p); setTimeout(() => p.remove(), 420);
+}
+// the opening, under two seconds: the sign buzzes on in the dark, then the street
+function cyberOpening(force) {
+  if (!isCyber() || stillMotion() || document.querySelector(".cy-open, .opening")) return;
+  if (!force) { try { if (sessionStorage.getItem("sm-opened-cy") || navigator.webdriver) return; sessionStorage.setItem("sm-opened-cy", "1"); } catch {} }
+  const op = el("div", "cy-open"); op.setAttribute("aria-hidden", "true"); op.innerHTML = "<b>街头中文</b><i>STREET MANDARIN</i>";
+  document.body.append(op); setTimeout(() => op.remove(), 2100);
+}
+// The theme: 玉境 Jade (the default), 夜城 Cyberpunk, or Paper (the light bamboo one). A new theme is one more line in THEMES
+const THEMES = [["jade", "玉境 Jade"], ["cyber", "夜城 Cyberpunk"], ["paper", "Paper"]];
 function setLook(look) {
   document.documentElement.dataset.look = look; try { localStorage.setItem("sm-look", look); } catch {}
+  if (look === "cyber") { cyberCity($(".scenery")); cyberStreet($(".scenery")); }
+  else if (cyStreet) { cyStreet.stop(); $(".cy-street")?.remove(); cyStreet = null; }
   renderFoot(); setSky(); jadeF && jadeF.sync();
 }
 scenery();
 jadeWorld($(".scenery"));
+if (isCyber()) { cyberCity($(".scenery")); cyberStreet($(".scenery")); }
 applyPrefs(); renderNotebook(); renderStreak(); renderFoot();
 $("#home-btn").onclick = () => { startHome(); setMenu(false); };
 $("#ts-seg").onclick = e => { const b = e.target.closest("button"); if (b) stepTextSize(+b.dataset.d); };
@@ -5854,7 +6031,7 @@ $("#notes-close").onclick = () => closeNotes();
 document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !ev.isComposing && notesShown()) closeNotes(); });
 // Coming back: start from a short "today" page. The very first visit goes straight into the noodle shop.
 if (said) startHome(); else start(lastScene());
-jadeOpening();
+jadeOpening(); cyberOpening();
 
 (async () => {
   // Coming back from OpenRouter's connect page finishes it in Your AI
