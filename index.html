@@ -5945,95 +5945,33 @@ function jadeOpening(force) {
   addEventListener("keydown", finish, true); addEventListener("pointerdown", finish, true);
 }
 /* ---------- 夜城 Cyberpunk: the city at night behind the page ----------
-   A still picture drawn on one canvas: three rows of towers with lit windows and neon signs for the
-   story's own places. Nothing moves, so it never competes with the page. Seeded, so the skyline is the
-   same street every visit. */
+   Until the filmed shots come, no pretend city: just the night, and the glow neon throws into it from below.
+   Nothing moves, so it never competes with the page. */
 const isCyber = () => document.documentElement.dataset.look === "cyber";
 let cyCity = null;
 function cyberCity(sc) {
   if (cyCity || !sc) return cyCity;
   const cv = el("canvas", "cy"); sc.append(cv);
   const ctx = cv.getContext("2d"); if (!ctx) return null;
-  const SIGNS = ["面馆", "药店", "夜市", "酒店", "茶馆", "出租车", "便利店", "火锅", "网吧", "包子", "手机", "地铁"];
-  const NEON = ["#ff2bd6", "#00e5ff", "#ffb347", "#f4ff52", "#ff4f8b", "#7cf9ff"];
-  let W = 0, H = 0, dpr = 1, layers = [], signs = [], beacons = [];
-  const seeded = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-  function sign(text, color, size) {
-    const pad = size * 0.35, w = Math.round(size + pad * 2), h = Math.round(text.length * size * 1.08 + pad * 2), g = 18;
-    const c = document.createElement("canvas"); c.width = (w + g * 2) * dpr; c.height = (h + g * 2) * dpr;
-    const x = c.getContext("2d"); x.scale(dpr, dpr); x.translate(g, g);
-    x.fillStyle = "rgba(8, 5, 18, .85)"; x.fillRect(0, 0, w, h);
-    x.shadowColor = color; x.shadowBlur = 14; x.strokeStyle = color; x.lineWidth = 1.6; x.strokeRect(1, 1, w - 2, h - 2);
-    x.font = `700 ${size}px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif`; x.textAlign = "center"; x.textBaseline = "top";
-    [...text].forEach((ch, i) => { const y = pad + i * size * 1.08; x.shadowBlur = 16; x.fillStyle = color; x.fillText(ch, w / 2, y); x.shadowBlur = 0; x.fillStyle = "rgba(255,255,255,.75)"; x.fillText(ch, w / 2, y); });
-    return { c, w: w + g * 2, h: h + g * 2 };
-  }
-  function build() {
-    dpr = Math.min(devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight;
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    const R = seeded(7), small = W < 700, span = W * 1.12;
-    beacons = [];
-    layers = [["#1d1545", "#120d30", .36, .66, 6, .5], ["#151036", "#0c0924", .48, .82, 14, .75], ["#0f0b28", "#07051a", .62, .95, 26, 1]].map(([hiC, loC, lo, hi, drift, lit], li) => {
-      const c = document.createElement("canvas"); c.width = Math.round(span * dpr); c.height = Math.round(H * dpr);
-      const x = c.getContext("2d"); x.scale(dpr, dpr);
-      const tops = [], warm = ["255, 196, 120", "120, 240, 255", "255, 90, 220"];
-      for (let bx = 0; bx < span;) {
-        const bw = (small ? 26 : 34) + R() * (li === 2 ? 90 : 70), bh = H * (lo + R() * (hi - lo)) * (li === 2 && bx > span * .3 && bx < span * .7 ? .55 : 1);
-        const top = H - bh; tops.push([bx, bw, top]);
-        const g = x.createLinearGradient(0, top, 0, H); g.addColorStop(0, hiC); g.addColorStop(.5, loC); x.fillStyle = g;
-        const step = R() < .3 ? Math.min(bw * .2, 10) : 0; // some towers step in at the top
-        x.fillRect(bx, top + step * 2, bw + 1, bh); if (step) x.fillRect(bx + step, top, bw - step * 2, step * 2 + 1);
-        if (R() < .4) { const ax = bx + bw * (.3 + R() * .4), ah = 14 + R() * 40; x.fillRect(ax, top - ah, 2, ah); if (R() < .6) beacons.push({ li, x: ax + 1, y: top - ah, ph: R() * 6 }); }
-        // the top edge catches the neon
-        if (R() < .5) { x.fillStyle = `rgba(${R() < .5 ? "0, 229, 255" : "255, 43, 214"}, ${.25 + li * .15})`; x.fillRect(bx + (step || 0), top, bw - (step || 0) * 2, 1); }
-        x.fillStyle = `rgba(0, 229, 255, ${.05 + li * .05})`; x.fillRect(bx, top, 1, bh); // rim light from the signs
-        // windows: a grid, lit strips, or floors in bands, a share of them on
-        const style = R(), on = .12 + R() * .4 * lit, col = warm[R() < .6 ? 0 : R() < .7 ? 1 : 2], cw = small ? 3 : 4, ch = small ? 4 : 5;
-        if (style < .55) {
-          for (let wy = top + step * 2 + 8; wy < H - 6; wy += ch + 5) for (let wx = bx + 4; wx < bx + bw - cw - 2; wx += cw + 4)
-            if (R() < on) { x.fillStyle = `rgba(${R() < .85 ? col : warm[Math.floor(R() * 3)]}, ${.35 + R() * .55})`; x.fillRect(wx, wy, cw, ch); }
-        } else if (style < .8) {
-          for (let wx = bx + 5; wx < bx + bw - 4; wx += 6) if (R() < on + .2) { const y0 = top + step * 2 + 6 + R() * bh * .4; x.fillStyle = `rgba(${col}, ${.18 + R() * .3})`; x.fillRect(wx, y0, 1.5, H - y0); }
-        } else {
-          for (let wy = top + step * 2 + 6; wy < H - 4; wy += 11) if (R() < on + .15) { x.fillStyle = `rgba(${col}, ${.2 + R() * .35})`; x.fillRect(bx + 3, wy, bw - 6, 2); }
-        }
-        bx += bw + (R() < .3 ? 6 + R() * 18 : 0);
-      }
-      return { c, drift, tops, li };
-    });
-    // signs hang off the two nearer rows, more toward the edges where the page doesn't cover them
-    signs = [];
-    const R2 = seeded(11);
-    for (const L of layers.slice(1)) for (const [bx, bw, top] of L.tops) {
-      if (R2() > (L.li === 2 ? .55 : .3)) continue;
-      const text = SIGNS[Math.floor(R2() * SIGNS.length)], col = NEON[Math.floor(R2() * NEON.length)];
-      const s = sign(text, col, L.li === 2 ? (small ? 15 : 19) : (small ? 10 : 12));
-      signs.push({ ...s, L, x: bx + (R2() < .5 ? -s.w * .35 : bw - s.w * .65), y: top + 10 + R2() * Math.max(10, (H - top) * .3), col, hum: R2() * 6, glitchy: R2() < .25, off: 0 });
-    }
-  }
-  // a still picture of the street: nothing moves behind the page, so it never pulls at your eye
   function draw() {
-    const time = (sc.dataset.time || "out"), dawn = time === "morning", late = time === "evening";
+    const dpr = Math.min(devicePixelRatio || 1, 1.5), W = innerWidth, H = innerHeight, time = sc.dataset.time || "out";
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, late ? "#030208" : "#05030d"); sky.addColorStop(.45, dawn ? "#1e0f3a" : "#100828");
-    sky.addColorStop(.75, dawn ? "rgba(255, 120, 150, .3)" : "rgba(255, 43, 214, .14)"); sky.addColorStop(1, "#07050f");
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-    layers.forEach((L, i) => {
-      const ox = -W * .06;
-      ctx.drawImage(L.c, ox, 0, L.c.width / dpr, H);
-      for (const b of beacons) if (b.li === i) { ctx.fillStyle = "rgba(255, 60, 90, .8)"; ctx.fillRect(b.x + ox - 1.5, b.y - 1.5, 3, 3); }
-      ctx.globalAlpha = .8; for (const s of signs) if (s.L === L) ctx.drawImage(s.c, s.x + ox, s.y, s.w, s.h); ctx.globalAlpha = 1;
-      if (i === 0) { const m = ctx.createLinearGradient(0, H * .55, 0, H); m.addColorStop(0, "rgba(40, 20, 80, 0)"); m.addColorStop(1, "rgba(40, 20, 80, .45)"); ctx.fillStyle = m; ctx.fillRect(0, H * .55, W, H * .45); }
-    });
-    // and a little darker, so the page in front stays the thing you read
-    ctx.fillStyle = "rgba(5, 3, 12, .3)"; ctx.fillRect(0, 0, W, H);
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#04030a"); bg.addColorStop(.55, time === "morning" ? "#120d2a" : "#0a0718"); bg.addColorStop(1, "#06040d");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    // a wide haze of colour where the signs are thickest, low in the frame
+    for (const [x, y, r, c, a] of [[.18, .78, .7, "255, 43, 190", .16], [.82, .7, .65, "0, 200, 255", .13], [.55, .95, .5, "255, 140, 60", .08]]) {
+      const g = ctx.createRadialGradient(W * x, H * y, 0, W * x, H * y, Math.max(W, H) * r);
+      g.addColorStop(0, `rgba(${c}, ${a})`); g.addColorStop(1, `rgba(${c}, 0)`); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    // a lens's darker corners, and a little darker overall so the page in front stays the thing you read
+    const v = ctx.createRadialGradient(W / 2, H * .55, Math.min(W, H) * .2, W / 2, H * .55, Math.max(W, H) * .8);
+    v.addColorStop(0, "rgba(4, 3, 10, .25)"); v.addColorStop(1, "rgba(4, 3, 10, .75)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
   }
-  const redraw = () => { build(); draw(); };
-  redraw();
-  addEventListener("resize", redraw, { passive: true });
+  draw();
+  addEventListener("resize", draw, { passive: true });
   new MutationObserver(draw).observe(sc, { attributes: true, attributeFilter: ["data-time"] });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
   cyCity = { canvas: cv };
   return cyCity;
 }

@@ -1,4 +1,4 @@
-// Themes: Jade stays the default; the footer's Theme picker offers 夜城 Cyberpunk, which draws a still city behind
+// Themes: Jade stays the default; the footer's Theme picker offers 夜城 Cyberpunk, which draws a still night backdrop behind
 // the page (nothing in it moves), keeps it after a reload, gives page changes a scan line, and hands back to Jade cleanly
 const { chromium } = require('./pw');
 (async () => {
@@ -15,11 +15,11 @@ const { chromium } = require('./pw');
     if (!/Theme:/.test(await pg.locator('#foot').innerText())) bad.push(w + ' no Theme label');
     await pg.locator('#foot button', { hasText: '夜城 Cyberpunk' }).click(); await pg.waitForTimeout(700);
     if (await look() !== 'cyber' || !(await pg.locator('.scenery canvas.cy').isVisible())) bad.push(w + ' cyber not on');
-    // the city is drawn, and holds still
+    // the backdrop is drawn, and holds still
     const px = () => pg.evaluate(() => { const c = document.querySelector('canvas.cy'); return c.toDataURL('image/png').length; });
     const a = await pg.evaluate(() => document.querySelector('canvas.cy').toDataURL()); await pg.waitForTimeout(300);
     const c2 = await pg.evaluate(() => document.querySelector('canvas.cy').toDataURL());
-    if ((await px()) < 20000) bad.push(w + ' city looks empty'); if (a !== c2) bad.push(w + " city moving");
+    if ((await px()) < 2000) bad.push(w + ' backdrop not drawn'); if (a !== c2) bad.push(w + " city moving");
     if (await pg.locator('.jw-film video.on, .sc-bamboo').evaluateAll(n => n.some(x => x.offsetParent))) bad.push(w + ' jade or paper scenery showing');
     // kept after a reload; a page change gets the scan line
     await pg.reload(); await pg.waitForTimeout(800);
